@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
-import React from 'react'
 import Link from 'next/link'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 
@@ -44,7 +44,8 @@ export default async function TopicsListPage() {
     <div className="container">
       <h1>Konular</h1>
       <p className="muted">
-        Uzmanların çalıştığı tüm alanlar. Bir konuya tıklayarak o alanda kural yazan uzmanları ve aktif kuralları görebilirsiniz.
+        Uzmanların çalıştığı tüm alanlar. Bir konuya tıklayarak o alanda kural yazan uzmanları ve
+        aktif kuralları görebilirsiniz.
       </p>
 
       {topics.docs.length === 0 ? (
@@ -61,10 +62,7 @@ export default async function TopicsListPage() {
                 className="topic-card-large"
                 style={{ borderTopColor: t.color || '#374151' }}
               >
-                <div
-                  className="topic-chip large"
-                  style={{ background: t.color || '#374151' }}
-                >
+                <div className="topic-chip large" style={{ background: t.color || '#374151' }}>
                   {t.icon || '🏷️'}
                 </div>
                 <h2>{t.name}</h2>

@@ -2,14 +2,11 @@ import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import Link from 'next/link'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 
-export default async function TopicPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
+export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -27,10 +24,7 @@ export default async function TopicPage({
   const rules = await payload.find({
     collection: 'expert-rules',
     where: {
-      and: [
-        { topic: { equals: topic.id } },
-        { isActive: { equals: true } },
-      ],
+      and: [{ topic: { equals: topic.id } }, { isActive: { equals: true } }],
     },
     sort: '-createdAt',
     limit: 100,
@@ -39,11 +33,7 @@ export default async function TopicPage({
 
   // Bu konuda kural yazan uzmanların ID'lerini topla
   const expertIds = Array.from(
-    new Set(
-      rules.docs.map((r: any) =>
-        typeof r.expert === 'object' ? r.expert.id : r.expert,
-      ),
-    ),
+    new Set(rules.docs.map((r: any) => (typeof r.expert === 'object' ? r.expert.id : r.expert))),
   )
 
   const experts =
@@ -63,15 +53,9 @@ export default async function TopicPage({
 
   return (
     <div className="container">
-      <header
-        className="topic-header"
-        style={{ borderTopColor: topic.color || '#374151' }}
-      >
+      <header className="topic-header" style={{ borderTopColor: topic.color || '#374151' }}>
         <h1>
-          <span
-            className="topic-chip large"
-            style={{ background: topic.color || '#374151' }}
-          >
+          <span className="topic-chip large" style={{ background: topic.color || '#374151' }}>
             {topic.icon} {topic.name}
           </span>
         </h1>
@@ -85,11 +69,7 @@ export default async function TopicPage({
         ) : (
           <div className="experts-grid">
             {experts.docs.map((e: any) => (
-              <Link
-                key={e.id}
-                href={`/uzmanlar/${e.slug}`}
-                className="expert-card-link"
-              >
+              <Link key={e.id} href={`/uzmanlar/${e.slug}`} className="expert-card-link">
                 <article className="expert-card-large">
                   {e.avatar?.url && (
                     <img src={e.avatar.url} alt={e.name} className="expert-avatar" />
@@ -108,9 +88,7 @@ export default async function TopicPage({
       {rules.docs.length > 0 && (
         <section>
           <h2>Bu Konudaki Aktif Kurallar ({rules.totalDocs})</h2>
-          <p className="muted">
-            Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.
-          </p>
+          <p className="muted">Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.</p>
           <div className="grid">
             {rules.docs.map((rule: any) => {
               const expert = rule.expert

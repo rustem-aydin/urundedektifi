@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
-import React from 'react'
 import Link from 'next/link'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 import { evaluateProductRules } from '@/lib/verdictEngine'
@@ -59,7 +59,9 @@ export default async function ProductPage({
         <div className="not-found">
           <h1>Ürün bulunamadı</h1>
           <p>Aradığınız barkod sistemde kayıtlı değil.</p>
-          <a href="/tara" className="cta-button">Tekrar Tara</a>
+          <a href="/tara" className="cta-button">
+            Tekrar Tara
+          </a>
         </div>
       </div>
     )
@@ -151,9 +153,7 @@ export default async function ProductPage({
           {product.brand?.name && (
             <p className="brand">
               Marka: <strong>{product.brand.name}</strong>
-              {product.brand.isBoycotted && (
-                <span className="warn"> 🛑 Boykotlu marka</span>
-              )}
+              {product.brand.isBoycotted && <span className="warn"> 🛑 Boykotlu marka</span>}
             </p>
           )}
           {product.category?.name && <p>Kategori: {product.category.name}</p>}
@@ -185,7 +185,8 @@ export default async function ProductPage({
         <section className="expert-verdicts">
           <h2>🕵️ Uzman Değerlendirmeleri</h2>
           <p className="muted">
-            {verdictResult.totalMatched} aktif kural eşleşti · {verdictResult.byExpert.length} uzman yorumu
+            {verdictResult.totalMatched} aktif kural eşleşti · {verdictResult.byExpert.length} uzman
+            yorumu
           </p>
           {verdictResult.byExpert.map((ev) => (
             <div key={ev.expert.id} className="expert-block">
@@ -230,21 +231,14 @@ export default async function ProductPage({
                           {m.topic.icon} {m.topic.name}
                         </span>
                       )}
-                      {m.matchedValue && (
-                        <span> • {m.matchedValue}</span>
-                      )}
+                      {m.matchedValue && <span> • {m.matchedValue}</span>}
                     </p>
                     <p>{m.description}</p>
                     {m.sources && m.sources.length > 0 && (
                       <p className="sources">
                         Kaynaklar:{' '}
                         {m.sources.map((s: any, i: number) => (
-                          <a
-                            key={i}
-                            href={s.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
+                          <a key={i} href={s.url} target="_blank" rel="noreferrer">
                             {s.title}
                             {i < (m.sources?.length || 0) - 1 ? ', ' : ''}
                           </a>
@@ -260,8 +254,8 @@ export default async function ProductPage({
       ) : (
         <section className="no-verdict">
           <p>
-            Bu ürün için henüz eşleşen kural yok. Uzmanlar{' '}
-            <Link href="/uzmanlar">kurallarını</Link> yazdıkça burası otomatik güncellenecek.
+            Bu ürün için henüz eşleşen kural yok. Uzmanlar <Link href="/uzmanlar">kurallarını</Link>{' '}
+            yazdıkça burası otomatik güncellenecek.
           </p>
         </section>
       )}
@@ -272,11 +266,7 @@ export default async function ProductPage({
           <ul>
             {product.ingredientsAnalyzed.map((ia: any, i: number) => {
               const ing = ia.ingredient
-              return (
-                <li key={i}>
-                  {typeof ing === 'object' ? ing.name : ing}
-                </li>
-              )
+              return <li key={i}>{typeof ing === 'object' ? ing.name : ing}</li>
             })}
           </ul>
           {product.allergens && product.allergens.length > 0 && (

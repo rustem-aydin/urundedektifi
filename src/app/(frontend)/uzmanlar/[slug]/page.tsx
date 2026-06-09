@@ -1,14 +1,10 @@
 import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
-import React from 'react'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 
-export default async function ExpertDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}) {
+export default async function ExpertDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -16,10 +12,7 @@ export default async function ExpertDetailPage({
   const result = await payload.find({
     collection: 'experts',
     where: {
-      and: [
-        { slug: { equals: slug } },
-        { isPublic: { equals: true } },
-      ],
+      and: [{ slug: { equals: slug } }, { isPublic: { equals: true } }],
     },
     limit: 1,
     depth: 1,
@@ -32,10 +25,7 @@ export default async function ExpertDetailPage({
     payload.find({
       collection: 'expert-rules',
       where: {
-        and: [
-          { expert: { equals: expert.id } },
-          { isActive: { equals: true } },
-        ],
+        and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }],
       },
       sort: '-createdAt',
       depth: 1,
@@ -60,8 +50,7 @@ export default async function ExpertDetailPage({
         )}
         <div>
           <h1>
-            {expert.name}{' '}
-            {expert.verified && <span className="verified">✓ Doğrulanmış</span>}
+            {expert.name} {expert.verified && <span className="verified">✓ Doğrulanmış</span>}
           </h1>
           {expert.title && <p className="expert-title">{expert.title}</p>}
           {expert.bio && <p className="expert-bio">{expert.bio}</p>}
@@ -111,9 +100,7 @@ export default async function ExpertDetailPage({
 
       <section className="expert-rules">
         <h2>📋 Aktif Kurallar ({rules.totalDocs})</h2>
-        <p className="muted">
-          Bu kurallar, ürün verilerine göre otomatik olarak değerlendirilir.
-        </p>
+        <p className="muted">Bu kurallar, ürün verilerine göre otomatik olarak değerlendirilir.</p>
         {rules.docs.length === 0 ? (
           <p>Henüz aktif kural yok.</p>
         ) : (

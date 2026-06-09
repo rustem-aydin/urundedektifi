@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import React from 'react'
 import Link from 'next/link'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 
@@ -33,10 +34,7 @@ export default async function ExpertsPage({
   const experts = await payload.find({
     collection: 'experts',
     where: {
-      and: [
-        { isPublic: { equals: true } },
-        { verified: { equals: true } },
-      ],
+      and: [{ isPublic: { equals: true } }, { verified: { equals: true } }],
     },
     sort: 'name',
     depth: 1,
@@ -48,18 +46,13 @@ export default async function ExpertsPage({
     const rulesInTopic = await payload.find({
       collection: 'expert-rules',
       where: {
-        and: [
-          { topic: { equals: selectedTopic.id } },
-          { isActive: { equals: true } },
-        ],
+        and: [{ topic: { equals: selectedTopic.id } }, { isActive: { equals: true } }],
       },
       limit: 1000,
       depth: 0,
     })
     const expertIds = new Set(
-      rulesInTopic.docs.map((r: any) =>
-        typeof r.expert === 'object' ? r.expert.id : r.expert,
-      ),
+      rulesInTopic.docs.map((r: any) => (typeof r.expert === 'object' ? r.expert.id : r.expert)),
     )
     filteredExperts = experts.docs.filter((e: any) => expertIds.has(e.id))
   }
@@ -71,10 +64,7 @@ export default async function ExpertsPage({
         payload.find({
           collection: 'expert-rules',
           where: {
-            and: [
-              { expert: { equals: e.id } },
-              { isActive: { equals: true } },
-            ],
+            and: [{ expert: { equals: e.id } }, { isActive: { equals: true } }],
           },
           limit: 0,
         }),
@@ -98,10 +88,7 @@ export default async function ExpertsPage({
       {topics.docs.length > 0 && (
         <div className="topic-filter">
           <span className="filter-label">Konuya göre filtrele:</span>
-          <Link
-            href="/uzmanlar"
-            className={`topic-filter-btn ${!selectedTopic ? 'active' : ''}`}
-          >
+          <Link href="/uzmanlar" className={`topic-filter-btn ${!selectedTopic ? 'active' : ''}`}>
             Tümü
           </Link>
           {topics.docs.map((t: any) => (
@@ -117,9 +104,7 @@ export default async function ExpertsPage({
       )}
 
       {selectedTopic && (
-        <p className="muted">
-          "{selectedTopic.name}" konusunda kural yazan uzmanlar
-        </p>
+        <p className="muted">"{selectedTopic.name}" konusunda kural yazan uzmanlar</p>
       )}
 
       {expertsWithStats.length === 0 ? (
@@ -127,18 +112,10 @@ export default async function ExpertsPage({
       ) : (
         <div className="experts-grid">
           {expertsWithStats.map((e: any) => (
-            <Link
-              key={e.id}
-              href={`/uzmanlar/${e.slug}`}
-              className="expert-card-link"
-            >
+            <Link key={e.id} href={`/uzmanlar/${e.slug}`} className="expert-card-link">
               <article className="expert-card-large">
                 {e.avatar?.url && (
-                  <img
-                    src={e.avatar.url}
-                    alt={e.avatar.alt || e.name}
-                    className="expert-avatar"
-                  />
+                  <img src={e.avatar.url} alt={e.avatar.alt || e.name} className="expert-avatar" />
                 )}
                 <h2>
                   {e.name} {e.verified && <span className="verified">✓</span>}
