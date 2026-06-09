@@ -7,6 +7,17 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Categories } from './collections/Categories'
+import { Topics } from './collections/Topics'
+import { Brands } from './collections/Brands'
+import { Products } from './collections/Products'
+import { Pages } from './collections/Pages'
+import { Experts } from './collections/Experts'
+import { ExpertRules } from './collections/ExpertRules'
+import { RatingScales } from './collections/RatingScales'
+import { Ingredients } from './collections/Ingredients'
+import { Additives } from './collections/Additives'
+import { Countries } from './collections/Countries'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -17,8 +28,25 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    meta: {
+      titleSuffix: ' — Ürün Dedektifi',
+    },
   },
-  collections: [Users, Media],
+  collections: [
+    Users,
+    Media,
+    Categories,
+    Topics,
+    Brands,
+    Products,
+    Pages,
+    Experts,
+    ExpertRules,
+    RatingScales,
+    Ingredients,
+    Additives,
+    Countries,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -31,4 +59,7 @@ export default buildConfig({
   }),
   sharp,
   plugins: [],
+  graphQL: {
+    disable: false,
+  },
 })

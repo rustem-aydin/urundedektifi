@@ -69,6 +69,17 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    categories: Category;
+    topics: Topic;
+    brands: Brand;
+    products: Product;
+    pages: Page;
+    experts: Expert;
+    'expert-rules': ExpertRule;
+    'rating-scales': RatingScale;
+    ingredients: Ingredient;
+    additives: Additive;
+    countries: Country;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,13 +89,24 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    topics: TopicsSelect<false> | TopicsSelect<true>;
+    brands: BrandsSelect<false> | BrandsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    experts: ExpertsSelect<false> | ExpertsSelect<true>;
+    'expert-rules': ExpertRulesSelect<false> | ExpertRulesSelect<true>;
+    'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
+    ingredients: IngredientsSelect<false> | IngredientsSelect<true>;
+    additives: AdditivesSelect<false> | AdditivesSelect<true>;
+    countries: CountriesSelect<false> | CountriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -118,11 +140,25 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Sistem kullanıcıları. Admin, editör, uzman ve normal üye olabilirler.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  /**
+   * Kullanıcının gerçek adı ve soyadı. Sitede bu isim görüntülenir.
+   */
+  name: string;
+  /**
+   * Admin tüm yetkilere sahiptir. Editör içerik yönetir. Uzman kural/yorum yazar. Kullanıcı standart üyedir.
+   */
+  role: 'admin' | 'editor' | 'expert' | 'user';
+  /**
+   * Kare formatında, en az 200x200 piksel önerilir.
+   */
+  avatar?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -143,12 +179,17 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Yüklenen tüm görseller ve belgeler (ürün fotoğrafları, uzman fotoğrafları, kanıt belgeleri).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
-  alt: string;
+  id: number;
+  /**
+   * Görseli açıklayan kısa metin. SEO ve görme engelli kullanıcılar için önerilir (Örn: "Coca-Cola 1L kola şişesi"). Boş bırakılabilir.
+   */
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -160,13 +201,867 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    medium?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    large?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * Ürünlerin tip kategorileri (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik yapıdadır — alt kategori eklenebilir.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  /**
+   * Sitede görünecek kategori adı (Örn: "Atıştırmalık", "Süt Ürünleri", "İçecek").
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. Otomatik üretilir, Türkçe karakterler İngilizce karşılıklarına dönüşür. Sadece küçük harf, rakam ve tire kullanın.
+   */
+  slug: string;
+  /**
+   * Kategori sayfasında görünecek kısa açıklama (isteğe bağlı).
+   */
+  description?: string | null;
+  /**
+   * Kategoriyi temsil eden küçük görsel (Örn: bir meyve fotoğrafı). Kare format önerilir.
+   */
+  icon?: (number | null) | Media;
+  /**
+   * Eğer bu bir alt kategori ise üst kategoriyi seçin. Ana kategori için boş bırakın (Örn: "Meyve Suyu" → "İçecek" altında).
+   */
+  parent?: (number | null) | Category;
+  /**
+   * Listeleme sırası. Küçük değerler önce gösterilir (Örn: 1=en üstte, 10=en altta).
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Uzmanların çalıştığı alanlar. Helal, Vegan, Çevresel, Boykot, Katkı Maddeleri vb. gibi istediğiniz kadar konu tanımlayabilirsiniz.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topics".
+ */
+export interface Topic {
+  id: number;
+  /**
+   * Konunun görünen adı (Örn: "Helal Gıda", "Vegan", "Çevresel Etki", "Boykot", "Katkı Maddeleri").
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. Otomatik üretilir, Türkçe karakterler dönüştürülür. Sadece küçük harf, rakam ve tire kullanın.
+   */
+  slug: string;
+  /**
+   * Bu konunun ne anlama geldiğini açıklayan metin. Kullanıcı konu sayfasında görür (Örn: "Helal: İslami usullere uygun üretim, hayvansal kaynak kontrolü").
+   */
+  description?: string | null;
+  /**
+   * Konuyu temsil eden emoji (Örn: 🛑, ☪️, 🌱, 🐾, 🧪, 🌾, 💚). Liste halinde gösterilirken kullanılır.
+   */
+  icon?: string | null;
+  /**
+   * Konu rozetlerinin ve başlıklarının rengi. HEX formatında girin (Örn: #16a34a yeşil için, #dc2626 kırmızı için, #7c3aed mor için). Boş bırakılırsa varsayılan gri kullanılır.
+   */
+  color?: string | null;
+  /**
+   * Konu listeleme sırası. Küçük değerler önce gösterilir (Örn: 1=en üstte, 10=en altta).
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ürün markaları. Boykotlu olarak işaretlenirse, kural motoru bu markanın TÜM ürünlerini otomatik boykot eder.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands".
+ */
+export interface Brand {
+  id: number;
+  /**
+   * Markanın tam adı (Örn: "Coca-Cola", "Ülker", "Nestlé").
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.
+   */
+  slug: string;
+  /**
+   * Marka logosu (kare veya yatay format). Şeffaf arka planlı PNG önerilir. Liste ve ürün sayfalarında görüntülenir.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Marka hakkında kısa bilgi.
+   */
+  description?: string | null;
+  /**
+   * Marka ana şirketinin bulunduğu ülke. Kural motorunda ülke bazlı boykot analizi için kullanılır (Örn: "ABD", "İsviçre", "Türkiye").
+   */
+  country?: string | null;
+  /**
+   * Marka resmi web sitesi URL'i (Örn: https://www.example.com).
+   */
+  website?: string | null;
+  /**
+   * Bu marka genel olarak boykot ediliyor mu? İşaretlenirse, kural motorunda "Marka boykotlu" kuralı bu markaya otomatik uygulanır.
+   */
+  isBoycotted?: boolean | null;
+  /**
+   * Bu marka neden boykot ediliyor? Kullanıcılara gösterilecek açıklama (Örn: "İsrail-Filistin sorunu sebebiyle uluslararası BDS hareketi tarafından boykot edilmektedir.").
+   */
+  boycottReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sistemdeki tüm ürün kayıtları. Kullanıcılar barkod okutarak veya arayarak bu ürünlere ulaşır. Aktif uzman kuralları sayfasında otomatik değerlendirilir.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  /**
+   * Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. Otomatik üretilir.
+   */
+  slug: string;
+  /**
+   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar (Örn: 8690504001234, 5449000000996).
+   */
+  barcode: string;
+  /**
+   * Ürün hakkında genel açıklama. Düz metin olarak yazılır (satır sonları korunur).
+   */
+  description?: string | null;
+  /**
+   * Ürünün ana/ön yüz fotoğrafı. Listelerde ve ürün sayfasında hero olarak gösterilir. Marka logosu, ürün adı ve gramaj görünen kısım. Kare veya dikey format önerilir, en az 600x600 piksel.
+   */
+  frontImage: number | Media;
+  /**
+   * Paket üzerindeki içindekiler tablosunun fotoğrafı. Sitede "İçindekiler" etiketiyle gösterilir.
+   */
+  ingredientsImage?: (number | null) | Media;
+  /**
+   * Paket üzerindeki besin değerleri tablosunun fotoğrafı. Sitede "Besin Değerleri" etiketiyle gösterilir.
+   */
+  nutritionImage?: (number | null) | Media;
+  /**
+   * Ambalaj üzerindeki geri dönüşüm sembolleri veya bertaraf talimatları. Sitede "Geri Dönüşüm" etiketiyle gösterilir.
+   */
+  recyclingImage?: (number | null) | Media;
+  /**
+   * İsteğe bağlı ek fotoğraflar: arka yüz, kullanım örneği, sertifika, garanti belgesi vb. Maksimum 2 ek fotoğraf. Ön Yüz + 3 kategorize + 2 ek = toplam en fazla 6 fotoğraf.
+   */
+  additionalImages?:
+    | {
+        image: number | Media;
+        /**
+         * Bu görselin ne olduğunu açıklayan kısa metin (Örn: "Arka yüz", "Kullanım örneği", "Sertifika").
+         */
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Ürünün markası. Listelerde marka logusu ile gösterilir.
+   */
+  brand: number | Brand;
+  /**
+   * Ürünün tipi (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik olabilir.
+   */
+  category: number | Category;
+  /**
+   * Ürünü fiziksel olarak üreten firma. Markadan farklıysa buraya yazın (Örn: "Marka: Coca-Cola, Üretici: The Coca-Cola Company İstanbul Şubesi").
+   */
+  manufacturer?: string | null;
+  /**
+   * Ürünün fiziksel olarak üretildiği ülke. Barkod girildiğinde GS1 prefix'inden (ilk 3 hane) OTOMATİK doldurulur; isterseniz elle değiştirebilirsiniz. Kural motorunda ülke bazlı boykot analizi için kullanılır. Ülke listede yoksa önce "Ülkeler" bölümünden ekleyin.
+   */
+  country?: (number | null) | Country;
+  /**
+   * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
+   */
+  ingredientsAnalyzed?:
+    | {
+        /**
+         * İçindekiler master listesinden seçim yapın.
+         */
+        ingredient: number | Ingredient;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Bu üründe bulunan alerjenler. Çoklu seçim yapılabilir.
+   */
+  allergens?:
+    | (
+        | 'gluten'
+        | 'milk'
+        | 'egg'
+        | 'soy'
+        | 'peanut'
+        | 'nuts'
+        | 'fish'
+        | 'shellfish'
+        | 'sesame'
+        | 'mustard'
+        | 'celery'
+        | 'sulphite'
+      )[]
+    | null;
+  /**
+   * Ürünün içerdiği katkı maddeleri. Her birini E-kodlu katkı master listesinden seçin (Örn: E330 Sitrik Asit, E621 MSG).
+   */
+  additives?:
+    | {
+        /**
+         * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
+         */
+        additive: number | Additive;
+        id?: string | null;
+      }[]
+    | null;
+  nutritionFacts?: {
+    /**
+     * Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").
+     */
+    servingSize?: string | null;
+    /**
+     * Toplam paketteki porsiyon sayısı.
+     */
+    servingsPerPackage?: number | null;
+    energyKcal?: number | null;
+    energyKj?: number | null;
+    /**
+     * Tüm yağ miktarı, 100g başına.
+     */
+    fat?: number | null;
+    /**
+     * Doymuş yağ asitleri.
+     */
+    saturatedFat?: number | null;
+    /**
+     * Trans yağ asitleri (genelde sağlıksız).
+     */
+    transFat?: number | null;
+    carbohydrates?: number | null;
+    /**
+     * Doğal + eklenmiş tüm şekerler.
+     */
+    sugars?: number | null;
+    /**
+     * Üretim sırasında eklenen şeker (en zararlı).
+     */
+    addedSugars?: number | null;
+    fiber?: number | null;
+    protein?: number | null;
+    /**
+     * Sodyum klorür miktarı.
+     */
+    salt?: number | null;
+    /**
+     * Sodyum miktarı, miligram olarak. Tuz ≈ Sodyum × 2.5.
+     */
+    sodium?: number | null;
+  };
+  /**
+   * Nutri-Score, ürünün genel besin değeri kalitesini gösteren A-E harfli etiket (A=en iyi, E=en kötü). Etikette yazıyorsa seçin.
+   */
+  nutriscore?: ('a' | 'b' | 'c' | 'd' | 'e') | null;
+  /**
+   * Ürünün üzerinde bulunan etiket/sertifikalar. Çoklu seçim yapılabilir. Kural motoru bu etiketlere bakar. Gıda + kozmetik + elektronik + tekstil için ortak liste.
+   */
+  labels?:
+    | (
+        | 'vegan'
+        | 'vegetarian'
+        | 'gluten-free'
+        | 'lactose-free'
+        | 'organic'
+        | 'halal-certified'
+        | 'kosher'
+        | 'non-gmo'
+        | 'natural'
+        | 'no-additives'
+        | 'sugar-free'
+        | 'ce-mark'
+        | 'rohs'
+        | 'energy-star'
+        | 'cruelty-free'
+        | 'vegan-certified-cosmetics'
+        | 'bpa-free'
+        | 'paraben-free'
+        | 'sulfate-free'
+        | 'recyclable'
+        | 'disposable'
+        | 'reusable'
+        | 'oeko-tex'
+        | 'gots'
+        | 'fair-trade'
+        | 'fsc'
+        | 'energy-a-plus-plus-plus'
+        | 'energy-a-plus-plus'
+        | 'energy-a-plus'
+        | 'energy-a'
+        | 'energy-b'
+      )[]
+    | null;
+  /**
+   * Ürünün paketleme tipi (Örn: "Cam şişe", "Plastik kutu", "Karton kutu", "Teneke kutu").
+   */
+  packaging?: string | null;
+  /**
+   * Ürünün boyutu (Örn: "500g", "1L", "330ml", "12x25g").
+   */
+  size?: string | null;
+  /**
+   * Ürünün teknik özellikleri anahtar-değer çiftleri olarak (Örn: "Renk: Siyah", "Materyal: Pamuk", "Güç: 2200W", "Voltaj: 220V").
+   */
+  specifications?:
+    | {
+        /**
+         * Özelliğin adı (Örn: "Renk", "Materyal", "Güç", "Voltaj", "Kapasite").
+         */
+        key: string;
+        /**
+         * Özelliğin değeri (Örn: "Siyah", "Pamuk %100", "2200W", "220V", "5L").
+         */
+        value: string;
+        /**
+         * Değerin birimi, ayrı yazılmak istenirse (Örn: "W", "V", "ml", "kg").
+         */
+        unit?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Ürünün kullanımıyla ilgili uyarılar. Ciddiyet seviyesine göre renklendirilir (sitede).
+   */
+  warnings?:
+    | {
+        /**
+         * Uyarının ciddiyet seviyesi. Sitede renkli olarak gösterilir.
+         */
+        severity: 'low' | 'medium' | 'high';
+        /**
+         * Uyarı metni (Örn: "3 yaş altı için uygun değildir", "Direkt güneş ışığından uzak tutun", "Yanıcı madde").
+         */
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Üreticinin ürüne verdiği model/seri kodu (Örn: "iPhone 15 Pro Max A2849", "Arçelik 5840 NM").
+   */
+  model?: string | null;
+  /**
+   * Satıcının stok kodu (Örn: "ARN-12345-BK").
+   */
+  sku?: string | null;
+  /**
+   * Garanti bilgisi (Örn: "2 yıl", "1 yıl resmi distribütör", "Garanti yok").
+   */
+  warranty?: string | null;
+  /**
+   * Ürünün nasıl kullanılacağına dair kısa bilgi (Örn: "Yıkamadan önce ters çevirin", "İlk kullanımda 10 dakika kaynatın").
+   */
+  usage?: string | null;
+  /**
+   * Ürünün saklama koşulları (Örn: "Serin ve kuru yerde saklayın", "+4°C'de buzdolabında", "Direkt güneş ışığından uzak").
+   */
+  storage?: string | null;
+  /**
+   * Farklı tarihlerdeki fiyat kayıtları. Sitede otomatik olarak "en düşük - en yüksek" aralığı + ortalama fiyat gösterilir. Maksimum 10 kayıt (en eski otomatik düşer).
+   */
+  prices?:
+    | {
+        /**
+         * Sayısal fiyat Türk Lirası olarak (Örn: 12.50, 1499.99).
+         */
+        amount: number;
+        /**
+         * Fiyatın kaydedildiği tarih.
+         */
+        date: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Sadece "Yayında" durumundaki ürünler sitede görünür ve taranabilir. Taslak ürünler admin panele özeldir.
+   */
+  status: 'draft' | 'published' | 'archived';
+  /**
+   * Ürünü sisteme ekleyen kullanıcı. Otomatik atanır.
+   */
+  submittedBy?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Üretim yeri ülkelerin master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "İsrail menşeli ürünler → Boykot" kuralı). "code" alanı GS1 barkod prefixidir (3 hane).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries".
+ */
+export interface Country {
+  id: number;
+  /**
+   * Ülkenin tam adı (Örn: "Türkiye", "Almanya", "İsrail", "Amerika Birleşik Devletleri"). Barkod prefix eşleştirmesi bu ada göre yapılır, bu yüzden standart isim kullanın.
+   */
+  name: string;
+  /**
+   * Bu ülkeye ait ana GS1 barkod prefixi (3 hane, sıfır dolgulu). Örn: Türkiye="868", Almanya="400", ABD="000". Barkod girilirken ilk 3 hane bu alanla eşleşirse ülke otomatik atanır. Birden fazla prefix varsa birini buraya, diğerlerini "Ek Prefixler" alanına yazın.
+   */
+  code?: string | null;
+  /**
+   * Bu ülkeye ait ek GS1 prefix'ler (3 hane, sıfır dolgulu). Örn: ABD için 000-139 aralığındaki diğer prefix'ler. Sadece "code" alanında belirtilmeyen ek prefix'ler eklenir.
+   */
+  aliases?:
+    | {
+        /**
+         * 3 haneli GS1 prefix (Örn: "869", "030").
+         */
+        prefix: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Ülkenin uluslararası 2 harfli kodu (Örn: "TR", "DE", "IL", "US"). Görsel/gösterim amaçlıdır.
+   */
+  iso?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ürünlerde geçebilecek içindekilerin master listesi. Uzman kuralları bu listeden seçim yaparak eşleşme arar (Örn: "Palm Yağı" kuralı, ürünün içindekiler metninde "Palm Yağı", "Palm Oil" veya tanımlı alternatif adları aranır). Sadece ad + eş anlamlılar + kısa açıklama içerir. Helal/vegan/sağlık/çevre değerlendirmeleri uzmanların kural yazımıyla yapılır.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ingredients".
+ */
+export interface Ingredient {
+  id: number;
+  /**
+   * İçindekilerin standart Türkçe adı. Ürün etiketinde farklı yazılsa bile kural motoru buradan arar (Örn: "Palm Yağı", "Monosodyum Glutamat").
+   */
+  name: string;
+  /**
+   * Etiketlerde farklı yazılabilecek alternatif adlar. Bunlardan biri geçtiğinde de eşleşir (Örn: Palm Yağı için ["Palm Oil", "Palmiye Yağı", "Yağ (palm)"]).
+   */
+  aliases?:
+    | {
+        alias: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Bu içindekiler hakkında kısa, nötr bilgi (kökeni, üretim yöntemi). Değer yargısı içermemeli — helal/vegan/sağlık/çevre yorumlarını uzman kural yazımında yapar.
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Gıda katkı maddelerinin (E-kodları) master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "E621 Monosodyum Glutamat" → sağlığa zararlı kuralı).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "additives".
+ */
+export interface Additive {
+  id: number;
+  /**
+   * Avrupa katkı kodu (Örn: "E330", "E621", "E102"). Büyük harfle ve "E" ile başlamalı.
+   */
+  code: string;
+  /**
+   * Katkı maddesinin tam adı (Örn: "Sitrik Asit", "Monosodyum Glutamat", "Tartrazin").
+   */
+  name: string;
+  /**
+   * Farklı dillerde veya ticari isimlerle yazılan alternatif adlar.
+   */
+  aliases?:
+    | {
+        alias: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Katkının gıdadaki fonksiyonu. Kategorize etmek için kullanılır.
+   */
+  function?:
+    | (
+        | 'acidity_regulator'
+        | 'antioxidant'
+        | 'flavor_enhancer'
+        | 'emulsifier'
+        | 'preservative'
+        | 'color'
+        | 'sweetener'
+        | 'thickener'
+        | 'anti_caking'
+        | 'leavening'
+        | 'stabilizer'
+        | 'other'
+      )
+    | null;
+  /**
+   * Sağlık açısından risk seviyesi. Bilimsel kanıtlara dayanır.
+   */
+  riskLevel?: ('low' | 'medium' | 'high') | null;
+  /**
+   * Helal kuralları için referans. Bazı katkılar hayvansal kaynaklı olabilir (örn: E120 koşnil böceği).
+   */
+  halalStatus?: ('halal' | 'haram' | 'mashbooh' | 'unknown') | null;
+  /**
+   * Vegan kuralları için referans.
+   */
+  isVegan?: ('yes' | 'no' | 'unknown') | null;
+  /**
+   * Katkı maddesinin ne olduğu, ne için kullanıldığı, olası sağlık etkileri hakkında bilgi.
+   */
+  description?: string | null;
+  sources?:
+    | {
+        title: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Hakkımızda, Metodoloji, Gizlilik Politikası, Kullanım Şartları gibi statik içerik sayfaları.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  /**
+   * Sayfanın başlığı (Örn: "Hakkımızda", "Metodoloji", "Gizlilik Politikası").
+   */
+  title: string;
+  /**
+   * URL'de kullanılacak kısa ad. Sayfaya /sayfa/[slug] üzerinden erişilir. Otomatik üretilir.
+   */
+  slug: string;
+  /**
+   * Sayfanın ana içeriği. Düz metin olarak yazılır (satır sonları korunur). Markdown benzeri basit biçimlendirme kullanabilirsiniz.
+   */
+  content?: string | null;
+  seo?: {
+    /**
+     * Google arama sonuçlarında görünecek başlık. Boş bırakılırsa sayfa başlığı kullanılır (maks. 60 karakter önerilir).
+     */
+    metaTitle?: string | null;
+    /**
+     * Google arama sonuçlarında başlığın altında görünecek açıklama (maks. 160 karakter önerilir).
+     */
+    metaDescription?: string | null;
+    /**
+     * Facebook, Twitter vb. paylaşımlarda görünecek görsel. 1200x630 piksel önerilir.
+     */
+    ogImage?: (number | null) | Media;
+  };
+  /**
+   * Sadece "Yayında" durumundaki sayfalar sitede görüntülenir.
+   */
+  status?: ('draft' | 'published') | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ürün değerlendirmesi yapan uzmanlar. Her uzman kendi derecelendirme ölçeğini oluşturur (Boykot, Helal, Sağlık vb.) ve kendi kurallarını yazar. Sadece doğrulanmış ve "Herkese Açık" işaretli uzmanlar sitede görünür.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "experts".
+ */
+export interface Expert {
+  id: number;
+  /**
+   * Uzmanın gerçek adı ve soyadı. Sitede her yerde bu isim görünür.
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. /uzmanlar/ahmet-hocam gibi. Otomatik üretilir.
+   */
+  slug: string;
+  /**
+   * Uzmanın admin panele giriş yapacağı kullanıcı hesabı (opsiyonel). Boş bırakılırsa sadece admin tarafından yönetilir.
+   */
+  user?: (number | null) | User;
+  /**
+   * Uzmanın mesleki ünvanı (Örn: "Gıda Mühendisi", "Helal Denetçisi", "Diyetisyen", "Çevre Mühendisi").
+   */
+  title?: string | null;
+  /**
+   * Kare formatında, en az 400x400 piksel önerilir. Şeffaf arka plan opsiyonel.
+   */
+  avatar?: (number | null) | Media;
+  /**
+   * Uzman hakkında kısa biyografi. Uzman profili sayfasında ve kartında görüntülenir (2-3 paragraf önerilir).
+   */
+  bio?: string | null;
+  credentials?:
+    | {
+        /**
+         * Sertifika veya belgenin tam adı (Örn: "Helal Gıda Denetçisi Sertifikası").
+         */
+        title: string;
+        /**
+         * Alındığı yıl (Örn: 2020).
+         */
+        year?: number | null;
+        /**
+         * Sertifikayı veren kurum (Örn: "GIMDES", "TÜBİTAK", "Üniversite Adı").
+         */
+        issuer?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Admin tarafından doğrulanmış uzman. Sadece doğrulanmış uzmanlar anasayfada ve filtrelerde gösterilir.
+   */
+  verified?: boolean | null;
+  /**
+   * Sitede görüntülensin mi? İşaret kaldırılırsa uzman sadece admin panelde görünür.
+   */
+  isPublic?: boolean | null;
+  socialLinks?: {
+    /**
+     * Uzmanın kendi web sitesi (https:// ile birlikte).
+     */
+    website?: string | null;
+    /**
+     * Twitter profil URL'i.
+     */
+    twitter?: string | null;
+    /**
+     * Instagram profil URL'i.
+     */
+    instagram?: string | null;
+    /**
+     * LinkedIn profil URL'i.
+     */
+    linkedin?: string | null;
+    /**
+     * YouTube kanal URL'i.
+     */
+    youtube?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Uzmanların ürünlere otomatik olarak uygulanan değerlendirme kuralları. Her kural tipi için ilgili master listeden (Marka, Ülke, İçindekiler, Katkı, Konu vb.) dropdown ile seçim yapılır — manuel metin girişi yoktur. Kural eşleştiğinde uzmanın kendi derecelendirme ölçeğinden seçtiği "Derece" gösterilir.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expert-rules".
+ */
+export interface ExpertRule {
+  id: number;
+  /**
+   * Kuralın kısa, akılda kalıcı adı. Sitede bu isimle görüntülenir (Örn: "Domuz yağı → Helal Değil", "İsrail menşeli → Boykot").
+   */
+  name: string;
+  /**
+   * Bu kuralı yazan uzman. Sitede uzmanın adıyla birlikte gösterilir.
+   */
+  expert: number | Expert;
+  /**
+   * Bu kural hangi konuyla ilgili? (Örn: Helal, Vegan, Çevresel, Boykot, Katkı). Önce "Konular" bölümünden konu tanımlamalısınız.
+   */
+  topic: number | Topic;
+  /**
+   * Kural eşleştiğinde gösterilecek derece. Uzmanın "Derecelendirmeler" koleksiyonundan seçilir (Örn: "Boykot", "Şüpheli", "Boykot Değil"). Her uzman kendi ölçeğini oluşturur.
+   */
+  rating: number | RatingScale;
+  /**
+   * Ürünün hangi özelliğine bakılacak? Seçiminize göre aşağıda ilgili dropdown açılır.
+   */
+  ruleType:
+    | 'ingredient_text'
+    | 'ingredient_excludes'
+    | 'additive_code'
+    | 'allergen'
+    | 'country'
+    | 'brand'
+    | 'brand_boycotted'
+    | 'category'
+    | 'nutrition_max'
+    | 'nutrition_min'
+    | 'label_has'
+    | 'label_missing';
+  /**
+   * İçindekiler master listesinden seçim yapın. Kural motoru, ürünün seçili içindekiler listesinde bu maddenin olup olmadığını kontrol eder.
+   */
+  ingredient?: (number | null) | Ingredient;
+  /**
+   * Katkı master listesinden seçim yapın (Örn: E621, E330, E102). Kural motoru ürünün katkı listesinde bu kodu arar.
+   */
+  additive?: (number | null) | Additive;
+  /**
+   * Marka master listesinden seçim yapın. Kural motoru ürünün markasını kontrol eder.
+   */
+  brand?: (number | null) | Brand;
+  /**
+   * Ülke master listesinden seçim yapın. Kural motoru ürünün üretim ülkesini kontrol eder.
+   */
+  country?: (number | null) | Country;
+  /**
+   * Ürün kategorisi master listesinden seçim yapın. Kural motoru ürünün tipini kontrol eder (Örn: sadece "Enerji İçeceği" tipindeki ürünler için kural).
+   */
+  productType?: (number | null) | Category;
+  /**
+   * Alerjen tipini seçin. Kural motoru ürünün alerjen listesinde bunu arar.
+   */
+  allergen?:
+    | (
+        | 'gluten'
+        | 'milk'
+        | 'egg'
+        | 'soy'
+        | 'peanut'
+        | 'nuts'
+        | 'fish'
+        | 'shellfish'
+        | 'sesame'
+        | 'mustard'
+        | 'celery'
+        | 'sulphite'
+      )
+    | null;
+  /**
+   * Etiket tipini seçin. label_has: etiket mevcutsa, label_missing: etiket yoksa eşleşir.
+   */
+  label?:
+    | (
+        | 'vegan'
+        | 'vegetarian'
+        | 'gluten-free'
+        | 'lactose-free'
+        | 'organic'
+        | 'halal-certified'
+        | 'kosher'
+        | 'non-gmo'
+        | 'natural'
+        | 'no-additives'
+        | 'sugar-free'
+      )
+    | null;
+  /**
+   * Hangi besin değerine bakılacak?
+   */
+  nutritionField?: ('sugars' | 'addedSugars' | 'fat' | 'saturatedFat' | 'salt' | 'sodium' | 'energyKcal') | null;
+  /**
+   * Sınır değer (100g/ml başına). "Max" için üstünde, "Min" için altında eşleşir (Örn: 22.5).
+   */
+  nutritionThreshold?: number | null;
+  /**
+   * Kural eşleştiğinde kullanıcıya gösterilecek detaylı açıklama. Neden bu karar verildiğini anlatın, bilimsel/tarihsel referanslar ekleyin.
+   */
+  description: string;
+  evidence?:
+    | {
+        type: 'image' | 'document' | 'link';
+        media?: (number | null) | Media;
+        url?: string | null;
+        caption?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sources?:
+    | {
+        title: string;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * İşaret kaldırılırsa kural motoru tarafından değerlendirilmez.
+   */
+  isActive?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Uzmanların kendi derecelendirme ölçekleri. Her uzman kendi ölçeğini oluşturur (Örn: Boykot Dedektifi → "Boykot", "Şüpheli", "Boykot Değil"). Uzman Kuralları bu ölçeklerden birini referans alır.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales".
+ */
+export interface RatingScale {
+  id: number;
+  /**
+   * Bu derecelendirme ölçeğini oluşturan uzman.
+   */
+  expert: number | Expert;
+  /**
+   * Derecenin adı. Sitede badge olarak gösterilir (Örn: "Boykot", "Şüpheli", "Boykot Değil", "Helal", "Sağlıklı", "Dikkat").
+   */
+  name: string;
+  /**
+   * Badge rengi. HEX formatında girin (Örn: #dc2626 kırmızı, #16a34a yeşil, #f59e0b turuncu, #6b7280 gri). Boş bırakılırsa varsayılan gri kullanılır.
+   */
+  color?: string | null;
+  /**
+   * Uzmanın kendi ölçeğindeki sırası. Küçük değerler önce gösterilir (Örn: 0=ilk, 1=ikinci).
+   */
+  order?: number | null;
+  /**
+   * Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama kanıtlanmamış").
+   */
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -183,20 +1078,64 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'topics';
+        value: number | Topic;
+      } | null)
+    | ({
+        relationTo: 'brands';
+        value: number | Brand;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'experts';
+        value: number | Expert;
+      } | null)
+    | ({
+        relationTo: 'expert-rules';
+        value: number | ExpertRule;
+      } | null)
+    | ({
+        relationTo: 'rating-scales';
+        value: number | RatingScale;
+      } | null)
+    | ({
+        relationTo: 'ingredients';
+        value: number | Ingredient;
+      } | null)
+    | ({
+        relationTo: 'additives';
+        value: number | Additive;
+      } | null)
+    | ({
+        relationTo: 'countries';
+        value: number | Country;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -206,10 +1145,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -229,7 +1168,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -240,6 +1179,9 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  avatar?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -274,6 +1216,351 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  icon?: T;
+  parent?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topics_select".
+ */
+export interface TopicsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  icon?: T;
+  color?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "brands_select".
+ */
+export interface BrandsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  logo?: T;
+  description?: T;
+  country?: T;
+  website?: T;
+  isBoycotted?: T;
+  boycottReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  barcode?: T;
+  description?: T;
+  frontImage?: T;
+  ingredientsImage?: T;
+  nutritionImage?: T;
+  recyclingImage?: T;
+  additionalImages?:
+    | T
+    | {
+        image?: T;
+        caption?: T;
+        id?: T;
+      };
+  brand?: T;
+  category?: T;
+  manufacturer?: T;
+  country?: T;
+  ingredientsAnalyzed?:
+    | T
+    | {
+        ingredient?: T;
+        id?: T;
+      };
+  allergens?: T;
+  additives?:
+    | T
+    | {
+        additive?: T;
+        id?: T;
+      };
+  nutritionFacts?:
+    | T
+    | {
+        servingSize?: T;
+        servingsPerPackage?: T;
+        energyKcal?: T;
+        energyKj?: T;
+        fat?: T;
+        saturatedFat?: T;
+        transFat?: T;
+        carbohydrates?: T;
+        sugars?: T;
+        addedSugars?: T;
+        fiber?: T;
+        protein?: T;
+        salt?: T;
+        sodium?: T;
+      };
+  nutriscore?: T;
+  labels?: T;
+  packaging?: T;
+  size?: T;
+  specifications?:
+    | T
+    | {
+        key?: T;
+        value?: T;
+        unit?: T;
+        id?: T;
+      };
+  warnings?:
+    | T
+    | {
+        severity?: T;
+        text?: T;
+        id?: T;
+      };
+  model?: T;
+  sku?: T;
+  warranty?: T;
+  usage?: T;
+  storage?: T;
+  prices?:
+    | T
+    | {
+        amount?: T;
+        date?: T;
+        id?: T;
+      };
+  status?: T;
+  submittedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  content?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "experts_select".
+ */
+export interface ExpertsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  user?: T;
+  title?: T;
+  avatar?: T;
+  bio?: T;
+  credentials?:
+    | T
+    | {
+        title?: T;
+        year?: T;
+        issuer?: T;
+        id?: T;
+      };
+  verified?: T;
+  isPublic?: T;
+  socialLinks?:
+    | T
+    | {
+        website?: T;
+        twitter?: T;
+        instagram?: T;
+        linkedin?: T;
+        youtube?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "expert-rules_select".
+ */
+export interface ExpertRulesSelect<T extends boolean = true> {
+  name?: T;
+  expert?: T;
+  topic?: T;
+  rating?: T;
+  ruleType?: T;
+  ingredient?: T;
+  additive?: T;
+  brand?: T;
+  country?: T;
+  productType?: T;
+  allergen?: T;
+  label?: T;
+  nutritionField?: T;
+  nutritionThreshold?: T;
+  description?: T;
+  evidence?:
+    | T
+    | {
+        type?: T;
+        media?: T;
+        url?: T;
+        caption?: T;
+        id?: T;
+      };
+  sources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        id?: T;
+      };
+  isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rating-scales_select".
+ */
+export interface RatingScalesSelect<T extends boolean = true> {
+  expert?: T;
+  name?: T;
+  color?: T;
+  order?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ingredients_select".
+ */
+export interface IngredientsSelect<T extends boolean = true> {
+  name?: T;
+  aliases?:
+    | T
+    | {
+        alias?: T;
+        id?: T;
+      };
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "additives_select".
+ */
+export interface AdditivesSelect<T extends boolean = true> {
+  code?: T;
+  name?: T;
+  aliases?:
+    | T
+    | {
+        alias?: T;
+        id?: T;
+      };
+  function?: T;
+  riskLevel?: T;
+  halalStatus?: T;
+  isVegan?: T;
+  description?: T;
+  sources?:
+    | T
+    | {
+        title?: T;
+        url?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "countries_select".
+ */
+export interface CountriesSelect<T extends boolean = true> {
+  name?: T;
+  code?: T;
+  aliases?:
+    | T
+    | {
+        prefix?: T;
+        id?: T;
+      };
+  iso?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
