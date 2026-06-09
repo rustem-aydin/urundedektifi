@@ -4,6 +4,7 @@ import Link from 'next/link'
 import config from '@/payload.config'
 import { evaluateProductRules } from '@/lib/verdictEngine'
 import { summarizePrices } from '@/lib/priceSummary'
+export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const payloadConfig = await config

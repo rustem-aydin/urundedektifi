@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
+export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 import { getAllCountries } from '@/lib/barcodePrefixes'
@@ -66,8 +67,7 @@ export async function POST() {
 
 export async function GET() {
   return NextResponse.json({
-    message:
-      'Bu endpoint Countries koleksiyonunu GS1 barkod prefixlerine göre doldurur/günceller.',
+    message: 'Bu endpoint Countries koleksiyonunu GS1 barkod prefixlerine göre doldurur/günceller.',
     usage: 'curl -X POST http://localhost:3000/api/seed-countries',
     note: 'Aynı isimdeki ülkeler güncellenir, yenileri eklenir. Silme yapmaz.',
   })
