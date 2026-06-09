@@ -1,17 +1,34 @@
-// app/products/add/page.tsx
 'use client'
-
-import React, { useState, useEffect } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { useForm, Controller } from 'react-hook-form'
+import { motion } from 'motion/react'
+import { Check } from 'lucide-react'
+import { Field, FieldLabel, FieldDescription, FieldError } from '@/components/ui/field'
+import {
+  FormHeader,
+  FormFooter,
+  StepFields,
+  PreviousButton,
+  NextButton,
+  SubmitButton,
+  MultiStepFormContent,
+} from '@/components/multi-step-viewer'
+import { MultiStepFormProvider } from '@/hooks/use-multi-step-viewer'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ChevronsUpDown } from 'lucide-react'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { FileUpload } from '@/components/file-upload'
 import {
   Select,
   SelectContent,
@@ -19,909 +36,1155 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import {
-  Camera,
-  Upload,
-  Plus,
-  X,
-  Save,
-  Scan,
-  AlertTriangle,
-  Info,
-  ChevronLeft,
-  Loader2,
-} from 'lucide-react'
-import { BarcodeScanner } from '@/components/BarcodeScanner'
-import { fetchRelations, checkBarcode, uploadMedia, createProduct } from '@/lib/api'
-import { productSchema } from '@/types/schemas'
+import { Button } from './ui/button'
+import { cn } from '@/lib/utils'
+import { formSchema } from '@/types/schemas'
 
-export default function AddProductPage() {
-  const router = useRouter()
-  const [scannerOpen, setScannerOpen] = useState(false)
-  const [existingProduct, setExistingProduct] = useState<any>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [relations, setRelations] = useState<any>({
-    brands: [],
-    categories: [],
-    countries: [],
-    ingredients: [],
-    additives: [],
+//------------------------------
+type Schema = z.infer<typeof formSchema>
+
+export function GeneratedForm() {
+  const form = useForm<Schema>({
+    resolver: zodResolver(formSchema as any),
   })
+  const {
+    formState: { isSubmitting, isSubmitSuccessful },
+  } = form
 
-  // @ts-ignore - Tip hatasını görmezden gel
-  const form = useForm({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: '',
-      barcode: '',
-      status: 'draft',
-      brand: '',
-      category: '',
-      manufacturer: '',
-      country: '',
-      description: '',
-      packaging: '',
-      size: '',
-      model: '',
-      sku: '',
-      warranty: '',
-      usage: '',
-      storage: '',
-      prices: [],
-      specifications: [],
-      warnings: [],
-      ingredientsAnalyzed: [],
-      additives: [],
-      allergens: [],
-      labels: [],
-      additionalImages: [],
-      nutritionFacts: {},
+  const handleSubmit = form.handleSubmit(async (data: Schema) => {
+    try {
+      // TODO: implement form submission
+      console.log(data)
+      form.reset()
+    } catch (error) {
+      // TODO: handle error
+    }
+  })
+  const stepsFields = [
+    {
+      fields: ['barcode', 'name', 'brand', 'category', 'manufacturer', 'country'],
+      component: (
+        <>
+          <h2 className="mt-4 mb-1 font-bold text-2xl tracking-tight col-span-full">
+            Ürün Bilgileri
+          </h2>
+          <p className="tracking-wide text-muted-foreground mb-5 text-wrap text-sm col-span-full">
+            Ürüne ait bilgiler
+          </p>
+
+          <Controller
+            name="barcode"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                <FieldLabel htmlFor="barcode">Barkod *</FieldLabel>
+                <Input
+                  {...field}
+                  id="barcode"
+                  type="text"
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Ürüne ait baarcode"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="name"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                <FieldLabel htmlFor="name">Ürün Adı *</FieldLabel>
+                <Input
+                  {...field}
+                  id="name"
+                  type="text"
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="brand"
+            control={form.control}
+            render={({ field, fieldState }: any) => {
+              const options = [
+                { value: 'arabic', label: 'Arabic' },
+                { value: 'english', label: 'English' },
+                { value: 'turkish', label: 'Turkish' },
+                { value: 'russian', label: 'Russian' },
+                { value: 'korean', label: 'Korean' },
+                { value: 'chinese', label: 'Chinese' },
+                { value: 'german', label: 'German' },
+                { value: 'spanish', label: 'Spanish' },
+              ]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-2 col-span-full">
+                  <FieldLabel htmlFor="brand">Marka *</FieldLabel>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'justify-between active:scale-100',
+                          !field.value && 'text-muted-foreground',
+                        )}
+                      >
+                        {field.value
+                          ? field.options.find((option: any) => option.value === field.value)?.label
+                          : 'Marka seçiniz'}
+                        <ChevronsUpDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 min-w-(--radix-popper-anchor-width) w-full"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandList>
+                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandGroup>
+                            {options.map(({ label, value }) => (
+                              <CommandItem
+                                value={value}
+                                key={value}
+                                onSelect={() => {
+                                  form.setValue('brand', value)
+                                }}
+                              >
+                                {label}
+                                <Check
+                                  className={cn(
+                                    'ml-auto',
+                                    value === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+
+          <Controller
+            name="category"
+            control={form.control}
+            render={({ field, fieldState }: any) => {
+              const options = [
+                { value: 'arabic', label: 'Arabic' },
+                { value: 'english', label: 'English' },
+                { value: 'turkish', label: 'Turkish' },
+                { value: 'russian', label: 'Russian' },
+                { value: 'korean', label: 'Korean' },
+                { value: 'chinese', label: 'Chinese' },
+                { value: 'german', label: 'German' },
+                { value: 'spanish', label: 'Spanish' },
+              ]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-2 col-span-full">
+                  <FieldLabel htmlFor="category">Kategori *</FieldLabel>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'justify-between active:scale-100',
+                          !field.value && 'text-muted-foreground',
+                        )}
+                      >
+                        {field.value
+                          ? field.options.find((option: any) => option.value === field.value)?.label
+                          : 'Kategori seçiniz'}
+                        <ChevronsUpDown className="opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 min-w-(--radix-popper-anchor-width) w-full"
+                      align="start"
+                    >
+                      <Command>
+                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandList>
+                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandGroup>
+                            {options.map(({ label, value }) => (
+                              <CommandItem
+                                value={value}
+                                key={value}
+                                onSelect={() => {
+                                  form.setValue('category', value)
+                                }}
+                              >
+                                {label}
+                                <Check
+                                  className={cn(
+                                    'ml-auto',
+                                    value === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+
+          <Controller
+            name="manufacturer"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                <FieldLabel htmlFor="manufacturer">Üretici Firma (Opsiyonel) </FieldLabel>
+                <Input
+                  {...field}
+                  id="manufacturer"
+                  type="text"
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>
+                  Ürünü fiziksel olarak üreten firma. Markadan farklıysa buraya yazın (Örn: "Marka:
+                  Coca-Cola, Üretici: The Coca-Cola Company İstanbul Şubesi
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="country"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                <FieldLabel htmlFor="country">Üretim Yeri Ülke </FieldLabel>
+                <Input
+                  {...field}
+                  id="country"
+                  type="text"
+                  onChange={(e) => {
+                    field.onChange(e.target.value)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+                <FieldDescription>
+                  Ürünün fiziksel olarak üretildiği ülke. Barkod girildiğinde GS1 prefix\'inden (ilk
+                  3 hane) OTOMATİK doldurulur; isterseniz elle değiştirebilirsiniz. Kural motorunda
+                  ülke bazlı boykot analizi için kullanılır. Ülke listede yoksa önce "Ülkeler"
+                  bölümünden ekleyin.
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+        </>
+      ),
     },
-  })
+    {
+      fields: [
+        'frontImage',
+        'ingredientsImage',
+        'nutritionImage',
+        'recyclingImage',
+        'additionalImages',
+      ],
+      component: (
+        <>
+          <h1 className="mt-6 mb-1 font-extrabold text-3xl tracking-tight col-span-full">
+            Ürün Fotoğrafları
+          </h1>
 
-  const { register, control, handleSubmit, setValue, watch } = form
-
-  // Field Arrays
-  const {
-    fields: priceFields,
-    append: appendPrice,
-    remove: removePrice,
-  } = useFieldArray({ control, name: 'prices' })
-  const {
-    fields: specFields,
-    append: appendSpec,
-    remove: removeSpec,
-  } = useFieldArray({ control, name: 'specifications' })
-  const {
-    fields: warningFields,
-    append: appendWarning,
-    remove: removeWarning,
-  } = useFieldArray({ control, name: 'warnings' })
-  const {
-    fields: ingredientFields,
-    append: appendIngredient,
-    remove: removeIngredient,
-  } = useFieldArray({ control, name: 'ingredientsAnalyzed' })
-  const {
-    fields: additiveFields,
-    append: appendAdditive,
-    remove: removeAdditive,
-  } = useFieldArray({ control, name: 'additives' })
-  const {
-    fields: imageFields,
-    append: appendImage,
-    remove: removeImage,
-  } = useFieldArray({ control, name: 'additionalImages' })
-
-  useEffect(() => {
-    fetchRelations()
-      .then(setRelations)
-      .catch(() => toast.error('Veriler yüklenemedi'))
-  }, [])
-
-  const handleBarcodeScan = async (barcode: string) => {
-    setValue('barcode', barcode)
-    const existing = await checkBarcode(barcode)
-    if (existing) {
-      setExistingProduct(existing)
-      toast.info('Bu barkod zaten kayıtlı!')
-    } else {
-      setExistingProduct(null)
-      toast.success('Barkod okundu!')
-    }
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      const media = await uploadMedia(file, fieldName)
-      setValue(fieldName as any, media.id)
-      toast.success('Görsel yüklendi')
-    } catch {
-      toast.error('Yükleme başarısız')
-    }
-  }
-
-  const onSubmit = async (data: any) => {
-    if (existingProduct) return toast.error('Bu barkod zaten kayıtlı!')
-    setIsSubmitting(true)
-    try {
-      await createProduct(data)
-      toast.success('Ürün eklendi!')
-      router.push('/admin/collections/products')
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Hata oluştu')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const watchedAllergens = watch('allergens') || []
-  const watchedLabels = watch('labels') || []
-
-  return (
-    <div className="container mx-auto py-6 max-w-7xl">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <Button type="button" variant="ghost" className="mb-2" onClick={() => router.back()}>
-              <ChevronLeft className="h-4 w-4 mr-2" /> Geri
-            </Button>
-            <h1 className="text-3xl font-bold">Yeni Ürün Ekle</h1>
-          </div>
-          <div className="flex gap-3">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              İptal
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Barkod Scanner */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Scan className="h-5 w-5" /> Barkod Tara
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row items-end gap-4">
-              <div className="flex-1 w-full">
-                <Label>Barkod Numarası *</Label>
-                <Input {...register('barcode')} placeholder="Barkod girin veya taratın" />
-              </div>
-              <Button type="button" variant="outline" onClick={() => setScannerOpen(true)}>
-                <Camera className="h-4 w-4 mr-2" /> Kamerayla Tara
-              </Button>
-            </div>
-            {existingProduct && (
-              <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-yellow-800">Bu barkod zaten kayıtlı!</p>
-                  <p className="text-yellow-700">Ürün: {existingProduct.name}</p>
-                </div>
+          <Controller
+            name="frontImage"
+            control={form.control}
+            render={({ field, fieldState }: any) => (
+              <div>
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="frontImage">Ön Yüz Fotoğrafı (Zorunlu) *</FieldLabel>
+                  <FieldDescription>
+                    Ürünün ana/ön yüz fotoğrafı. Listelerde ve ürün sayfasında hero olarak
+                    gösterilir. Marka logosu, ürün adı ve gramaj görünen kısım. Kare veya dikey
+                    format önerilir, en az 600x600 piksel.
+                  </FieldDescription>
+                  <FileUpload
+                    {...field}
+                    setValue={form.setValue}
+                    name="frontImage"
+                    placeholder="PNG, JPEG or Gif, (max. 5MB)"
+                    accept={`image/png, image/jpeg, image/gif`}
+                    maxFiles={1}
+                    maxSize={5242880}
+                  />
+                </Field>
+                {Array.isArray(fieldState.error) ? (
+                  fieldState.error?.map((error: any, i: any) => (
+                    <p
+                      key={i}
+                      role="alert"
+                      data-slot="field-error"
+                      className="text-destructive text-sm"
+                    >
+                      {error.message}
+                    </p>
+                  ))
+                ) : (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          />
 
-        {/* Form Tabs */}
-        <Tabs defaultValue="general" className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 h-auto flex-wrap">
-            <TabsTrigger value="general">📋 Genel</TabsTrigger>
-            <TabsTrigger value="images">📸 Görseller</TabsTrigger>
-            <TabsTrigger value="brand">🏷️ Marka</TabsTrigger>
-            <TabsTrigger value="ingredients">🧪 İçindekiler</TabsTrigger>
-            <TabsTrigger value="nutrition">🥗 Besin</TabsTrigger>
-            <TabsTrigger value="labels">🏷️ Etiketler</TabsTrigger>
-            <TabsTrigger value="specs">📦 Özellikler</TabsTrigger>
-            <TabsTrigger value="price">💰 Fiyat</TabsTrigger>
-          </TabsList>
+          <Controller
+            name="ingredientsImage"
+            control={form.control}
+            render={({ field, fieldState }: any) => (
+              <div>
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="ingredientsImage">İçindekiler Fotoğrafı </FieldLabel>
+                  <FieldDescription>
+                    Paket üzerindeki içindekiler tablosunun fotoğrafı. Sitede "İçindekiler"
+                    etiketiyle gösterilir.
+                  </FieldDescription>
+                  <FileUpload
+                    {...field}
+                    setValue={form.setValue}
+                    name="ingredientsImage"
+                    placeholder="PNG, JPEG or Gif, (max. 5MB)"
+                    accept={`image/png, image/jpeg, image/gif`}
+                    maxFiles={1}
+                    maxSize={5242880}
+                  />
+                </Field>
+                {Array.isArray(fieldState.error) ? (
+                  fieldState.error?.map((error: any, i: any) => (
+                    <p
+                      key={i}
+                      role="alert"
+                      data-slot="field-error"
+                      className="text-destructive text-sm"
+                    >
+                      {error.message}
+                    </p>
+                  ))
+                ) : (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </div>
+            )}
+          />
 
-          {/* GENEL */}
-          <TabsContent value="general">
-            <Card>
-              <CardHeader>
-                <CardTitle>Genel Bilgiler</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Ürün Adı *</Label>
-                  <Input {...register('name')} placeholder="Örn: Coca-Cola Original 1L" />
-                </div>
-                <div>
-                  <Label>Açıklama</Label>
-                  <Textarea {...register('description')} placeholder="Ürün açıklaması" rows={4} />
-                </div>
-                <div>
-                  <Label>Yayın Durumu</Label>
-                  <Select onValueChange={(v: any) => setValue('status', v)} defaultValue="draft">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Durum seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">📝 Taslak</SelectItem>
-                      <SelectItem value="published">✅ Yayında</SelectItem>
-                      <SelectItem value="archived">🗄️ Arşivlendi</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <Controller
+            name="nutritionImage"
+            control={form.control}
+            render={({ field, fieldState }: any) => (
+              <div>
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="nutritionImage">Besin Değerleri Fotoğrafı </FieldLabel>
+                  <FieldDescription>
+                    Paket üzerindeki besin değerleri tablosunun fotoğrafı. Sitede "Besin Değerleri"
+                    etiketiyle gösterilir.
+                  </FieldDescription>
+                  <FileUpload
+                    {...field}
+                    setValue={form.setValue}
+                    name="nutritionImage"
+                    placeholder="PNG, JPEG or Gif, (max. 5MB)"
+                    accept={`image/png, image/jpeg, image/gif`}
+                    maxFiles={1}
+                    maxSize={5242880}
+                  />
+                </Field>
+                {Array.isArray(fieldState.error) ? (
+                  fieldState.error?.map((error: any, i: any) => (
+                    <p
+                      key={i}
+                      role="alert"
+                      data-slot="field-error"
+                      className="text-destructive text-sm"
+                    >
+                      {error.message}
+                    </p>
+                  ))
+                ) : (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </div>
+            )}
+          />
 
-          {/* GÖRSELLER */}
-          <TabsContent value="images">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ürün Görselleri</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <Label>Ön Yüz Fotoğrafı</Label>
-                  <div className="mt-2 border-2 border-dashed rounded-lg p-8 text-center">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={(e) => handleImageUpload(e, 'frontImage')}
-                      className="hidden"
-                      id="frontImage"
-                    />
-                    <Label htmlFor="frontImage" className="cursor-pointer">
-                      <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                      <p className="mt-2 text-sm text-gray-600">Fotoğraf çek veya seç</p>
-                    </Label>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['ingredientsImage', 'nutritionImage', 'recyclingImage'].map((key) => (
-                    <div key={key}>
-                      <Label>
-                        {key === 'ingredientsImage'
-                          ? 'İçindekiler'
-                          : key === 'nutritionImage'
-                            ? 'Besin Değerleri'
-                            : 'Geri Dönüşüm'}
-                      </Label>
-                      <div className="mt-2 border-2 border-dashed rounded-lg p-4 text-center">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={(e) => handleImageUpload(e, key)}
-                          className="hidden"
-                          id={key}
-                        />
-                        <Label htmlFor={key} className="cursor-pointer">
-                          <Camera className="h-6 w-6 mx-auto text-gray-400" />
-                          <p className="mt-1 text-xs text-gray-500">Fotoğraf ekle</p>
-                        </Label>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <Label>Ek Fotoğraflar (Maks. 2)</Label>
-                    {imageFields.length < 2 && (
+          <Controller
+            name="recyclingImage"
+            control={form.control}
+            render={({ field, fieldState }: any) => (
+              <div>
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="recyclingImage">Geri Dönüşüm Bilgisi Fotoğrafı </FieldLabel>
+                  <FieldDescription>
+                    Ambalaj üzerindeki geri dönüşüm sembolleri veya bertaraf talimatları. Sitede
+                    "Geri Dönüşüm" etiketiyle gösterilir.
+                  </FieldDescription>
+                  <FileUpload
+                    {...field}
+                    setValue={form.setValue}
+                    name="recyclingImage"
+                    placeholder="PNG, JPEG or Gif, (max. 5MB)"
+                    accept={`image/png, image/jpeg, image/gif`}
+                    maxFiles={1}
+                    maxSize={5242880}
+                  />
+                </Field>
+                {Array.isArray(fieldState.error) ? (
+                  fieldState.error?.map((error: any, i: any) => (
+                    <p
+                      key={i}
+                      role="alert"
+                      data-slot="field-error"
+                      className="text-destructive text-sm"
+                    >
+                      {error.message}
+                    </p>
+                  ))
+                ) : (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </div>
+            )}
+          />
+
+          <Controller
+            name="additionalImages"
+            control={form.control}
+            render={({ field, fieldState }: any) => (
+              <div>
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="additionalImages">Ek Fotoğraflar </FieldLabel>
+                  <FieldDescription>
+                    İsteğe bağlı ek fotoğraflar: arka yüz, kullanım örneği, sertifika, garanti
+                    belgesi vb. Maksimum 2 ek fotoğraf. Ön Yüz + 3 kategorize + 2 ek = toplam en
+                    fazla 6 fotoğraf.
+                  </FieldDescription>
+                  <FileUpload
+                    {...field}
+                    setValue={form.setValue}
+                    name="additionalImages"
+                    placeholder="PNG, JPEG or Gif, (max. 5MB)"
+                    accept={`image/png, image/jpeg, image/gif`}
+                    maxFiles={1}
+                    maxSize={5242880}
+                  />
+                </Field>
+                {Array.isArray(fieldState.error) ? (
+                  fieldState.error?.map((error: any, i: any) => (
+                    <p
+                      key={i}
+                      role="alert"
+                      data-slot="field-error"
+                      className="text-destructive text-sm"
+                    >
+                      {error.message}
+                    </p>
+                  ))
+                ) : (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </div>
+            )}
+          />
+        </>
+      ),
+    },
+    {
+      fields: ['ingredients', 'allergens', 'additives'],
+      component: (
+        <>
+          <h2 className="mt-4 mb-1 font-bold text-2xl tracking-tight col-span-full">
+            🧪 İçindekiler
+          </h2>
+          <p className="tracking-wide text-muted-foreground mb-5 text-wrap text-sm col-span-full">
+            Ürüne ait içerikler
+          </p>
+
+          <Controller
+            name="ingredients"
+            control={form.control}
+            render={({ field, fieldState }: any) => {
+              const options = [
+                { value: 'arabic', label: 'Arabic' },
+                { value: 'english', label: 'English' },
+                { value: 'turkish', label: 'Turkish' },
+                { value: 'russian', label: 'Russian' },
+                { value: 'korean', label: 'Korean' },
+                { value: 'chinese', label: 'Chinese' },
+                { value: 'german', label: 'German' },
+                { value: 'spanish', label: 'Spanish' },
+              ]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-2 col-span-full">
+                  <FieldLabel htmlFor="ingredients">İçindekiler *</FieldLabel>
+                  <FieldDescription>
+                    İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden
+                    seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
+                  </FieldDescription>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <Button
-                        type="button"
                         variant="outline"
-                        size="sm"
-                        onClick={() => appendImage({ image: undefined, caption: '' })}
+                        role="combobox"
+                        className={cn(
+                          'justify-between active:scale-100',
+                          !field.value && 'text-muted-foreground',
+                        )}
                       >
-                        <Plus className="h-4 w-4 mr-1" /> Ekle
+                        {field.value
+                          ? field.options.find((option: any) => option.value === field.value)?.label
+                          : ''}
+                        <ChevronsUpDown className="opacity-50" />
                       </Button>
-                    )}
-                  </div>
-                  {imageFields.map((field, index) => (
-                    <div
-                      key={field.id}
-                      className="flex items-end gap-3 mb-3 p-3 bg-gray-50 rounded-lg"
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 min-w-(--radix-popper-anchor-width) w-full"
+                      align="start"
                     >
-                      <div className="flex-1">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const media = await uploadMedia(file, `Ek ${index + 1}`)
-                              setValue(`additionalImages.${index}.image`, media.id)
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          {...register(`additionalImages.${index}.caption`)}
-                          placeholder="Açıklama"
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* MARKA */}
-          <TabsContent value="brand">
-            <Card>
-              <CardHeader>
-                <CardTitle>Marka & Kategori</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Marka *</Label>
-                  <Select onValueChange={(v) => setValue('brand', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Marka seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relations.brands.map((b: any) => (
-                        <SelectItem key={b.id} value={b.id}>
-                          {b.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Kategori *</Label>
-                  <Select onValueChange={(v) => setValue('category', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Kategori seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relations.categories.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Üretici Firma</Label>
-                  <Input {...register('manufacturer')} placeholder="Üretici firma adı" />
-                </div>
-                <div>
-                  <Label>Üretim Yeri (Ülke)</Label>
-                  <Select onValueChange={(v) => setValue('country', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ülke seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relations.countries.map((c: any) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* İÇİNDEKİLER */}
-          <TabsContent value="ingredients">
-            <Card>
-              <CardHeader>
-                <CardTitle>İçindekiler & Alerjenler</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <Label>İçindekiler</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => appendIngredient({ ingredient: '' })}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Ekle
-                    </Button>
-                  </div>
-                  {ingredientFields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-3 mb-3">
-                      <div className="flex-1">
-                        <Select
-                          onValueChange={(v) =>
-                            setValue(`ingredientsAnalyzed.${index}.ingredient`, v)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seçin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {relations.ingredients.map((i: any) => (
-                              <SelectItem key={i.id} value={i.id}>
-                                {i.name}
-                              </SelectItem>
+                      <Command>
+                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandList>
+                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandGroup>
+                            {options.map(({ label, value }) => (
+                              <CommandItem
+                                value={value}
+                                key={value}
+                                onSelect={() => {
+                                  form.setValue('ingredients', value)
+                                }}
+                              >
+                                {label}
+                                <Check
+                                  className={cn(
+                                    'ml-auto',
+                                    value === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                              </CommandItem>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+
+          <Controller
+            name="allergens"
+            control={form.control}
+            render={({ field, fieldState }: any) => {
+              const options = [{ value: 'gluten', label: 'Gluten / Buğday' }]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-2 col-span-full">
+                  <FieldLabel htmlFor="allergens">Alerjenler </FieldLabel>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeIngredient(index)}
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'justify-between active:scale-100',
+                          !field.value && 'text-muted-foreground',
+                        )}
                       >
-                        <X className="h-4 w-4 text-red-500" />
+                        {field.value
+                          ? field.options.find((option: any) => option.value === field.value)?.label
+                          : 'tap to search language'}
+                        <ChevronsUpDown className="opacity-50" />
                       </Button>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-                <div>
-                  <Label>Alerjenler</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                    {[
-                      'gluten',
-                      'milk',
-                      'egg',
-                      'soy',
-                      'peanut',
-                      'nuts',
-                      'fish',
-                      'shellfish',
-                      'sesame',
-                      'mustard',
-                      'celery',
-                      'sulphite',
-                    ].map((a) => (
-                      <label
-                        key={a}
-                        className="flex items-center gap-2 p-2 border rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={watchedAllergens.includes(a)}
-                          onChange={(e) => {
-                            const curr = watch('allergens') || []
-                            setValue(
-                              'allergens',
-                              e.target.checked ? [...curr, a] : curr.filter((v) => v !== a),
-                            )
-                          }}
-                        />
-                        <span className="text-sm">{a}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <Label>Katkı Maddeleri</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => appendAdditive({ additive: '' })}
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 min-w-(--radix-popper-anchor-width) w-full"
+                      align="start"
                     >
-                      <Plus className="h-4 w-4 mr-1" /> Ekle
-                    </Button>
-                  </div>
-                  {additiveFields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-3 mb-3">
-                      <div className="flex-1">
-                        <Select onValueChange={(v) => setValue(`additives.${index}.additive`, v)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seçin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {relations.additives.map((a: any) => (
-                              <SelectItem key={a.id} value={a.id}>
-                                {a.code} - {a.name}
-                              </SelectItem>
+                      <Command>
+                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandList>
+                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandGroup>
+                            {options.map(({ label, value }) => (
+                              <CommandItem
+                                value={value}
+                                key={value}
+                                onSelect={() => {
+                                  form.setValue('allergens', value)
+                                }}
+                              >
+                                {label}
+                                <Check
+                                  className={cn(
+                                    'ml-auto',
+                                    value === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                              </CommandItem>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+
+          <Controller
+            name="additives"
+            control={form.control}
+            render={({ field, fieldState }: any) => {
+              const options = [
+                { value: 'arabic', label: 'Arabic' },
+                { value: 'english', label: 'English' },
+                { value: 'turkish', label: 'Turkish' },
+                { value: 'russian', label: 'Russian' },
+                { value: 'korean', label: 'Korean' },
+                { value: 'chinese', label: 'Chinese' },
+                { value: 'german', label: 'German' },
+                { value: 'spanish', label: 'Spanish' },
+              ]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-2 col-span-full">
+                  <FieldLabel htmlFor="additives">Katkı Maddesi </FieldLabel>
+                  <FieldDescription>
+                    Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
+                  </FieldDescription>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeAdditive(index)}
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          'justify-between active:scale-100',
+                          !field.value && 'text-muted-foreground',
+                        )}
                       >
-                        <X className="h-4 w-4 text-red-500" />
+                        {field.value
+                          ? field?.options.find((option: any) => option.value === field.value)
+                              ?.label
+                          : ''}
+                        <ChevronsUpDown className="opacity-50" />
                       </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* BESİN DEĞERLERİ */}
-          <TabsContent value="nutrition">
-            <Card>
-              <CardHeader>
-                <CardTitle>Besin Değerleri (100g/100ml)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Porsiyon</Label>
-                    <Input {...register('nutritionFacts.servingSize')} placeholder="30g" />
-                  </div>
-                  <div>
-                    <Label>Porsiyon/Paket</Label>
-                    <Input
-                      type="number"
-                      {...register('nutritionFacts.servingsPerPackage', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Enerji (kcal)</Label>
-                    <Input
-                      type="number"
-                      {...register('nutritionFacts.energyKcal', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Enerji (kJ)</Label>
-                    <Input
-                      type="number"
-                      {...register('nutritionFacts.energyKj', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Yağ (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.fat', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Doymuş Yağ (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.saturatedFat', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Trans Yağ (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.transFat', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Karbonhidrat (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.carbohydrates', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Şeker (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.sugars', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Ekl. Şeker (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.addedSugars', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label>Lif (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.fiber', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Protein (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      {...register('nutritionFacts.protein', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Tuz (g)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...register('nutritionFacts.salt', { valueAsNumber: true })}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Sodyum (mg)</Label>
-                    <Input
-                      type="number"
-                      {...register('nutritionFacts.sodium', { valueAsNumber: true })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Nutri-Score</Label>
-                    <Select onValueChange={(v) => setValue('nutriscore', v as any)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seçin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="a">A</SelectItem>
-                        <SelectItem value="b">B</SelectItem>
-                        <SelectItem value="c">C</SelectItem>
-                        <SelectItem value="d">D</SelectItem>
-                        <SelectItem value="e">E</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ETİKETLER */}
-          <TabsContent value="labels">
-            <Card>
-              <CardHeader>
-                <CardTitle>Etiketler & Sertifikalar</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Etiketler</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                    {[
-                      'vegan',
-                      'vegetarian',
-                      'gluten-free',
-                      'lactose-free',
-                      'organic',
-                      'halal',
-                      'kosher',
-                      'non-gmo',
-                      'sugar-free',
-                      'recyclable',
-                      'fair-trade',
-                    ].map((l) => (
-                      <label
-                        key={l}
-                        className="flex items-center gap-2 p-2 border rounded cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={watchedLabels.includes(l)}
-                          onChange={(e) => {
-                            const curr = watch('labels') || []
-                            setValue(
-                              'labels',
-                              e.target.checked ? [...curr, l] : curr.filter((v) => v !== l),
-                            )
-                          }}
-                        />
-                        <span className="text-sm">{l}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Ambalaj Tipi</Label>
-                    <Input {...register('packaging')} placeholder="Cam şişe" />
-                  </div>
-                  <div>
-                    <Label>Boyut / Ağırlık</Label>
-                    <Input {...register('size')} placeholder="500g" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ÖZELLİKLER */}
-          <TabsContent value="specs">
-            <Card>
-              <CardHeader>
-                <CardTitle>Ek Özellikler</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <Label>Teknik Özellikler</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => appendSpec({ key: '', value: '', unit: '' })}
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="p-0 min-w-(--radix-popper-anchor-width) w-full"
+                      align="start"
                     >
-                      <Plus className="h-4 w-4 mr-1" /> Ekle
-                    </Button>
-                  </div>
-                  {specFields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-3 mb-3">
-                      <Input {...register(`specifications.${index}.key`)} placeholder="Özellik" />
-                      <Input {...register(`specifications.${index}.value`)} placeholder="Değer" />
-                      <Input
-                        {...register(`specifications.${index}.unit`)}
-                        placeholder="Birim"
-                        className="w-20"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeSpec(index)}
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <Label>Uyarılar</Label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => appendWarning({ severity: 'medium', text: '' })}
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Ekle
-                    </Button>
-                  </div>
-                  {warningFields.map((field, index) => (
-                    <div key={field.id} className="flex items-start gap-3 mb-3">
-                      <Select
-                        onValueChange={(v) => setValue(`warnings.${index}.severity`, v as any)}
-                        defaultValue="medium"
-                      >
-                        <SelectTrigger className="w-28">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">🟢 Düşük</SelectItem>
-                          <SelectItem value="medium">🟡 Orta</SelectItem>
-                          <SelectItem value="high">🔴 Yüksek</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Textarea
-                        {...register(`warnings.${index}.text`)}
-                        placeholder="Uyarı metni"
-                        rows={2}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeWarning(index)}
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                <Separator />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Model</Label>
-                    <Input {...register('model')} />
-                  </div>
-                  <div>
-                    <Label>SKU</Label>
-                    <Input {...register('sku')} />
-                  </div>
-                  <div>
-                    <Label>Garanti</Label>
-                    <Input {...register('warranty')} />
-                  </div>
-                  <div>
-                    <Label>Saklama</Label>
-                    <Input {...register('storage')} />
-                  </div>
-                </div>
-                <div>
-                  <Label>Kullanım</Label>
-                  <Textarea {...register('usage')} rows={3} />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      <Command>
+                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandList>
+                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandGroup>
+                            {options.map(({ label, value }) => (
+                              <CommandItem
+                                value={value}
+                                key={value}
+                                onSelect={() => {
+                                  form.setValue('additives', value)
+                                }}
+                              >
+                                {label}
+                                <Check
+                                  className={cn(
+                                    'ml-auto',
+                                    value === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+        </>
+      ),
+    },
+    {
+      fields: [
+        'servingSize',
+        'servingsPerPackage',
+        'energyKcal',
+        'energyKj',
+        'fat',
+        'saturatedFat',
+        'transFat',
+        'carbohydrates',
+        'sugars',
+        'addedSugars',
+        'fiber',
+        'protein',
+        'salt',
+        'sodium',
+        'nutriscore',
+      ],
+      component: (
+        <>
+          <h2 className="mt-4 mb-1 font-bold text-2xl tracking-tight col-span-full">
+            🥗 Besin Değerleri
+          </h2>
+          <h3 className="mt-3 mb-1 font-semibold text-xl tracking-tight col-span-full">
+            Besin Değerleri Tablosu (100g/100ml başına)
+          </h3>
 
-          {/* FİYAT */}
-          <TabsContent value="price">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Fiyat Bilgileri</CardTitle>
-                  {priceFields.length < 10 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        appendPrice({ amount: 0, date: new Date().toISOString().split('T')[0] })
-                      }
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Ekle
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {priceFields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-3 mb-3">
-                    <div className="flex-1">
-                      <Label>Fiyat (₺)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...register(`prices.${index}.amount`, { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label>Tarih</Label>
-                      <Input type="date" {...register(`prices.${index}.date`)} />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removePrice(index)}
-                    >
-                      <X className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          <Controller
+            name="servingSize"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-3">
+                <FieldLabel htmlFor="servingSize">Porsiyon Boyutu </FieldLabel>
+                <Input
+                  {...field}
+                  id="servingSize"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>
+                  Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="servingsPerPackage"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-3">
+                <FieldLabel htmlFor="servingsPerPackage">Paket Başına Porsiyon </FieldLabel>
+                <Input
+                  {...field}
+                  id="servingsPerPackage"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Toplam paketteki porsiyon sayısı.</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="energyKcal"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-3">
+                <FieldLabel htmlFor="energyKcal">Enerji (kcal) </FieldLabel>
+                <Input
+                  {...field}
+                  id="energyKcal"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="energyKj"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-3">
+                <FieldLabel htmlFor="energyKj">Enerji (kJ) </FieldLabel>
+                <Input
+                  {...field}
+                  id="energyKj"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="fat"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="fat">Toplam Yağ (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="fat"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Tüm yağ miktarı, 100g başına.</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="saturatedFat"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="saturatedFat">Doymuş Yağ (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="saturatedFat"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Doymuş yağ asitleri.</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="transFat"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="transFat">Trans Yağ (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="transFat"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Trans yağ asitleri (genelde sağlıksız).</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="carbohydrates"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="carbohydrates">Karbonhidrat (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="carbohydrates"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="sugars"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="sugars">Şeker (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="sugars"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Doğal + eklenmiş tüm şekerler.</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="addedSugars"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="addedSugars">Eklenmiş Şeker (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="addedSugars"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>Üretim sırasında eklenen şeker (en zararlı).</FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="fiber"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="fiber">Lif / Posa (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="fiber"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="protein"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="protein">Protein (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="protein"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="salt"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 md:col-span-2">
+                <FieldLabel htmlFor="salt">Tuz (g) </FieldLabel>
+                <Input
+                  {...field}
+                  id="salt"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="Enter your text"
+                />
+
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="sodium"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                <FieldLabel htmlFor="sodium">Sodyum (mg) </FieldLabel>
+                <Input
+                  {...field}
+                  id="sodium"
+                  type="number"
+                  onChange={(e) => {
+                    field.onChange(e.target.valueAsNumber)
+                  }}
+                  aria-invalid={fieldState.invalid}
+                  placeholder=""
+                />
+                <FieldDescription>
+                  Sodyum miktarı, miligram olarak. Tuz ≈ Sodyum × 2.5.
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="nutriscore"
+            control={form.control}
+            render={({ field, fieldState }) => {
+              const options = [
+                { value: 'a', label: 'A (En sağlıklı)' },
+                { value: 'b', label: 'B' },
+                { value: 'c', label: 'C' },
+                { value: 'd', label: 'D' },
+                { value: 'e', label: 'E (En sağlıksız)' },
+              ]
+              return (
+                <Field data-invalid={fieldState.invalid} className="gap-1 col-span-full">
+                  <FieldLabel htmlFor="nutriscore">Nutri-Score </FieldLabel>
+
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )
+            }}
+          />
+        </>
+      ),
+    },
+  ]
+
+  if (isSubmitSuccessful) {
+    return (
+      <div className="p-2 sm:p-5 md:p-8 w-full rounded-md gap-2 border">
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, stiffness: 300, damping: 25 }}
+          className="h-full py-6 px-3"
+        >
+          <motion.div
+            initial={{ scale: 0.5 }}
+            animate={{ scale: 1 }}
+            transition={{
+              delay: 0.3,
+              type: 'spring',
+              stiffness: 500,
+              damping: 15,
+            }}
+            className="mb-4 flex justify-center border rounded-full w-fit mx-auto p-2"
+          >
+            <Check className="size-8" />
+          </motion.div>
+          <h2 className="text-center text-2xl text-pretty font-bold mb-2">Thank you</h2>
+          <p className="text-center text-lg text-pretty text-muted-foreground">
+            Form submitted successfully, we will get back to you soon
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
+  return (
+    <div>
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col p-2 md:p-5 w-full mx-auto rounded-md max-w-3xl gap-2 border"
+      >
+        <MultiStepFormProvider
+          stepsFields={stepsFields}
+          onStepValidation={async (step: any) => {
+            const isValid = await form.trigger(step.fields)
+            return isValid
+          }}
+        >
+          <MultiStepFormContent>
+            <FormHeader />
+            <StepFields />
+            <FormFooter>
+              <PreviousButton>
+                <ChevronLeft />
+                Previous
+              </PreviousButton>
+              <NextButton>
+                Next <ChevronRight />
+              </NextButton>
+              <SubmitButton type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </SubmitButton>
+            </FormFooter>
+          </MultiStepFormContent>
+        </MultiStepFormProvider>
       </form>
-
-      <BarcodeScanner
-        isOpen={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onScan={handleBarcodeScan}
-      />
     </div>
   )
 }

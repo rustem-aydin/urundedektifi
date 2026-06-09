@@ -1,10 +1,11 @@
-import AddProductPage from '@/components/AddProduct'
+import { GeneratedForm } from '@/components/AddProduct'
+
 export const dynamic = 'force-dynamic'
 
 const AddPAage = () => {
   return (
     <div>
-      <AddProductPage />
+      <GeneratedForm />
     </div>
   )
 }

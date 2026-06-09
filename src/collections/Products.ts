@@ -16,10 +16,8 @@ export const Products: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) =>
-      ['admin', 'editor', 'expert'].includes(user?.role || ''),
-    update: ({ req: { user } }) =>
-      ['admin', 'editor'].includes(user?.role || ''),
+    create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes(user?.role || ''),
+    update: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
     delete: ({ req: { user } }) => user?.role === 'admin',
   },
   fields: [
@@ -35,7 +33,8 @@ export const Products: CollectionConfig = {
               label: 'Ürün Adı',
               required: true,
               admin: {
-                description: 'Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").',
+                description:
+                  'Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").',
               },
             },
             {
@@ -46,7 +45,7 @@ export const Products: CollectionConfig = {
               unique: true,
               index: true,
               admin: {
-                description: 'URL\'de kullanılacak kısa ad. Otomatik üretilir.',
+                description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
               },
             },
             {
@@ -169,7 +168,8 @@ export const Products: CollectionConfig = {
               label: 'Ürün Kategorisi',
               required: true,
               admin: {
-                description: 'Ürünün tipi (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik olabilir.',
+                description:
+                  'Ürünün tipi (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik olabilir.',
               },
             },
             {
@@ -197,25 +197,17 @@ export const Products: CollectionConfig = {
           label: '🧪 İçindekiler',
           fields: [
             {
-              name: 'ingredientsAnalyzed',
-              type: 'array',
-              labels: { singular: 'İçindekiler Öğesi', plural: 'Parçalanmış İçindekiler Listesi' },
+              name: 'ingredients',
+              type: 'relationship',
+              relationTo: 'ingredients',
+              required: true,
+
+              label: 'İçindekiler',
+              hasMany: true,
               admin: {
                 description:
                   'İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.',
               },
-              fields: [
-                {
-                  name: 'ingredient',
-                  type: 'relationship',
-                  relationTo: 'ingredients',
-                  label: 'İçindekiler',
-                  required: true,
-                  admin: {
-                    description: 'İçindekiler master listesinden seçim yapın.',
-                  },
-                },
-              ],
             },
             {
               name: 'allergens',
@@ -242,24 +234,15 @@ export const Products: CollectionConfig = {
             },
             {
               name: 'additives',
-              type: 'array',
-              labels: { singular: 'Katkı Maddesi', plural: 'Katkı Maddeleri' },
+              type: 'relationship',
+              relationTo: 'additives',
+              label: 'Katkı Maddesi',
+              hasMany: true,
+              required: true,
               admin: {
                 description:
-                  'Ürünün içerdiği katkı maddeleri. Her birini E-kodlu katkı master listesinden seçin (Örn: E330 Sitrik Asit, E621 MSG).',
+                  'Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).',
               },
-              fields: [
-                {
-                  name: 'additive',
-                  type: 'relationship',
-                  relationTo: 'additives',
-                  label: 'Katkı Maddesi',
-                  required: true,
-                  admin: {
-                    description: 'Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).',
-                  },
-                },
-              ],
             },
           ],
         },
@@ -278,7 +261,11 @@ export const Products: CollectionConfig = {
                       name: 'servingSize',
                       type: 'text',
                       label: 'Porsiyon Boyutu',
-                      admin: { width: '50%', description: 'Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").' },
+                      admin: {
+                        width: '50%',
+                        description:
+                          'Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").',
+                      },
                     },
                     {
                       name: 'servingsPerPackage',
@@ -324,7 +311,10 @@ export const Products: CollectionConfig = {
                       name: 'transFat',
                       type: 'number',
                       label: 'Trans Yağ (g)',
-                      admin: { width: '34%', description: 'Trans yağ asitleri (genelde sağlıksız).' },
+                      admin: {
+                        width: '34%',
+                        description: 'Trans yağ asitleri (genelde sağlıksız).',
+                      },
                     },
                   ],
                 },
@@ -347,7 +337,10 @@ export const Products: CollectionConfig = {
                       name: 'addedSugars',
                       type: 'number',
                       label: 'Eklenmiş Şeker (g)',
-                      admin: { width: '34%', description: 'Üretim sırasında eklenen şeker (en zararlı).' },
+                      admin: {
+                        width: '34%',
+                        description: 'Üretim sırasında eklenen şeker (en zararlı).',
+                      },
                     },
                   ],
                 },
@@ -453,7 +446,8 @@ export const Products: CollectionConfig = {
               type: 'text',
               label: 'Ambalaj Tipi',
               admin: {
-                description: 'Ürünün paketleme tipi (Örn: "Cam şişe", "Plastik kutu", "Karton kutu", "Teneke kutu").',
+                description:
+                  'Ürünün paketleme tipi (Örn: "Cam şişe", "Plastik kutu", "Karton kutu", "Teneke kutu").',
               },
             },
             {
@@ -486,7 +480,8 @@ export const Products: CollectionConfig = {
                   label: 'Özellik Adı',
                   required: true,
                   admin: {
-                    description: 'Özelliğin adı (Örn: "Renk", "Materyal", "Güç", "Voltaj", "Kapasite").',
+                    description:
+                      'Özelliğin adı (Örn: "Renk", "Materyal", "Güç", "Voltaj", "Kapasite").',
                   },
                 },
                 {
@@ -495,7 +490,8 @@ export const Products: CollectionConfig = {
                   label: 'Değer',
                   required: true,
                   admin: {
-                    description: 'Özelliğin değeri (Örn: "Siyah", "Pamuk %100", "2200W", "220V", "5L").',
+                    description:
+                      'Özelliğin değeri (Örn: "Siyah", "Pamuk %100", "2200W", "220V", "5L").',
                   },
                 },
                 {
@@ -503,7 +499,8 @@ export const Products: CollectionConfig = {
                   type: 'text',
                   label: 'Birim (Opsiyonel)',
                   admin: {
-                    description: 'Değerin birimi, ayrı yazılmak istenirse (Örn: "W", "V", "ml", "kg").',
+                    description:
+                      'Değerin birimi, ayrı yazılmak istenirse (Örn: "W", "V", "ml", "kg").',
                   },
                 },
               ],
@@ -702,10 +699,7 @@ export const Products: CollectionConfig = {
         if (data?.prices && Array.isArray(data.prices)) {
           const dated = data.prices
             .filter((p: any) => p?.date)
-            .sort(
-              (a: any, b: any) =>
-                new Date(b.date).getTime() - new Date(a.date).getTime(),
-            )
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .slice(0, 10)
           const undated = data.prices.filter((p: any) => !p?.date)
           data.prices = [...dated, ...undated]

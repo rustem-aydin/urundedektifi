@@ -421,15 +421,7 @@ export interface Product {
   /**
    * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
    */
-  ingredientsAnalyzed?:
-    | {
-        /**
-         * İçindekiler master listesinden seçim yapın.
-         */
-        ingredient: number | Ingredient;
-        id?: string | null;
-      }[]
-    | null;
+  ingredients: (number | Ingredient)[];
   /**
    * Bu üründe bulunan alerjenler. Çoklu seçim yapılabilir.
    */
@@ -450,17 +442,9 @@ export interface Product {
       )[]
     | null;
   /**
-   * Ürünün içerdiği katkı maddeleri. Her birini E-kodlu katkı master listesinden seçin (Örn: E330 Sitrik Asit, E621 MSG).
+   * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
    */
-  additives?:
-    | {
-        /**
-         * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
-         */
-        additive: number | Additive;
-        id?: string | null;
-      }[]
-    | null;
+  additives: (number | Additive)[];
   nutritionFacts?: {
     /**
      * Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").
@@ -1329,19 +1313,9 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   manufacturer?: T;
   country?: T;
-  ingredientsAnalyzed?:
-    | T
-    | {
-        ingredient?: T;
-        id?: T;
-      };
+  ingredients?: T;
   allergens?: T;
-  additives?:
-    | T
-    | {
-        additive?: T;
-        id?: T;
-      };
+  additives?: T;
   nutritionFacts?:
     | T
     | {
