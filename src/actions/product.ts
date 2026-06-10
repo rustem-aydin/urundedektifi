@@ -10,3 +10,18 @@ export const AddProduct = async (data: Product) => {
     console.log(data)
   } catch (error) {}
 }
+export const getProduct = async (barcode: number) => {
+  try {
+    const data = await payload.find({
+      collection: 'products',
+      where: {
+        barcode: {
+          equals: barcode,
+        },
+      },
+    })
+    return data
+  } catch (error) {
+    throw error
+  }
+}
