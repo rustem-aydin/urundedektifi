@@ -1,3 +1,4 @@
+'use client'
 import dynamic from 'next/dynamic'
 
 // Dinamik import ile SSR'ı devre dışı bırak
