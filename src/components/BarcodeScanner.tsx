@@ -71,14 +71,14 @@ export default function BarcodeScanner() {
         setCameraStatus('✅ Ürün bulundu! Yönlendiriliyor...')
         setTimeout(() => {
           // Ürün detay sayfasına yönlendir
-          router.push(`/products/${result.docs[0].id}`)
+          router.push(`/urun/${result.docs[0].id}`)
         }, 1000)
       } else {
         // Ürün bulunamadı
         setCameraStatus('⚠️ Ürün bulunamadı! Yeni ürün ekleme sayfasına yönlendiriliyor...')
         setTimeout(() => {
           // Yeni ürün ekleme sayfasına barkod değerini gönder
-          router.push(`/ekle?barcode=${barcodeText}`)
+          router.push(`/ekle/barcode=${barcodeText}`)
         }, 1500)
       }
 
