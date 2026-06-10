@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     description: product.description?.substring(0, 160) || `${product.name} ürün detayları`,
   }
 }
+export const dynamic = 'force-dynamic'
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
