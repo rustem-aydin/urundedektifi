@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getProduct } from '@/actions/product'
-export default function BarcodeScanner({ onScan }: { onScan: (result: string) => void }) {
+export default function BarcodeScanner() {
   const router = useRouter()
   const scannerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
