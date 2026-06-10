@@ -1,7 +1,7 @@
-import BarcodeScanner from '@/components/BarcodeScanner'
 import dynamic from 'next/dynamic'
 
 // Dinamik import ile SSR'ı devre dışı bırak
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 
 export default function TaraPage() {
   return (
