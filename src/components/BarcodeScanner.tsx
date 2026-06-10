@@ -78,7 +78,7 @@ export default function BarcodeScanner() {
         setCameraStatus('⚠️ Ürün bulunamadı! Yeni ürün ekleme sayfasına yönlendiriliyor...')
         setTimeout(() => {
           // Yeni ürün ekleme sayfasına barkod değerini gönder
-          router.push(`/ekle/barcode=${barcodeText}`)
+          router.push(`/ekle/${barcodeText}`)
         }, 1500)
       }
 
