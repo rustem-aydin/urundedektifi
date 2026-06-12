@@ -1,25 +1,28 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { getProduct } from '@/actions/product'
+import { GeneratedForm } from './AddProduct'
+import { Brand, Category, Product } from '@/payload-types'
+
 export default function BarcodeScanner() {
-  const router = useRouter()
   const scannerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor...')
   const [isChecking, setIsChecking] = useState(false)
+  const [scannedBarcode, setScannedBarcode] = useState<string>('')
+  const [productData, setProductData] = useState<Product | null>(null)
+  const [isNotFound, setIsNotFound] = useState(false)
 
   useEffect(() => {
     let Html5QrcodeModule: any
 
     const initScanner = async () => {
       try {
-        // Önce kamera iznini kontrol et
         setCameraStatus('Kamera izni isteniyor...')
         const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-        stream.getTracks().forEach((track) => track.stop()) // Test için hemen durdur
+        stream.getTracks().forEach((track) => track.stop())
 
         setCameraStatus('Kütüphane yükleniyor...')
         const module = await import('html5-qrcode')
@@ -52,8 +55,8 @@ export default function BarcodeScanner() {
     try {
       setIsChecking(true)
       setCameraStatus('Barkod sorgulanıyor...')
+      setScannedBarcode(barcodeText)
 
-      // Barkodu number'a çevir (barkod genellikle sayısal değerdir)
       const barcodeNumber = parseInt(barcodeText, 10)
 
       if (isNaN(barcodeNumber)) {
@@ -62,36 +65,24 @@ export default function BarcodeScanner() {
         return
       }
 
-      // Ürünü sorgula
       const result = await getProduct(barcodeNumber)
 
-      // Ürün var mı kontrol et
-      if (result && result.docs && result.docs.length > 0) {
-        // Ürün bulundu
-        setCameraStatus('✅ Ürün bulundu! Yönlendiriliyor...')
-        setTimeout(() => {
-          // Ürün detay sayfasına yönlendir
-          router.push(`/urun/${result.docs[0].id}`)
-        }, 1000)
-      } else {
-        // Ürün bulunamadı
-        setCameraStatus('⚠️ Ürün bulunamadı! Yeni ürün ekleme sayfasına yönlendiriliyor...')
-        setTimeout(() => {
-          // Yeni ürün ekleme sayfasına barkod değerini gönder
-          router.push(`/ekle/${barcodeText}`)
-        }, 1500)
-      }
-
-      // Tarayıcıyı durdur
       if (scannerRef.current) {
         await scannerRef.current.stop()
+      }
+
+      if (result && result.docs && result.docs.length > 0) {
+        setProductData(result?.docs[0] as Product)
+        setCameraStatus('✅ Ürün bulundu!')
+      } else {
+        setIsNotFound(true)
+        setCameraStatus('⚠️ Ürün bulunamadı!')
       }
     } catch (error) {
       console.error('Sorgulama hatası:', error)
       setError('Ürün sorgulanırken bir hata oluştu!')
       setCameraStatus('Hata oluştu, tekrar deneniyor...')
 
-      // Hata durumunda tarayıcıyı yeniden başlat
       setTimeout(() => {
         if (scannerRef.current && isReady) {
           restartScanner()
@@ -157,6 +148,62 @@ export default function BarcodeScanner() {
     }
   }, [isReady])
 
+  // Ürün bulunamadı → GeneratedForm göster
+  if (isNotFound) {
+    return <GeneratedForm barcode={scannedBarcode} />
+  }
+
+  // Ürün bulundu → Ürün bilgilerini göster
+  if (productData) {
+    return (
+      <div className="p-6 max-w-md mx-auto bg-white rounded-lg shadow-lg">
+        <div className="text-center mb-6">
+          <div className="text-green-500 text-5xl mb-3">✅</div>
+          <h2 className="text-xl font-bold text-gray-800">Ürün Bulundu</h2>
+          <p className="text-sm text-gray-500 mt-1">Barkod: {scannedBarcode}</p>
+        </div>
+
+        <div className="space-y-3">
+          {productData.name && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <span className="text-xs text-gray-500">Ürün Adı</span>
+              <p className="font-semibold text-gray-800">{productData.name}</p>
+            </div>
+          )}
+          {productData.brand && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <span className="text-xs text-gray-500">Marka</span>
+              <p className="font-semibold text-gray-800">{(productData.brand as Brand).name}</p>
+            </div>
+          )}
+          {productData.category && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <span className="text-xs text-gray-500">Kategori</span>
+              <p className="font-semibold text-gray-800">
+                {(productData.category as Category).name}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={() => {
+              setProductData(null)
+              setScannedBarcode('')
+              setIsNotFound(false)
+              restartScanner()
+            }}
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Yeni Tarat
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Hata durumu
   if (error) {
     return (
       <div className="p-4 bg-red-100 border border-red-400 rounded">
@@ -172,6 +219,7 @@ export default function BarcodeScanner() {
     )
   }
 
+  // Tarayıcı aktif
   return (
     <div className="flex flex-col items-center">
       <div className="mb-4 text-center">

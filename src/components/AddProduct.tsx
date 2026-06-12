@@ -43,7 +43,7 @@ import { formSchema } from '@/types/schemas'
 //------------------------------
 type Schema = z.infer<typeof formSchema>
 
-export function GeneratedForm() {
+export function GeneratedForm({ barcode }: { barcode: string }) {
   const form = useForm<Schema>({
     resolver: zodResolver(formSchema as any),
   })
@@ -80,6 +80,7 @@ export function GeneratedForm() {
                 <FieldLabel htmlFor="barcode">Barkod *</FieldLabel>
                 <Input
                   {...field}
+                  value={barcode}
                   id="barcode"
                   type="text"
                   onChange={(e) => {
