@@ -57,7 +57,6 @@ export const Products: CollectionConfig = {
               description:
                 'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
             }),
-
             {
               name: 'description',
               type: 'textarea',

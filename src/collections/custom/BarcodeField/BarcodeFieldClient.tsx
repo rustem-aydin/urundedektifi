@@ -30,7 +30,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({
     setValue(initialValue || '')
   }, [initialValue])
 
-  // Component unmount olduğunda kamerayı ve animasyonu temizle
   useEffect(() => {
     return () => {
       stopCamera()
