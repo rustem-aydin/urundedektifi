@@ -366,7 +366,7 @@ export interface Product {
    */
   slug: string;
   /**
-   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar (Örn: 8690504001234, 5449000000996).
+   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
    */
   barcode: string;
   /**

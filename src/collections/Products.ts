@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
+import { barcodeField } from './custom/BarcodeField/BarcodeField'
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -20,6 +21,7 @@ export const Products: CollectionConfig = {
     update: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
     delete: ({ req: { user } }) => user?.role === 'admin',
   },
+
   fields: [
     {
       type: 'tabs',
@@ -48,18 +50,14 @@ export const Products: CollectionConfig = {
                 description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
               },
             },
-            {
+            barcodeField({
               name: 'barcode',
-              type: 'text',
               label: 'Barkod / QR Kod',
               required: true,
-              unique: true,
-              index: true,
-              admin: {
-                description:
-                  'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar (Örn: 8690504001234, 5449000000996).',
-              },
-            },
+              description:
+                'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
+            }),
+
             {
               name: 'description',
               type: 'textarea',
@@ -674,10 +672,32 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeChange: [
       async ({ data, req, operation }) => {
+        // submittedBy ataması
         if (operation === 'create' && req.user) {
           data.submittedBy = req.user.id
         }
 
+        // ✅ BARKOD KONTROLÜ
+        if (operation === 'create' && data?.barcode && req.payload) {
+          const existing = await req.payload.find({
+            collection: 'products',
+            where: { barcode: { equals: data.barcode } },
+            limit: 1,
+            depth: 0,
+          })
+
+          if (existing.docs.length > 0) {
+            const product = existing.docs[0]
+            throw new Error(
+              `⚠️ BU BARKOD ZATEN KAYITLI!\n\n` +
+                `Ürün: "${product.name}"\n` +
+                `ID: ${product.id}\n\n` +
+                `Lütfen mevcut ürünü düzenleyin veya farklı barkod girin.`,
+            )
+          }
+        }
+
+        // Ülke tespiti
         if (operation === 'create' && data?.barcode && !data.country && req.payload) {
           const detected = detectCountryFromBarcode(data.barcode)
           if (detected) {
@@ -696,6 +716,7 @@ export const Products: CollectionConfig = {
           }
         }
 
+        // Fiyat sıralama
         if (data?.prices && Array.isArray(data.prices)) {
           const dated = data.prices
             .filter((p: any) => p?.date)
@@ -741,14 +762,10 @@ export const Products: CollectionConfig = {
           : 0
         const total = categorizedCount + additionalCount
         if (total > 6) {
-          throw new Error(
-            `En fazla 6 fotoğraf eklenebilir (1 ön yüz + 3 kategorize + 2 ek). Şu an ${total} fotoğraf var (${categorizedCount} kategorize + ${additionalCount} ek). Lütfen bazı fotoğrafları kaldırın.`,
-          )
+          throw new Error(`En fazla 6 fotoğraf eklenebilir. Şu an ${total} fotoğraf var.`)
         }
         if (Array.isArray(data.prices) && data.prices.length > 10) {
-          throw new Error(
-            `En fazla 10 fiyat kaydı eklenebilir. Şu an ${data.prices.length} kayıt var.`,
-          )
+          throw new Error(`En fazla 10 fiyat kaydı eklenebilir.`)
         }
       },
     ],

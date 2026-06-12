@@ -34,6 +34,7 @@
     "dotenv": "16.4.7",
     "graphql": "^16.8.1",
     "html5-qrcode": "^2.3.8",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.17.0",
     "motion": "^12.40.0",
     "next": "16.2.6",
