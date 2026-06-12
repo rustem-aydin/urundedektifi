@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getProduct } from '@/actions/product'
 import { GeneratedForm } from './AddProduct'
 import { Brand, Category, Product } from '@/payload-types'
+export const dynamic = 'force-dynamic'
 
 export default function BarcodeScanner() {
   const scannerRef = useRef<any>(null)
