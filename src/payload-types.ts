@@ -366,7 +366,7 @@ export interface Product {
    */
   slug: string;
   /**
-   * URL'de kullanılacak kısa ad. Otomatik üretilir.
+   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
    */
   barcode: string;
   /**
