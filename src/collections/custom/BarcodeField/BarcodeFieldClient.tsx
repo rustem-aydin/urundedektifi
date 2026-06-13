@@ -417,8 +417,11 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
             className={`${fieldBaseClass}__input`}
             style={{
               width: '100%',
+              minHeight: '48px', // ✅ Inputu biraz uzun yaptı
+              height: '48px', // ✅ Sabit yükseklik
+              minWidth: '250px', // ✅ Minimum genişlik
               boxSizing: 'border-box',
-              // Butonun üzerine binmemesi için sağdan padding
+              fontSize: '15px', // ✅ Yazıyı biraz büyüttük
               paddingRight: !readOnly && isSupported ? '110px' : '12px',
             }}
           />
