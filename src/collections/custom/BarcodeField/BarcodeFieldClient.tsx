@@ -317,16 +317,8 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
               readOnly={readOnly || isScanning}
               placeholder="EAN-13 barkodunu girin..."
               disabled={readOnly || isScanning}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${errorMessage ? '#d32f2f' : foundProduct ? '#f59e0b' : '#d1d5db'}`,
-                borderRadius: '4px',
-                fontSize: '14px',
-                background: readOnly || isScanning ? '#f3f4f6' : '#fff',
-                outline: 'none',
-                boxSizing: 'border-box',
-              }}
+              // ✅ Payload'ın kendi standart input class'ı (beyaz arka plan, standart border vs. gider)
+              className={`${fieldBaseClass}__input`}
             />
             {checking && (
               <div

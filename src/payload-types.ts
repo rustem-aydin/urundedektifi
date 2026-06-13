@@ -358,6 +358,10 @@ export interface Brand {
 export interface Product {
   id: number;
   /**
+   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
+   */
+  barcode: string;
+  /**
    * Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").
    */
   name: string;
@@ -365,10 +369,6 @@ export interface Product {
    * URL'de kullanılacak kısa ad. Otomatik üretilir.
    */
   slug: string;
-  /**
-   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
-   */
-  barcode: string;
   /**
    * Ürün hakkında genel açıklama. Düz metin olarak yazılır (satır sonları korunur).
    */
@@ -1294,9 +1294,9 @@ export interface BrandsSelect<T extends boolean = true> {
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
+  barcode?: T;
   name?: T;
   slug?: T;
-  barcode?: T;
   description?: T;
   frontImage?: T;
   ingredientsImage?: T;
