@@ -31,37 +31,39 @@ export const Media: CollectionConfig = {
     ],
   },
   hooks: {
-    beforeValidate: [
-      async ({ data, req, operation }) => {
-        // 1. data yoksa veya create işlemi değilse direkt geç
-        if (!data || operation !== 'create') return data
+    beforeOperation: [
+      async ({ args, operation }) => {
+        // 1. Sadece create veya update işlemlerinde çalış
+        if (operation !== 'create' && operation !== 'update') {
+          return args
+        }
 
-        const rawFile = req.files?.file
-        const fileObj = Array.isArray(rawFile) ? rawFile[0] : rawFile
+        // 2. Payload 3.x'te dosya req.file üzerinden erişilir
+        const file = args.req?.file
 
-        // 2. Dosya yoksa veya görsel değilse geç
-        if (!fileObj || !fileObj.mimetype?.startsWith('image/')) {
-          return data
+        // 3. Dosya yoksa veya görsel değilse geç
+        if (!file || !file.mimetype?.startsWith('image/')) {
+          return args
         }
 
         let buffer: Buffer
 
-        // 3. Dosyayı bellekten veya geçici dosyadan oku
-        if (fileObj.data && fileObj.data.length > 0) {
-          buffer = Buffer.isBuffer(fileObj.data) ? fileObj.data : Buffer.from(fileObj.data)
-        } else if (fileObj.tempFilePath) {
-          buffer = fs.readFileSync(fileObj.tempFilePath)
+        // 4. Dosyayı bellekten veya geçici dosyadan oku
+        if (file.data && file.data.length > 0) {
+          buffer = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data)
+        } else if (file.tempFilePath) {
+          buffer = fs.readFileSync(file.tempFilePath)
         } else {
-          return data
+          return args
         }
 
         const originalSize = buffer.length
 
-        // Zaten küçükse işlem yapma
-        if (originalSize < 500 * 1024) return data
+        // 5. Zaten küçükse işlem yapma
+        if (originalSize < 500 * 1024) return args
 
         try {
-          // 4. Boyuta göre kalite ayarla
+          // 6. Boyuta göre kalite ayarla
           let quality = 80
           if (originalSize > 5 * 1024 * 1024) quality = 30
           else if (originalSize > 3 * 1024 * 1024) quality = 40
@@ -69,40 +71,38 @@ export const Media: CollectionConfig = {
           else if (originalSize > 1 * 1024 * 1024) quality = 60
           else if (originalSize > 500 * 1024) quality = 70
 
-          // 5. Sıkıştır
+          // 7. Sıkıştır
           const compressedBuffer = await sharp(buffer)
             .rotate()
             .jpeg({ quality, mozjpeg: true })
             .toBuffer()
 
-          // 6. Sadece küçüldüyse işle
+          // 8. Sadece küçüldüyse işle
           if (compressedBuffer.length < originalSize) {
-            // Bellekteki veriyi güncelle
-            fileObj.data = compressedBuffer
-            fileObj.size = compressedBuffer.length
-            fileObj.mimetype = 'image/jpeg'
+            // req.file üzerindeki veriyi güncelle
+            file.data = compressedBuffer
+            file.size = compressedBuffer.length
+            file.mimetype = 'image/jpeg'
 
-            // Eğer dosya diske yazılmışsa (Docker vs.), S3'ün okuyacağı yere tekrar yaz
-            if (fileObj.tempFilePath) {
-              fs.writeFileSync(fileObj.tempFilePath, compressedBuffer)
+            // Eğer dosya diske yazılmışsa (tempFilePath varsa), tekrar yaz
+            if (file.tempFilePath) {
+              fs.writeFileSync(file.tempFilePath, compressedBuffer)
             }
 
-            // Payload'ın veritabanına kaydedeceği veriyi güncelle
-            if (data.file) {
-              data.file.data = compressedBuffer.toString('base64')
-              data.file.size = compressedBuffer.length
-              data.file.mimeType = 'image/jpeg'
-            }
+            // Dosya adını güncelle (uzantıyı .jpg yap)
+            const originalName = file.name || 'image'
+            const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '')
+            file.name = `${nameWithoutExt}.jpg`
 
             console.log(
-              `✅ Sıkıştırıldı: ${(originalSize / 1024).toFixed(0)}MB -> ${(compressedBuffer.length / 1024).toFixed(0)}KB`,
+              `✅ Sıkıştırıldı: ${(originalSize / 1024).toFixed(0)}KB -> ${(compressedBuffer.length / 1024).toFixed(0)}KB`,
             )
           }
         } catch (error) {
           console.error('Sıkıştırma hatası:', error)
         }
 
-        return data
+        return args
       },
     ],
   },
