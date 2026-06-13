@@ -29,6 +29,13 @@ export const Products: CollectionConfig = {
         {
           label: '📋 Genel Bilgiler',
           fields: [
+            barcodeField({
+              name: 'barcode',
+              label: 'Barkod / QR Kod',
+              required: true,
+              description:
+                'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
+            }),
             {
               name: 'name',
               type: 'text',
@@ -51,13 +58,6 @@ export const Products: CollectionConfig = {
               },
             },
 
-            barcodeField({
-              name: 'barcode',
-              label: 'Barkod / QR Kod',
-              required: true,
-              description:
-                'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
-            }),
             {
               name: 'description',
               type: 'textarea',
