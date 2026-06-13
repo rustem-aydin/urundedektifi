@@ -16,10 +16,12 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
   const [isScanning, setIsScanning] = useState(false)
   const [foundProduct, setFoundProduct] = useState<{ id: string; name: string } | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [scanCount, setScanCount] = useState(0) // ✅ Debug: kaç kare tarandı
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const animationFrameRef = useRef<number>(0)
+  const frameCountRef = useRef(0) // ✅ Performans için ref'te tut
 
   useEffect(() => {
     setMounted(true)
@@ -75,32 +77,59 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
   const startCamera = async () => {
     try {
       console.log('📷 Kamera başlatılıyor...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      })
-      console.log('✅ Stream alındı:', stream.getTracks().length, 'track')
-      streamRef.current = stream
 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+        },
+      })
+
+      console.log('✅ Stream alındı:', stream.getVideoTracks()[0]?.label)
+      console.log('✅ Track settings:', stream.getVideoTracks()[0]?.getSettings())
+
+      streamRef.current = stream
+      frameCountRef.current = 0
+      setScanCount(0)
       setIsScanning(true)
 
-      // React'ın video elementini render etmesini bekle
       setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          videoRef.current.onloadedmetadata = () => {
-            console.log(
-              '🎬 Video metadata yüklendi:',
-              videoRef.current?.videoWidth,
-              'x',
-              videoRef.current?.videoHeight,
-            )
-            videoRef.current?.play()
+        const video = videoRef.current
+        if (!video) {
+          console.error('❌ videoRef null!')
+          return
+        }
+
+        video.srcObject = stream
+
+        video.onloadeddata = () => {
+          console.log('🎬 Video YÜKLendi - boyut:', video.videoWidth, 'x', video.videoHeight)
+          console.log('🎬 readyState:', video.readyState)
+          video
+            .play()
+            .then(() => {
+              console.log('▶️ Video oynatılıyor')
+              animationFrameRef.current = requestAnimationFrame(scanFrame)
+            })
+            .catch((err) => {
+              console.error('❌ Play hatası:', err)
+            })
+        }
+
+        video.onerror = (e) => {
+          console.error('❌ Video error:', e)
+        }
+
+        // Fallback: 3 saniye sonra da başlatmayı dene
+        setTimeout(() => {
+          if (video.readyState >= 2 && !animationFrameRef.current) {
+            console.log('⏰ Fallback başlatma')
+            video.play()
             animationFrameRef.current = requestAnimationFrame(scanFrame)
           }
-        } else {
-          console.error('❌ videoRef.current null!')
-        }
-      }, 500)
+        }, 3000)
+      }, 300)
     } catch (err) {
       console.error('❌ Kamera hatası:', err)
       alert('Kamera erişimi reddedildi veya kamera bulunamadı.\n\n' + String(err))
@@ -108,12 +137,8 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
   }
 
   const stopCamera = () => {
-    console.log('🛑 Kamera kapatılıyor...')
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => {
-        track.stop()
-        console.log('Track durduruldu:', track.label)
-      })
+      streamRef.current.getTracks().forEach((track) => track.stop())
       streamRef.current = null
     }
     if (animationFrameRef.current) {
@@ -124,41 +149,71 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
   }
 
   const scanFrame = () => {
-    if (!videoRef.current || !isScanning) return
-
     const video = videoRef.current
+    if (!video || !streamRef.current) return
 
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+    // Video henüz hazır değilse bekle
+    if (video.readyState < 2) {
+      animationFrameRef.current = requestAnimationFrame(scanFrame)
+      return
+    }
+
+    const w = video.videoWidth
+    const h = video.videoHeight
+
+    if (!w || !h) {
       animationFrameRef.current = requestAnimationFrame(scanFrame)
       return
     }
 
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    if (!ctx) {
+      animationFrameRef.current = requestAnimationFrame(scanFrame)
+      return
+    }
 
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
+    ctx.drawImage(video, 0, 0, w, h)
+    const imageData = ctx.getImageData(0, 0, w, h)
+
+    // ✅ Her 30 karede bir logla (console spam olmasın)
+    frameCountRef.current++
+    if (frameCountRef.current % 30 === 0) {
+      setScanCount(frameCountRef.current)
+      console.log(
+        `🔄 Taranan kare: ${frameCountRef.current} | Boyut: ${w}x${h} | Pixel: ${imageData.data.length}`,
+      )
+    }
+
+    try {
+      // ✅ attemptBoth: hem normal hem ters çevrilerek dener
+      const code = jsQR(imageData.data, w, h, {
+        inversionAttempts: 'attemptBoth',
       })
 
-      if (code?.data) {
-        console.log('🔍 Okunan kod:', code.data)
+      if (code && code.data) {
+        console.log('🎉✅✅ QR/BARKOD OKUNDU:', code.data)
+        console.log('📍 Konum:', code.location)
         stopCamera()
         handleChange(code.data)
         checkBarcode(code.data)
         return
       }
+    } catch (err) {
+      console.error('❌ jsQR hatası:', err)
+    }
+
+    // ✅ Her 60 karede bir jsQR çalıştığını doğrula
+    if (frameCountRef.current % 60 === 0) {
+      console.log('🔍 jsQR çalışıyor ama kod bulunamadı, taramaya devam...')
     }
 
     animationFrameRef.current = requestAnimationFrame(scanFrame)
   }
 
-  // ✅ PORTAL ile body'ye direkt mount
   const cameraOverlay =
     mounted && isScanning
       ? createPortal(
@@ -170,7 +225,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
               right: 0,
               bottom: 0,
               background: 'rgba(0,0,0,0.85)',
-              zIndex: 2147483647, // Maksimum z-index
+              zIndex: 2147483647,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -255,7 +310,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                     boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
                   }}
                 >
-                  {/* Sol üst köşe */}
                   <div
                     style={{
                       position: 'absolute',
@@ -268,8 +322,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                       borderRadius: '10px 0 0 0',
                     }}
                   />
-
-                  {/* Sağ üst köşe */}
                   <div
                     style={{
                       position: 'absolute',
@@ -282,8 +334,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                       borderRadius: '0 10px 0 0',
                     }}
                   />
-
-                  {/* Sol alt köşe */}
                   <div
                     style={{
                       position: 'absolute',
@@ -296,8 +346,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                       borderRadius: '0 0 0 10px',
                     }}
                   />
-
-                  {/* Sağ alt köşe */}
                   <div
                     style={{
                       position: 'absolute',
@@ -310,8 +358,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                       borderRadius: '0 0 10px 0',
                     }}
                   />
-
-                  {/* Animasyonlu tarama çizgisi */}
                   <div
                     style={{
                       position: 'absolute',
@@ -325,6 +371,23 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                     }}
                   />
                 </div>
+
+                {/* ✅ Debug: Tarama sayacı */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    background: 'rgba(0,0,0,0.7)',
+                    color: '#00ff88',
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  }}
+                >
+                  Kare: {scanCount}
+                </div>
               </div>
 
               {/* Alt bilgi */}
@@ -337,11 +400,10 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
                   background: '#1a1a2e',
                 }}
               >
-                Barkod veya QR kodu kameraya yaklaştırın...
+                Barkod veya QR kodu çerçeveye hizalayın...
               </div>
             </div>
 
-            {/* Animasyon keyframes - inline olarak style tag ile */}
             <style>{`
         @keyframes barcodeScan {
           0%, 100% { top: 5%; }
@@ -498,14 +560,12 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
         </div>
       )}
 
-      {/* Spinner animasyonu */}
       <style>{`
         @keyframes spin {
           to { transform: translateY(-50%) rotate(360deg); }
         }
       `}</style>
 
-      {/* ✅ Kamera overlay - Portal ile body'ye */}
       {cameraOverlay}
     </div>
   )
