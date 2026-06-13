@@ -2,26 +2,24 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useField } from '@payloadcms/ui'
-import styles from './BarcodeFieldClient.module.css'
+import { useField, FieldLabel, FieldDescription, FieldError, fieldBaseClass } from '@payloadcms/ui'
 
-// ✅ label ve description eklendi
 type Props = {
   path: string
-  label?: string
-  description?: string
+  field: any
   readOnly?: boolean
 }
 
-// ✅ Props'u buraya da ekle
-export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, readOnly }) => {
-  const { value, setValue, errorMessage } = useField<string>({ path })
+export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) => {
+  const { label, required, admin } = field
+  const { value, setValue, errorMessage, showError } = useField<string>({ path })
+
   const [checking, setChecking] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [foundProduct, setFoundProduct] = useState<{ id: string; name: string } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [scanCount, setScanCount] = useState(0)
-  const [isSupported, setIsSupported] = useState(true)
+  const [isSupported, setIsSupported] = useState(false)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -31,13 +29,12 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
 
   useEffect(() => {
     setMounted(true)
+    // Sadece EAN-13 ve 1D barkodları destekleyen native API
     if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
       nativeDetectorRef.current = new (window as any).BarcodeDetector({
         formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'],
       })
       setIsSupported(true)
-    } else {
-      setIsSupported(false)
     }
   }, [])
 
@@ -51,10 +48,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
   }
 
   const checkBarcode = useCallback(async (barcodeValue: string) => {
-    if (!barcodeValue || barcodeValue.length < 3) {
-      setFoundProduct(null)
-      return
-    }
+    if (!barcodeValue || barcodeValue.length < 3) return
     setChecking(true)
     setFoundProduct(null)
     try {
@@ -69,7 +63,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
         setFoundProduct({ id: product.id, name: product.name })
       }
     } catch (err) {
-      console.error('Barkod sorgulama hatası:', err)
+      console.error('Sorgu hatası:', err)
     } finally {
       setChecking(false)
     }
@@ -80,18 +74,11 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
     if (foundProduct) setFoundProduct(null)
   }
 
-  const goToEdit = () => {
-    if (foundProduct) {
-      window.location.href = `/admin/collections/products/${foundProduct.id}`
-    }
-  }
-
   const startCamera = async () => {
     if (!isSupported) {
-      alert('Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen barkodu manuel girin.')
+      alert('Bu tarayıcı kamera ile barkod okumayı desteklemiyor.')
       return
     }
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -111,7 +98,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
         }
       }, 300)
     } catch (err) {
-      alert('Kamera erişimi reddedildi.\n\n' + String(err))
+      alert('Kamera erişimi reddedildi.')
     }
   }
 
@@ -151,51 +138,135 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
     animationFrameRef.current = requestAnimationFrame(scanFrame)
   }
 
-  const cameraOverlay =
+  // =====================================================================
+  // MODAL: TAMAMEN INLINE STYLE İLE YAZILDI (PAYLOAD CSS ÇAKIŞMASI ÖNLENDİ)
+  // =====================================================================
+  const cameraModal =
     mounted && isScanning
       ? createPortal(
-          // ✅ DIŞ KUTU INLINE STYLE OLMALI (Payload CSS'i ezip çalamasın diye)
           <div
             style={{
               position: 'fixed',
               top: 0,
               left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0,0,0,0.9)',
-              zIndex: 2147483647,
+              width: '100vw',
+              height: '100vh',
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
+              zIndex: 9999999,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 20,
+              padding: '20px',
+              boxSizing: 'border-box',
               fontFamily: 'system-ui, -apple-system, sans-serif',
             }}
           >
-            {/* ✅ İÇERİK SENİN CSS DOSYANDAN ÇEKİLSİN */}
-            <div className={styles.overlayContent}>
-              <div className={styles.overlayHeader}>
-                <h3>📷 EAN-13 Barkod Okutma</h3>
-                <button type="button" onClick={stopCamera} className={styles.closeBtn}>
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '500px',
+                backgroundColor: '#1a1a2e',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                border: '1px solid #333',
+              }}
+            >
+              {/* Başlık */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  backgroundColor: '#16213e',
+                  borderBottom: '1px solid #0f3460',
+                }}
+              >
+                <span style={{ color: '#e0e0e0', fontSize: '16px', fontWeight: '600' }}>
+                  📷 EAN-13 Barkod Okutma
+                </span>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  style={{
+                    backgroundColor: '#e74c3c',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
                   ✕ Kapat
                 </button>
               </div>
 
-              <div className={styles.videoWrapper}>
-                <video ref={videoRef} playsInline muted className={styles.cameraVideo} />
-                <div className={styles.scanFrame}>
-                  <div className={styles.scanLine} />
-                </div>
+              {/* Kamera Alanı */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '300px',
+                  backgroundColor: '#000',
+                }}
+              >
+                <video
+                  ref={videoRef}
+                  playsInline
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+
+                {/* Yatay Tarama Çerçevesi */}
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: 8,
-                    left: 8,
-                    right: 8,
-                    background: 'rgba(0,0,0,0.8)',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '85%',
+                    height: '35%',
+                    border: '2px solid rgba(0, 255, 136, 0.8)',
+                    borderRadius: '10px',
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
+                  }}
+                >
+                  {/* Orta Lazer Çizgisi */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: 0,
+                      width: '100%',
+                      height: '2px',
+                      backgroundColor: '#00ff88',
+                      boxShadow: '0 0 10px #00ff88',
+                      transform: 'translateY(-50%)',
+                    }}
+                  />
+                </div>
+
+                {/* Kare Sayacı */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '10px',
+                    left: '10px',
+                    right: '10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
                     color: '#00ff88',
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    fontSize: 11,
+                    padding: '6px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
                     fontFamily: 'monospace',
                     textAlign: 'center',
                   }}
@@ -204,7 +275,16 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
                 </div>
               </div>
 
-              <div className={styles.overlayHint}>
+              {/* Alt Bilgi */}
+              <div
+                style={{
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#a0a0a0',
+                  fontSize: '14px',
+                  backgroundColor: '#1a1a2e',
+                }}
+              >
                 Ürün üzerindeki dikey çizgili barkodu çerçeveye hizalayın
               </div>
             </div>
@@ -212,104 +292,170 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
           document.body,
         )
       : null
+
   return (
-    <div className={styles.wrapper}>
-      {/* ✅ LABEL EKLENDİ */}
-      {label && (
-        <label htmlFor={path} className={styles.fieldLabel}>
-          {label}
-        </label>
-      )}
+    <div className={[fieldBaseClass, 'custom-barcode-field'].filter(Boolean).join(' ')}>
+      <FieldLabel label={label} path={path} required={required} />
 
-      {/* ✅ DESCRIPTION EKLENDİ */}
-      {description && <div className={styles.fieldDescription}>{description}</div>}
+      <div className={`${fieldBaseClass}__wrap`}>
+        <FieldError path={path} message={errorMessage} showError={showError} />
 
-      <div className={styles.inputRow}>
-        <div className={styles.inputContainer}>
-          <input
-            id={path} // ✅ Label ile eşleşmesi için id eklendi
-            type="text"
-            name={path}
-            value={(value as string) || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                checkBarcode((value as string) || '')
-              }
-            }}
-            readOnly={readOnly || isScanning}
-            placeholder="EAN-13 barkodunu girin..."
-            className={`${styles.input} ${foundProduct ? styles.hasWarning : ''} ${errorMessage ? styles.hasError : ''} ${readOnly ? styles.readOnly : ''}`}
-          />
-          {checking && <div className={styles.spinner} />}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <input
+              id={`field-${path.replace(/\./g, '__')}`}
+              type="text"
+              name={path}
+              value={(value as string) || ''}
+              onChange={(e) => handleChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  checkBarcode((value as string) || '')
+                }
+              }}
+              readOnly={readOnly || isScanning}
+              placeholder="EAN-13 barkodunu girin..."
+              disabled={readOnly || isScanning}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: `1px solid ${errorMessage ? '#d32f2f' : foundProduct ? '#f59e0b' : '#d1d5db'}`,
+                borderRadius: '4px',
+                fontSize: '14px',
+                background: readOnly || isScanning ? '#f3f4f6' : '#fff',
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            {checking && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 10,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 16,
+                  height: 16,
+                  border: '2px solid #e5e7eb',
+                  borderTopColor: '#2563eb',
+                  borderRadius: '50%',
+                  animation: 'spin 0.6s linear infinite',
+                }}
+              />
+            )}
+          </div>
+
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={startCamera}
+              disabled={isScanning || !isSupported}
+              style={{
+                padding: '10px 16px',
+                background: !isSupported || isScanning ? '#6b7280' : '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '14px',
+                cursor: !isSupported || isScanning ? 'not-allowed' : 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              📷 Okut
+            </button>
+          )}
         </div>
 
-        {!readOnly && (
-          <button
-            type="button"
-            onClick={startCamera}
-            disabled={isScanning || !isSupported}
-            className={styles.scanBtn}
-            title={
-              !isSupported ? 'Tarayıcınız kamera ile barkod okumayı desteklemiyor' : 'Kamerayı Aç'
-            }
+        {!isSupported && !readOnly && (
+          <p
+            style={{
+              margin: '8px 0 0',
+              color: '#b45309',
+              fontSize: '13px',
+              background: '#fffbeb',
+              padding: '8px 12px',
+              borderRadius: '4px',
+            }}
           >
-            📷 Okut
-          </button>
+            ⚠️ Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen manuel girin.
+          </p>
         )}
+
+        {foundProduct && !readOnly && (
+          <div
+            style={{
+              marginTop: '12px',
+              background: '#fffbeb',
+              border: '1px solid #f59e0b',
+              borderRadius: '6px',
+              padding: '12px',
+            }}
+          >
+            <p style={{ margin: '0 0 4px', color: '#92400e', fontSize: '14px', fontWeight: '600' }}>
+              ⚠️ Kopya Barkod Tespit Edildi
+            </p>
+            <p style={{ margin: '0 0 8px', color: '#78350f', fontSize: '13px' }}>
+              Sistemde bu barkoda sahip kayıtlı bir ürün bulundu.
+            </p>
+            <div
+              style={{
+                background: '#fef3c7',
+                padding: '8px 10px',
+                borderRadius: '4px',
+                marginBottom: '10px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <strong>{foundProduct.name}</strong>
+              <span style={{ fontSize: '12px', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={() =>
+                  (window.location.href = `/admin/collections/products/${foundProduct.id}`)
+                }
+                style={{
+                  padding: '8px 14px',
+                  background: '#f59e0b',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                ✏️ Ürünü Düzenle
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('')}
+                style={{
+                  padding: '8px 14px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                🔄 Yine De Yeni Oluştur
+              </button>
+            </div>
+          </div>
+        )}
+
+        {admin?.description && <FieldDescription description={admin.description} path={path} />}
       </div>
 
-      {!isSupported && !readOnly && (
-        <p
-          style={{
-            margin: 0,
-            color: '#b45309',
-            fontSize: 12,
-            backgroundColor: '#fffbeb',
-            padding: '6px 10px',
-            borderRadius: 4,
-          }}
-        >
-          ⚠️ Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen barkodu yukarıdaki kutuya
-          manuel olarak girip <strong>Enter</strong>'a basın.
-        </p>
-      )}
+      {/* Spinner animasyonu için minimum düzey inline css */}
+      <style>{`@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }`}</style>
 
-      {errorMessage && (
-        <p className={styles.fieldError}>
-          {typeof errorMessage === 'string' ? errorMessage : 'Geçersiz değer'}
-        </p>
-      )}
-
-      {foundProduct && !readOnly && (
-        <div className={styles.alert}>
-          <p className={styles.alertTitle}>⚠️ Kopya Barkod Tespit Edildi</p>
-          <p className={styles.alertDescription}>
-            Sistemde bu barkoda sahip kayıtlı bir ürün bulundu.
-          </p>
-          <div className={styles.alertMessage}>
-            <strong>{foundProduct.name}</strong>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
-          </div>
-          <div className={styles.alertActions}>
-            <button
-              type="button"
-              onClick={goToEdit}
-              className={`${styles.btn} ${styles.btnPrimary}`}
-            >
-              ✏️ Ürünü Düzenle
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChange('')}
-              className={`${styles.btn} ${styles.btnSecondary}`}
-            >
-              🔄 Yine De Yeni Oluştur
-            </button>
-          </div>
-        </div>
-      )}
+      {cameraModal}
     </div>
   )
 }

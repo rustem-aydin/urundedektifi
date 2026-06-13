@@ -5,6 +5,7 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import { s3Storage } from '@payloadcms/storage-s3'
+import { tr } from '@payloadcms/translations/languages/tr'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
@@ -60,6 +61,9 @@ export default buildConfig({
     },
     prodMigrations: migrations,
   }),
+  i18n: {
+    supportedLanguages: { tr }, // default
+  },
   sharp,
   plugins: [
     s3Storage({
