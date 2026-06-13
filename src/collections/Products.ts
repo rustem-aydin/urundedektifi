@@ -54,6 +54,7 @@ export const Products: CollectionConfig = {
               unique: true,
               index: true,
               admin: {
+                hidden: true,
                 description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
               },
             },
@@ -663,6 +664,7 @@ export const Products: CollectionConfig = {
       relationTo: 'users',
       label: 'Ekleyen Kullanıcı',
       admin: {
+        hidden: true,
         readOnly: true,
         position: 'sidebar',
         description: 'Ürünü sisteme ekleyen kullanıcı. Otomatik atanır.',
