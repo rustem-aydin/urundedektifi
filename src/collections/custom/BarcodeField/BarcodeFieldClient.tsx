@@ -154,7 +154,24 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
   const cameraOverlay =
     mounted && isScanning
       ? createPortal(
-          <div className={styles.overlay} style={{ zIndex: 2147483647 }}>
+          // ✅ DIŞ KUTU INLINE STYLE OLMALI (Payload CSS'i ezip çalamasın diye)
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.9)',
+              zIndex: 2147483647,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+            }}
+          >
+            {/* ✅ İÇERİK SENİN CSS DOSYANDAN ÇEKİLSİN */}
             <div className={styles.overlayContent}>
               <div className={styles.overlayHeader}>
                 <h3>📷 EAN-13 Barkod Okutma</h3>
@@ -195,7 +212,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, 
           document.body,
         )
       : null
-
   return (
     <div className={styles.wrapper}>
       {/* ✅ LABEL EKLENDİ */}
