@@ -6,51 +6,6 @@ import sharp from 'sharp'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// Görsel sıkıştırma hook'u - tip belirtilmeden
-const compressImage = async (args: { data: Record<string, any> }) => {
-  const { data } = args
-  const file = data.file
-
-  // Sadece görselleri sıkıştır (PDF dahil etme)
-  if (file?.data && file.mimeType?.startsWith('image/')) {
-    try {
-      const buffer = Buffer.from(file.data, 'base64')
-      const originalSize = buffer.length
-
-      // Boyuta göre kalite ayarla
-      let quality = 80
-      if (originalSize > 3 * 1024 * 1024) quality = 40
-      else if (originalSize > 2 * 1024 * 1024) quality = 50
-      else if (originalSize > 1 * 1024 * 1024) quality = 60
-      else if (originalSize > 500 * 1024) quality = 70
-
-      let compressedBuffer = await sharp(buffer)
-        .rotate()
-        .jpeg({ quality, mozjpeg: true })
-        .toBuffer()
-
-      // Hala çok büyükse kaliteyi daha düşür
-      if (compressedBuffer.length > 500 * 1024) {
-        compressedBuffer = await sharp(buffer)
-          .rotate()
-          .jpeg({ quality: 25, mozjpeg: true })
-          .toBuffer()
-      }
-
-      // Sadece orijinalden küçükse kullan
-      if (compressedBuffer.length < originalSize) {
-        data.file.data = compressedBuffer.toString('base64')
-        data.file.size = compressedBuffer.length
-        data.file.mimeType = 'image/jpeg'
-      }
-    } catch (error) {
-      console.error('Görsel sıkıştırma hatası:', error)
-    }
-  }
-
-  return data
-}
-
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: {
@@ -62,8 +17,7 @@ export const Media: CollectionConfig = {
   },
   admin: {
     group: 'Sistem',
-    description:
-      'Yüklenen tüm görseller ve belgeler (ürün fotoğrafları, uzman fotoğrafları, kanıt belgeleri).',
+    description: 'Yüklenen tüm görseller ve belgeler.',
   },
   upload: {
     staticDir: path.resolve(dirname, '../../media'),
@@ -74,10 +28,58 @@ export const Media: CollectionConfig = {
       { name: 'medium', width: 800 },
       { name: 'large', width: 1200 },
     ],
-    // uploadLimits BURADA YOK - silindi
   },
+  // FTP örneğindeki gibi doğrudan koleksiyon seviyesinde hooks kullanıyoruz
   hooks: {
-    beforeChange: [compressImage as any], // any ile tip hatasını bypass et
+    // S3 ile çalışırken beforeValidate ZORUNLUDUR.
+    // Çünkü S3 eklentisi dosyayı beforeChange'den önce S3'e yollar.
+    beforeValidate: [
+      async ({ data, operation }) => {
+        // Sadece dosya yükleme (create) anında çalışsın
+        if (operation !== 'create') return data
+
+        const file = data?.file
+
+        // Dosya yoksa veya görsel değilse hiçbir şey yapma
+        if (!file?.data || !file.mimeType?.startsWith('image/')) {
+          return data
+        }
+
+        try {
+          const buffer = Buffer.from(file.data, 'base64')
+          const originalSize = buffer.length
+
+          // Boyuta göre kalite ayarla
+          let quality = 80
+          if (originalSize > 5 * 1024 * 1024) quality = 30
+          else if (originalSize > 3 * 1024 * 1024) quality = 40
+          else if (originalSize > 2 * 1024 * 1024) quality = 50
+          else if (originalSize > 1 * 1024 * 1024) quality = 60
+          else if (originalSize > 500 * 1024) quality = 70
+
+          // Sharp ile sıkıştır
+          const compressedBuffer = await sharp(buffer)
+            .rotate() // EXIF rotasyonunu koru
+            .jpeg({ quality, mozjpeg: true })
+            .toBuffer()
+
+          // Sadece küçüldüyse data içindeki dosyayı değiştir
+          if (compressedBuffer.length < originalSize) {
+            file.data = compressedBuffer.toString('base64')
+            file.size = compressedBuffer.length
+            file.mimeType = 'image/jpeg'
+
+            console.log(
+              `✅ Sıkıştırıldı: ${(originalSize / 1024).toFixed(0)}KB -> ${(compressedBuffer.length / 1024).toFixed(0)}KB`,
+            )
+          }
+        } catch (error) {
+          console.error('Sıkıştırma hatası:', error)
+        }
+
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -85,8 +87,7 @@ export const Media: CollectionConfig = {
       type: 'text',
       label: 'Alternatif Metin (Alt Text)',
       admin: {
-        description:
-          'Görseli açıklayan kısa metin. SEO ve görme engelli kullanıcılar için önerilir (Örn: "Coca-Cola 1L kola şişesi"). Boş bırakılabilir.',
+        description: 'Görseli açıklayan kısa metin.',
       },
     },
   ],

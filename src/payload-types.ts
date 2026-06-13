@@ -179,7 +179,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * Yüklenen tüm görseller ve belgeler (ürün fotoğrafları, uzman fotoğrafları, kanıt belgeleri).
+ * Yüklenen tüm görseller ve belgeler.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -187,7 +187,7 @@ export interface User {
 export interface Media {
   id: number;
   /**
-   * Görseli açıklayan kısa metin. SEO ve görme engelli kullanıcılar için önerilir (Örn: "Coca-Cola 1L kola şişesi"). Boş bırakılabilir.
+   * Görseli açıklayan kısa metin.
    */
   alt?: string | null;
   updatedAt: string;
