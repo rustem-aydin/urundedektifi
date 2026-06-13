@@ -2,22 +2,20 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useField, FieldLabel, FieldDescription, FieldError, fieldBaseClass } from '@payloadcms/ui'
+import { useField } from '@payloadcms/ui'
 import styles from './BarcodeFieldClient.module.css'
 
+// ✅ label ve description eklendi
 type Props = {
   path: string
-  field: any // ✅ Label ve description'ı almak için field objesini ekliyoruz
+  label?: string
+  description?: string
   readOnly?: boolean
 }
 
-const baseClass = 'barcode-field' // ✅ Payload standartlarına uygun base class
-
-export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) => {
-  // ✅ Payload'ın field objesinden gerekli bilgileri al
-  const { label, required, admin } = field
-  const { value, setValue, errorMessage, showError } = useField<string>({ path })
-
+// ✅ Props'u buraya da ekle
+export const BarcodeFieldClient: React.FC<Props> = ({ path, label, description, readOnly }) => {
+  const { value, setValue, errorMessage } = useField<string>({ path })
   const [checking, setChecking] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [foundProduct, setFoundProduct] = useState<{ id: string; name: string } | null>(null)
@@ -90,7 +88,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
 
   const startCamera = async () => {
     if (!isSupported) {
-      alert('Tarayıcınız kamera ile barkod okumayı desteklemiyor.')
+      alert('Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen barkodu manuel girin.')
       return
     }
 
@@ -199,88 +197,103 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
       : null
 
   return (
-    // ✅ Payload'ın standart field wrapper sınıfları
-    <div className={[fieldBaseClass, baseClass].filter(Boolean).join(' ')}>
-      {/* ✅ Payload'ın resmi Label bileşeni */}
-      <FieldLabel label={label} path={path} required={required} />
+    <div className={styles.wrapper}>
+      {/* ✅ LABEL EKLENDİ */}
+      {label && (
+        <label htmlFor={path} className={styles.fieldLabel}>
+          {label}
+        </label>
+      )}
 
-      <div className={`${fieldBaseClass}__wrap`}>
-        {/* ✅ Payload'ın resmi Hata bileşeni (Input'un hemen üstünde/sağında çıkar) */}
-        <FieldError path={path} message={errorMessage} showError={showError} />
+      {/* ✅ DESCRIPTION EKLENDİ */}
+      {description && <div className={styles.fieldDescription}>{description}</div>}
 
-        <div className={`${baseClass}__input-row`}>
-          <div className={`${baseClass}__input-container`}>
-            <input
-              id={`field-${path.replace(/\./g, '__')}`} // Payload label standartı
-              type="text"
-              name={path}
-              value={(value as string) || ''}
-              onChange={(e) => handleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  checkBarcode((value as string) || '')
-                }
-              }}
-              readOnly={readOnly || isScanning}
-              placeholder="EAN-13 barkodunu girin..."
-              className={`${baseClass}__input`}
-              disabled={readOnly || isScanning}
-            />
-            {checking && <div className={`${baseClass}__spinner`} />}
-          </div>
-
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={startCamera}
-              disabled={isScanning || !isSupported}
-              className={`${baseClass}__scan-btn`}
-              title={!isSupported ? 'Tarayıcı desteklemiyor' : 'Kamerayı Aç'}
-            >
-              📷 Okut
-            </button>
-          )}
+      <div className={styles.inputRow}>
+        <div className={styles.inputContainer}>
+          <input
+            id={path} // ✅ Label ile eşleşmesi için id eklendi
+            type="text"
+            name={path}
+            value={(value as string) || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                checkBarcode((value as string) || '')
+              }
+            }}
+            readOnly={readOnly || isScanning}
+            placeholder="EAN-13 barkodunu girin..."
+            className={`${styles.input} ${foundProduct ? styles.hasWarning : ''} ${errorMessage ? styles.hasError : ''} ${readOnly ? styles.readOnly : ''}`}
+          />
+          {checking && <div className={styles.spinner} />}
         </div>
 
-        {!isSupported && !readOnly && (
-          <p className={`${baseClass}__unsupported-warning`}>
-            ⚠️ Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen manuel girin.
-          </p>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={startCamera}
+            disabled={isScanning || !isSupported}
+            className={styles.scanBtn}
+            title={
+              !isSupported ? 'Tarayıcınız kamera ile barkod okumayı desteklemiyor' : 'Kamerayı Aç'
+            }
+          >
+            📷 Okut
+          </button>
         )}
-
-        {foundProduct && !readOnly && (
-          <div className={`${baseClass}__alert`}>
-            <p className={`${baseClass}__alert-title`}>⚠️ Kopya Barkod Tespit Edildi</p>
-            <p className={`${baseClass}__alert-desc`}>
-              Sistemde bu barkoda sahip kayıtlı bir ürün bulundu.
-            </p>
-            <div className={`${baseClass}__alert-message`}>
-              <strong>{foundProduct.name}</strong>
-              <span>(Eşleşen Kayıt)</span>
-            </div>
-            <div className={`${baseClass}__alert-actions`}>
-              <button
-                type="button"
-                onClick={goToEdit}
-                className={`${baseClass}__btn ${baseClass}__btn-primary`}
-              >
-                ✏️ Ürünü Düzenle
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChange('')}
-                className={`${baseClass}__btn ${baseClass}__btn-secondary`}
-              >
-                🔄 Yine De Yeni Oluştur
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ✅ Payload'ın resmi Description bileşeni */}
-        {admin?.description && <FieldDescription description={admin.description} path={path} />}
       </div>
+
+      {!isSupported && !readOnly && (
+        <p
+          style={{
+            margin: 0,
+            color: '#b45309',
+            fontSize: 12,
+            backgroundColor: '#fffbeb',
+            padding: '6px 10px',
+            borderRadius: 4,
+          }}
+        >
+          ⚠️ Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen barkodu yukarıdaki kutuya
+          manuel olarak girip <strong>Enter</strong>'a basın.
+        </p>
+      )}
+
+      {errorMessage && (
+        <p className={styles.fieldError}>
+          {typeof errorMessage === 'string' ? errorMessage : 'Geçersiz değer'}
+        </p>
+      )}
+
+      {foundProduct && !readOnly && (
+        <div className={styles.alert}>
+          <p className={styles.alertTitle}>⚠️ Kopya Barkod Tespit Edildi</p>
+          <p className={styles.alertDescription}>
+            Sistemde bu barkoda sahip kayıtlı bir ürün bulundu.
+          </p>
+          <div className={styles.alertMessage}>
+            <strong>{foundProduct.name}</strong>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
+          </div>
+          <div className={styles.alertActions}>
+            <button
+              type="button"
+              onClick={goToEdit}
+              className={`${styles.btn} ${styles.btnPrimary}`}
+            >
+              ✏️ Ürünü Düzenle
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChange('')}
+              className={`${styles.btn} ${styles.btnSecondary}`}
+            >
+              🔄 Yine De Yeni Oluştur
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

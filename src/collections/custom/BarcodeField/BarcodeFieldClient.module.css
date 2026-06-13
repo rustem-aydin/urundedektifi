@@ -1,20 +1,24 @@
-/* ================= INPUT ALANI ================= */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-.barcode-field__input-row {
+.inputRow {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.barcode-field__input-container {
+.inputContainer {
   position: relative;
   flex: 1;
 }
 
-.barcode-field__input {
+.input {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--theme-elevation-100, #d1d5db);
+  border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: 14px;
   background: #fff;
@@ -22,21 +26,31 @@
   box-sizing: border-box;
 }
 
-.barcode-field__input:focus {
+.input:focus {
   outline: none;
-  border-color: var(--theme-color-primary, #2563eb);
+  border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-.barcode-field__input:disabled {
-  background: var(--theme-elevation-50, #f3f4f6);
+.input.hasWarning {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.input.hasError {
+  border-color: #d32f2f;
+  background: #fef2f2;
+}
+
+.input.readOnly {
+  background: #f3f4f6;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-.barcode-field__scan-btn {
+.scanBtn {
   padding: 8px 14px;
-  background: var(--theme-color-primary, #2563eb);
+  background: #2563eb;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -46,16 +60,16 @@
   transition: background 0.2s;
 }
 
-.barcode-field__scan-btn:hover:not(:disabled) {
-  background: var(--theme-color-primary-500, #1d4ed8);
+.scanBtn:hover {
+  background: #1d4ed8;
 }
 
-.barcode-field__scan-btn:disabled {
-  background: var(--theme-elevation-100, #93c5fd);
+.scanBtn:disabled {
+  background: #93c5fd;
   cursor: not-allowed;
 }
 
-.barcode-field__spinner {
+.spinner {
   position: absolute;
   right: 10px;
   top: 50%;
@@ -63,95 +77,24 @@
   width: 16px;
   height: 16px;
   border: 2px solid #e5e7eb;
-  border-top-color: var(--theme-color-primary, #2563eb);
+  border-top-color: #2563eb;
   border-radius: 50%;
-  animation: barcode-spin 0.6s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
-@keyframes barcode-spin {
+@keyframes spin {
   to {
     transform: translateY(-50%) rotate(360deg);
   }
 }
 
-.barcode-field__unsupported-warning {
-  margin: 8px 0 0 0;
-  color: #b45309;
-  font-size: 12px;
-  background: #fffbeb;
-  padding: '6px 10px';
-  border-radius: 4px;
+.fieldError {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  margin: 0;
 }
 
-/* ================= UYARI KUTUSU ================= */
-
-.barcode-field__alert {
-  margin-top: 12px;
-  background: #fffbeb;
-  border: 1px solid #f59e0b;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.barcode-field__alert-title {
-  margin: 0 0 4px 0;
-  color: #92400e;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.barcode-field__alert-desc {
-  margin: 0 0 8px 0;
-  color: #78350f;
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.barcode-field__alert-message {
-  background: #fef3c7;
-  padding: 8px 10px;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
-
-.barcode-field__alert-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.barcode-field__btn {
-  padding: 7px 14px;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.barcode-field__btn-primary {
-  background: #f59e0b;
-  color: #fff;
-}
-
-.barcode-field__btn-primary:hover {
-  background: #d97706;
-}
-
-.barcode-field__btn-secondary {
-  background: #e5e7eb;
-  color: #374151;
-}
-
-.barcode-field__btn-secondary:hover {
-  background: #d1d5db;
-}
-
-/* ================= KAMERA OVERLAY ================= */
-
+/* ✅ OVERLAY — Ekranın tam ortasında, Payload'dan bağımsız */
 .overlay {
   position: fixed;
   top: 0;
@@ -159,7 +102,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.7);
-  z-index: 2147483647; /* Maksimum z-index */
+  z-index: 999999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,6 +141,11 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: #c0392b;
 }
 
 .videoWrapper {
@@ -215,6 +163,7 @@
   display: block;
 }
 
+/* Tarama çerçevesi */
 .scanFrame {
   position: absolute;
   top: 50%;
@@ -227,6 +176,32 @@
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
 }
 
+/* Köşe süslemeleri */
+.scanFrame::before,
+.scanFrame::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #00ff88;
+  border-style: solid;
+}
+
+.scanFrame::before {
+  top: -2px;
+  left: -2px;
+  border-width: 3px 0 0 3px;
+  border-radius: 8px 0 0 0;
+}
+
+.scanFrame::after {
+  bottom: -2px;
+  right: -2px;
+  border-width: 0 3px 3px 0;
+  border-radius: 0 0 8px 0;
+}
+
+/* Tarama çizgisi animasyonu */
 .scanLine {
   position: absolute;
   top: 0;
@@ -254,4 +229,82 @@
   font-size: 13px;
   padding: 10px;
   margin: 0;
+}
+
+/* Uyarı kutusu */
+.alert {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.alertTitle {
+  margin: 0 0 4px 0;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.alertDescription {
+  margin: 0 0 8px 0;
+  color: #78350f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.alertMessage {
+  background: #fef3c7;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alertActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnPrimary {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.btnPrimary:hover {
+  background: #d97706;
+}
+
+.btnSecondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.btnSecondary:hover {
+  background: #d1d5db;
+}
+/* ✅ OVERLAY — Ekranın tam ortasında, Payload'dan bağımsız */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2147483647; /* ✅ BURAYI 999999'DAN 2147483647'YE ÇEVİR */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
