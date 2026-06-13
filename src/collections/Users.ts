@@ -25,7 +25,7 @@ export const Users: CollectionConfig = {
       if (user?.role === 'admin') return true
       return user?.id === id
     },
-    read: () => true,
+    read: ({ req: { user } }) => user?.role === 'admin',
   },
   fields: [
     {
