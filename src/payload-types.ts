@@ -366,6 +366,10 @@ export interface Product {
    */
   slug: string;
   /**
+   * URL'de kullanılacak kısa ad. Otomatik üretilir.
+   */
+  barcode: string;
+  /**
    * Ürün hakkında genel açıklama. Düz metin olarak yazılır (satır sonları korunur).
    */
   description?: string | null;
@@ -1292,6 +1296,7 @@ export interface BrandsSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  barcode?: T;
   description?: T;
   frontImage?: T;
   ingredientsImage?: T;
