@@ -284,3 +284,13 @@
 .btnSecondary:hover {
   background: var(--theme-elevation-50, #f9fafb);
 }
+
+.fieldError {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.hasError {
+  border-color: #d32f2f !important;
+}

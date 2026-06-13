@@ -1,40 +1,20 @@
 'use client'
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'
-import jsQR from 'jsqr'
+import React, { useState, useCallback } from 'react'
+import { useField } from '@payloadcms/ui'
 import styles from './BarcodeFieldClient.module.css'
 
 type Props = {
   path: string
-  value?: string
-  onChange?: (value: string) => void
   readOnly?: boolean
 }
 
-export const BarcodeFieldClient: React.FC<Props> = ({
-  path,
-  value: initialValue,
-  onChange,
-  readOnly,
-}) => {
-  const [value, setValue] = useState(initialValue || '')
+export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
+  // ✅ Payload'ın kendi form state'ini kullanıyoruz
+  const { value, setValue, errorMessage } = useField<string>({ path })
+
   const [checking, setChecking] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
   const [foundProduct, setFoundProduct] = useState<{ id: string; name: string } | null>(null)
-
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const animationFrameRef = useRef<number>(0)
-
-  useEffect(() => {
-    setValue(initialValue || '')
-  }, [initialValue])
-
-  useEffect(() => {
-    return () => {
-      stopCamera()
-    }
-  }, [])
 
   const getDocumentId = () => {
     const pathname = window.location.pathname
@@ -72,8 +52,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({
   }, [])
 
   const handleChange = (newValue: string) => {
-    setValue(newValue)
-    onChange?.(newValue)
+    setValue(newValue) // ✅ Payload'ın setValue fonksiyonu
     if (foundProduct) setFoundProduct(null)
   }
 
@@ -83,68 +62,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({
     }
   }
 
-  // ✨ Kamera İşlemleri
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Arka kamerayı aç
-      })
-      streamRef.current = stream
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.play()
-        setIsScanning(true)
-        // Okuma döngüsünü başlat
-        requestAnimationFrame(scanFrame)
-      }
-    } catch (err) {
-      alert('Kamera erişimi reddedildi veya kamera bulunamadı.')
-      console.error(err)
-    }
-  }
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-    }
-    setIsScanning(false)
-  }
-
-  const scanFrame = () => {
-    if (!videoRef.current || !isScanning) return
-
-    const video = videoRef.current
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-
-      const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      })
-
-      if (code?.data) {
-        // Kod okundu!
-        stopCamera()
-        handleChange(code.data)
-        checkBarcode(code.data)
-        return // Döngüden çık
-      }
-    }
-
-    // Kod bulunamadı, devam et
-    animationFrameRef.current = requestAnimationFrame(scanFrame)
-  }
-
   return (
     <div className={styles.wrapper}>
       <div className={styles.inputRow}>
@@ -152,53 +69,43 @@ export const BarcodeFieldClient: React.FC<Props> = ({
           <input
             type="text"
             name={path}
-            value={value}
+            value={(value as string) || ''}
             onChange={(e) => handleChange(e.target.value)}
-            onBlur={() => checkBarcode(value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
-                checkBarcode(value)
+                checkBarcode((value as string) || '')
               }
             }}
-            readOnly={readOnly || isScanning}
-            placeholder={
-              isScanning ? 'Kamera okuması bekleniyor...' : 'Barkod/QR girin veya taratın...'
-            }
+            readOnly={readOnly || checking}
+            placeholder="Barkod/QR kodunu girin..."
             className={`
               ${styles.input} 
               ${foundProduct ? styles.hasWarning : ''} 
+              ${errorMessage ? styles.hasError : ''}
               ${readOnly ? styles.readOnly : ''}
             `}
           />
           {checking && <div className={styles.spinner} />}
         </div>
 
-        {!readOnly && !isScanning && (
-          <button type="button" className={styles.scanBtn} onClick={startCamera}>
-            📷 Kamera ile Okut
+        {!readOnly && (
+          <button
+            type="button"
+            className={styles.scanBtn}
+            onClick={() => checkBarcode((value as string) || '')}
+            disabled={!value || (value as string).length < 3 || checking}
+          >
+            {checking ? 'Sorgulanıyor...' : '🔍 Sorgula'}
           </button>
         )}
       </div>
 
-      {/* Kamera Açıksa Gösterilecek Alan */}
-      {isScanning && (
-        <div className={styles.cameraContainer}>
-          <video ref={videoRef} className={styles.cameraVideo} playsInline muted />
-          <div className={styles.cameraOverlay}>
-            <div className={styles.scanningFrame}>
-              <div className={styles.scanningLine} />
-            </div>
-          </div>
-          <button
-            type="button"
-            className={styles.closeCameraBtn}
-            onClick={stopCamera}
-            title="Kamerayı Kapat"
-          >
-            ✕
-          </button>
-        </div>
+      {/* Payload doğrulama hatası */}
+      {errorMessage && (
+        <p className={styles.fieldError}>
+          {typeof errorMessage === 'string' ? errorMessage : 'Geçersiz değer'}
+        </p>
       )}
 
       {/* Ürün Bulundu Uyarısı */}
