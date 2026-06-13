@@ -366,10 +366,6 @@ export interface Product {
    */
   slug: string;
   /**
-   * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
-   */
-  barcode: string;
-  /**
    * Ürün hakkında genel açıklama. Düz metin olarak yazılır (satır sonları korunur).
    */
   description?: string | null;
@@ -1296,7 +1292,6 @@ export interface BrandsSelect<T extends boolean = true> {
 export interface ProductsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
-  barcode?: T;
   description?: T;
   frontImage?: T;
   ingredientsImage?: T;
