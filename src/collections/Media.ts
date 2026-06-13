@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
+import fs from 'fs'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -29,27 +30,38 @@ export const Media: CollectionConfig = {
       { name: 'large', width: 1200 },
     ],
   },
-  // FTP örneğindeki gibi doğrudan koleksiyon seviyesinde hooks kullanıyoruz
   hooks: {
-    // S3 ile çalışırken beforeValidate ZORUNLUDUR.
-    // Çünkü S3 eklentisi dosyayı beforeChange'den önce S3'e yollar.
     beforeValidate: [
-      async ({ data, operation }) => {
-        // Sadece dosya yükleme (create) anında çalışsın
-        if (operation !== 'create') return data
+      async ({ data, req, operation }) => {
+        // 1. data yoksa veya create işlemi değilse direkt geç
+        if (!data || operation !== 'create') return data
 
-        const file = data?.file
+        const rawFile = req.files?.file
+        const fileObj = Array.isArray(rawFile) ? rawFile[0] : rawFile
 
-        // Dosya yoksa veya görsel değilse hiçbir şey yapma
-        if (!file?.data || !file.mimeType?.startsWith('image/')) {
+        // 2. Dosya yoksa veya görsel değilse geç
+        if (!fileObj || !fileObj.mimetype?.startsWith('image/')) {
           return data
         }
 
-        try {
-          const buffer = Buffer.from(file.data, 'base64')
-          const originalSize = buffer.length
+        let buffer: Buffer
 
-          // Boyuta göre kalite ayarla
+        // 3. Dosyayı bellekten veya geçici dosyadan oku
+        if (fileObj.data && fileObj.data.length > 0) {
+          buffer = Buffer.isBuffer(fileObj.data) ? fileObj.data : Buffer.from(fileObj.data)
+        } else if (fileObj.tempFilePath) {
+          buffer = fs.readFileSync(fileObj.tempFilePath)
+        } else {
+          return data
+        }
+
+        const originalSize = buffer.length
+
+        // Zaten küçükse işlem yapma
+        if (originalSize < 500 * 1024) return data
+
+        try {
+          // 4. Boyuta göre kalite ayarla
           let quality = 80
           if (originalSize > 5 * 1024 * 1024) quality = 30
           else if (originalSize > 3 * 1024 * 1024) quality = 40
@@ -57,20 +69,33 @@ export const Media: CollectionConfig = {
           else if (originalSize > 1 * 1024 * 1024) quality = 60
           else if (originalSize > 500 * 1024) quality = 70
 
-          // Sharp ile sıkıştır
+          // 5. Sıkıştır
           const compressedBuffer = await sharp(buffer)
-            .rotate() // EXIF rotasyonunu koru
+            .rotate()
             .jpeg({ quality, mozjpeg: true })
             .toBuffer()
 
-          // Sadece küçüldüyse data içindeki dosyayı değiştir
+          // 6. Sadece küçüldüyse işle
           if (compressedBuffer.length < originalSize) {
-            file.data = compressedBuffer.toString('base64')
-            file.size = compressedBuffer.length
-            file.mimeType = 'image/jpeg'
+            // Bellekteki veriyi güncelle
+            fileObj.data = compressedBuffer
+            fileObj.size = compressedBuffer.length
+            fileObj.mimetype = 'image/jpeg'
+
+            // Eğer dosya diske yazılmışsa (Docker vs.), S3'ün okuyacağı yere tekrar yaz
+            if (fileObj.tempFilePath) {
+              fs.writeFileSync(fileObj.tempFilePath, compressedBuffer)
+            }
+
+            // Payload'ın veritabanına kaydedeceği veriyi güncelle
+            if (data.file) {
+              data.file.data = compressedBuffer.toString('base64')
+              data.file.size = compressedBuffer.length
+              data.file.mimeType = 'image/jpeg'
+            }
 
             console.log(
-              `✅ Sıkıştırıldı: ${(originalSize / 1024).toFixed(0)}KB -> ${(compressedBuffer.length / 1024).toFixed(0)}KB`,
+              `✅ Sıkıştırıldı: ${(originalSize / 1024).toFixed(0)}MB -> ${(compressedBuffer.length / 1024).toFixed(0)}KB`,
             )
           }
         } catch (error) {
