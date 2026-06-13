@@ -294,3 +294,17 @@
 .btnSecondary:hover {
   background: #d1d5db;
 }
+/* ✅ OVERLAY — Ekranın tam ortasında, Payload'dan bağımsız */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2147483647; /* ✅ BURAYI 999999'DAN 2147483647'YE ÇEVİR */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
