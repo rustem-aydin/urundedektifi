@@ -50,13 +50,18 @@ export const Products: CollectionConfig = {
                 description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
               },
             },
-            // barcodeField({
-            //   name: 'barcode',
-            //   label: 'Barkod / QR Kod',
-            //   required: true,
-            //   description:
-            //     'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
-            // }),
+            {
+              name: 'barcode',
+              type: 'text',
+              label: 'URL Kısa Adı (Slug)',
+              required: true,
+              unique: true,
+              index: true,
+              admin: {
+                description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
+              },
+            },
+
             {
               name: 'description',
               type: 'textarea',
