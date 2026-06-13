@@ -14,6 +14,12 @@ export const Brands: CollectionConfig = {
       'Ürün markaları. Boykotlu olarak işaretlenirse, kural motoru bu markanın TÜM ürünlerini otomatik boykot eder.',
   },
   access: {
+    create: () => true,
+    delete: ({ req: { user } }) => user?.role === 'admin',
+    update: ({ req: { user }, id }) => {
+      if (user?.role === 'admin') return true
+      return user?.id === id
+    },
     read: () => true,
   },
   fields: [
@@ -36,7 +42,7 @@ export const Brands: CollectionConfig = {
       index: true,
       admin: {
         description:
-          'URL\'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.',
+          "URL'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.",
       },
     },
     {
@@ -71,7 +77,7 @@ export const Brands: CollectionConfig = {
       type: 'text',
       label: 'Resmi Web Sitesi',
       admin: {
-        description: 'Marka resmi web sitesi URL\'i (Örn: https://www.example.com).',
+        description: "Marka resmi web sitesi URL'i (Örn: https://www.example.com).",
       },
     },
     {

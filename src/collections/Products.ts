@@ -50,17 +50,7 @@ export const Products: CollectionConfig = {
                 description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
               },
             },
-            //   {
-            //   name: 'barcode',
-            //   type: 'text',
-            //   label: 'URL Kısa Adı (Slug)',
-            //   required: true,
-            //   unique: true,
-            //   index: true,
-            //   admin: {
-            //     description: "URL'de kullanılacak kısa ad. Otomatik üretilir.",
-            //   },
-            // },
+
             barcodeField({
               name: 'barcode',
               label: 'Barkod / QR Kod',

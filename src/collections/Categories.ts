@@ -14,6 +14,12 @@ export const Categories: CollectionConfig = {
       'Ürünlerin tip kategorileri (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik yapıdadır — alt kategori eklenebilir.',
   },
   access: {
+    create: () => true,
+    delete: ({ req: { user } }) => user?.role === 'admin',
+    update: ({ req: { user }, id }) => {
+      if (user?.role === 'admin') return true
+      return user?.id === id
+    },
     read: () => true,
   },
   fields: [
@@ -23,7 +29,8 @@ export const Categories: CollectionConfig = {
       label: 'Kategori Adı',
       required: true,
       admin: {
-        description: 'Sitede görünecek kategori adı (Örn: "Atıştırmalık", "Süt Ürünleri", "İçecek").',
+        description:
+          'Sitede görünecek kategori adı (Örn: "Atıştırmalık", "Süt Ürünleri", "İçecek").',
       },
     },
     {
@@ -35,7 +42,7 @@ export const Categories: CollectionConfig = {
       index: true,
       admin: {
         description:
-          'URL\'de kullanılacak kısa ad. Otomatik üretilir, Türkçe karakterler İngilizce karşılıklarına dönüşür. Sadece küçük harf, rakam ve tire kullanın.',
+          "URL'de kullanılacak kısa ad. Otomatik üretilir, Türkçe karakterler İngilizce karşılıklarına dönüşür. Sadece küçük harf, rakam ve tire kullanın.",
       },
     },
     {
@@ -52,7 +59,8 @@ export const Categories: CollectionConfig = {
       relationTo: 'media',
       label: 'Kategori İkonu',
       admin: {
-        description: 'Kategoriyi temsil eden küçük görsel (Örn: bir meyve fotoğrafı). Kare format önerilir.',
+        description:
+          'Kategoriyi temsil eden küçük görsel (Örn: bir meyve fotoğrafı). Kare format önerilir.',
       },
     },
     {

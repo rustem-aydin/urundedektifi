@@ -14,6 +14,12 @@ export const Ingredients: CollectionConfig = {
       'Ürünlerde geçebilecek içindekilerin master listesi. Uzman kuralları bu listeden seçim yaparak eşleşme arar (Örn: "Palm Yağı" kuralı, ürünün içindekiler metninde "Palm Yağı", "Palm Oil" veya tanımlı alternatif adları aranır). Sadece ad + eş anlamlılar + kısa açıklama içerir. Helal/vegan/sağlık/çevre değerlendirmeleri uzmanların kural yazımıyla yapılır.',
   },
   access: {
+    create: () => true,
+    delete: ({ req: { user } }) => user?.role === 'admin',
+    update: ({ req: { user }, id }) => {
+      if (user?.role === 'admin') return true
+      return user?.id === id
+    },
     read: () => true,
   },
   fields: [

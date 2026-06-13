@@ -14,6 +14,12 @@ export const Countries: CollectionConfig = {
       'Üretim yeri ülkelerin master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "İsrail menşeli ürünler → Boykot" kuralı). "code" alanı GS1 barkod prefixidir (3 hane).',
   },
   access: {
+    create: () => true,
+    delete: ({ req: { user } }) => user?.role === 'admin',
+    update: ({ req: { user }, id }) => {
+      if (user?.role === 'admin') return true
+      return user?.id === id
+    },
     read: () => true,
   },
   fields: [
@@ -43,7 +49,7 @@ export const Countries: CollectionConfig = {
       labels: { singular: 'Ek Prefix', plural: 'Ek Prefixler (3 hane)' },
       admin: {
         description:
-          'Bu ülkeye ait ek GS1 prefix\'ler (3 hane, sıfır dolgulu). Örn: ABD için 000-139 aralığındaki diğer prefix\'ler. Sadece "code" alanında belirtilmeyen ek prefix\'ler eklenir.',
+          "Bu ülkeye ait ek GS1 prefix'ler (3 hane, sıfır dolgulu). Örn: ABD için 000-139 aralığındaki diğer prefix'ler. Sadece \"code\" alanında belirtilmeyen ek prefix'ler eklenir.",
       },
       fields: [
         {
