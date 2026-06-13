@@ -1,23 +1,17 @@
 'use client'
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import { useField } from '@payloadcms/ui'
 import jsQR from 'jsqr'
 import styles from './BarcodeFieldClient.module.css'
 
 type Props = {
   path: string
-  value?: string
-  onChange?: (value: string) => void
   readOnly?: boolean
 }
 
-export const BarcodeFieldClient: React.FC<Props> = ({
-  path,
-  value: initialValue,
-  onChange,
-  readOnly,
-}) => {
-  const [value, setValue] = useState(initialValue || '')
+export const BarcodeFieldClient: React.FC<Props> = ({ path, readOnly }) => {
+  const { value, setValue, errorMessage } = useField<string>({ path })
   const [checking, setChecking] = useState(false)
   const [isScanning, setIsScanning] = useState(false)
   const [foundProduct, setFoundProduct] = useState<{ id: string; name: string } | null>(null)
@@ -25,10 +19,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const animationFrameRef = useRef<number>(0)
-
-  useEffect(() => {
-    setValue(initialValue || '')
-  }, [initialValue])
 
   useEffect(() => {
     return () => {
@@ -73,7 +63,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({
 
   const handleChange = (newValue: string) => {
     setValue(newValue)
-    onChange?.(newValue)
     if (foundProduct) setFoundProduct(null)
   }
 
@@ -83,21 +72,22 @@ export const BarcodeFieldClient: React.FC<Props> = ({
     }
   }
 
-  // ✨ Kamera İşlemleri
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Arka kamerayı aç
+        video: { facingMode: 'environment' },
       })
       streamRef.current = stream
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.play()
-        setIsScanning(true)
-        // Okuma döngüsünü başlat
-        requestAnimationFrame(scanFrame)
-      }
+      // Küçük bir gecikme ile video'yu başlat
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play()
+          setIsScanning(true)
+          animationFrameRef.current = requestAnimationFrame(scanFrame)
+        }
+      }, 300)
     } catch (err) {
       alert('Kamera erişimi reddedildi veya kamera bulunamadı.')
       console.error(err)
@@ -111,6 +101,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({
     }
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = 0
     }
     setIsScanning(false)
   }
@@ -119,6 +110,13 @@ export const BarcodeFieldClient: React.FC<Props> = ({
     if (!videoRef.current || !isScanning) return
 
     const video = videoRef.current
+
+    // Video hazır mı kontrol et
+    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animationFrameRef.current = requestAnimationFrame(scanFrame)
+      return
+    }
+
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
@@ -133,104 +131,110 @@ export const BarcodeFieldClient: React.FC<Props> = ({
       })
 
       if (code?.data) {
-        // Kod okundu!
         stopCamera()
         handleChange(code.data)
         checkBarcode(code.data)
-        return // Döngüden çık
+        return
       }
     }
 
-    // Kod bulunamadı, devam et
     animationFrameRef.current = requestAnimationFrame(scanFrame)
   }
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.inputRow}>
-        <div className={styles.inputContainer}>
-          <input
-            type="text"
-            name={path}
-            value={value}
-            onChange={(e) => handleChange(e.target.value)}
-            onBlur={() => checkBarcode(value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                checkBarcode(value)
+    <>
+      <div className={styles.wrapper}>
+        <div className={styles.inputRow}>
+          <div className={styles.inputContainer}>
+            <input
+              type="text"
+              name={path}
+              value={(value as string) || ''}
+              onChange={(e) => handleChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  checkBarcode((value as string) || '')
+                }
+              }}
+              readOnly={readOnly || isScanning}
+              placeholder={
+                isScanning ? 'Kamera okuması bekleniyor...' : 'Barkod/QR girin veya taratın...'
               }
-            }}
-            readOnly={readOnly || isScanning}
-            placeholder={
-              isScanning ? 'Kamera okuması bekleniyor...' : 'Barkod/QR girin veya taratın...'
-            }
-            className={`
-              ${styles.input} 
-              ${foundProduct ? styles.hasWarning : ''} 
-              ${readOnly ? styles.readOnly : ''}
-            `}
-          />
-          {checking && <div className={styles.spinner} />}
+              className={`
+                ${styles.input} 
+                ${foundProduct ? styles.hasWarning : ''} 
+                ${errorMessage ? styles.hasError : ''}
+                ${readOnly ? styles.readOnly : ''}
+              `}
+            />
+            {checking && <div className={styles.spinner} />}
+          </div>
+
+          {!readOnly && !isScanning && (
+            <button type="button" className={styles.scanBtn} onClick={startCamera}>
+              📷 Kamera ile Okut
+            </button>
+          )}
         </div>
 
-        {!readOnly && !isScanning && (
-          <button type="button" className={styles.scanBtn} onClick={startCamera}>
-            📷 Kamera ile Okut
-          </button>
+        {errorMessage && (
+          <p className={styles.fieldError}>
+            {typeof errorMessage === 'string' ? errorMessage : 'Geçersiz değer'}
+          </p>
+        )}
+
+        {foundProduct && !readOnly && (
+          <div className={styles.alert}>
+            <p className={styles.alertTitle}>⚠️ Kopya Barkod / QR Kod Tespit Edildi</p>
+            <p className={styles.alertDescription}>
+              Sistemde bu koda sahip kayıtlı bir ürün bulundu. Yeni bir ürün oluşturmak yerine
+              mevcut ürünü düzenlemeniz önerilir.
+            </p>
+            <div className={styles.alertMessage}>
+              <strong>{foundProduct.name}</strong>
+              <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
+            </div>
+            <div className={styles.alertActions}>
+              <button
+                type="button"
+                onClick={goToEdit}
+                className={`${styles.btn} ${styles.btnPrimary}`}
+              >
+                ✏️ Ürünü Düzenle
+              </button>
+              <button
+                type="button"
+                onClick={() => handleChange('')}
+                className={`${styles.btn} ${styles.btnSecondary}`}
+              >
+                🔄 Yine De Yeni Oluştur
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Kamera Açıksa Gösterilecek Alan */}
+      {/* ✅ FIXED OVERLAY — Payload layout'undan bağımsız */}
       {isScanning && (
-        <div className={styles.cameraContainer}>
-          <video ref={videoRef} className={styles.cameraVideo} playsInline muted />
-          <div className={styles.cameraOverlay}>
-            <div className={styles.scanningFrame}>
-              <div className={styles.scanningLine} />
+        <div className={styles.overlay}>
+          <div className={styles.overlayContent}>
+            <div className={styles.overlayHeader}>
+              <h3>📷 Barkod / QR Okutma</h3>
+              <button type="button" className={styles.closeBtn} onClick={stopCamera}>
+                ✕ Kapat
+              </button>
             </div>
-          </div>
-          <button
-            type="button"
-            className={styles.closeCameraBtn}
-            onClick={stopCamera}
-            title="Kamerayı Kapat"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
-      {/* Ürün Bulundu Uyarısı */}
-      {foundProduct && !readOnly && (
-        <div className={styles.alert}>
-          <p className={styles.alertTitle}>⚠️ Kopya Barkod / QR Kod Tespit Edildi</p>
-          <p className={styles.alertDescription}>
-            Sistemde bu koda sahip kayıtlı bir ürün bulundu. Yeni bir ürün oluşturmak yerine mevcut
-            ürünü düzenlemeniz önerilir.
-          </p>
-          <div className={styles.alertMessage}>
-            <strong>{foundProduct.name}</strong>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
-          </div>
-          <div className={styles.alertActions}>
-            <button
-              type="button"
-              onClick={goToEdit}
-              className={`${styles.btn} ${styles.btnPrimary}`}
-            >
-              ✏️ Ürünü Düzenle
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChange('')}
-              className={`${styles.btn} ${styles.btnSecondary}`}
-            >
-              🔄 Yine De Yeni Oluştur
-            </button>
+            <div className={styles.videoWrapper}>
+              <video ref={videoRef} className={styles.cameraVideo} playsInline muted />
+              <div className={styles.scanFrame}>
+                <div className={styles.scanLine} />
+              </div>
+            </div>
+            <p className={styles.overlayHint}>Barkod veya QR kodu kameraya yaklaştırın...</p>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
