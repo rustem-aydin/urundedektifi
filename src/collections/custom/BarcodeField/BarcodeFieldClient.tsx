@@ -29,7 +29,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
 
   useEffect(() => {
     setMounted(true)
-    // Sadece EAN-13 ve 1D barkodları destekleyen native API
     if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
       nativeDetectorRef.current = new (window as any).BarcodeDetector({
         formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'],
@@ -138,9 +137,6 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
     animationFrameRef.current = requestAnimationFrame(scanFrame)
   }
 
-  // =====================================================================
-  // MODAL: TAMAMEN INLINE STYLE İLE YAZILDI (PAYLOAD CSS ÇAKIŞMASI ÖNLENDİ)
-  // =====================================================================
   const cameraModal =
     mounted && isScanning
       ? createPortal(
@@ -166,51 +162,59 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
               style={{
                 width: '100%',
                 maxWidth: '500px',
-                backgroundColor: '#1a1a2e',
-                borderRadius: '16px',
+                backgroundColor: '#121212',
+                borderRadius: '20px',
                 overflow: 'hidden',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                boxShadow: '0 25px 80px rgba(0,0,0,0.9)',
                 border: '1px solid #333',
               }}
             >
-              {/* Başlık */}
+              {/* Başlık Çubuğu */}
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '16px 20px',
-                  backgroundColor: '#16213e',
-                  borderBottom: '1px solid #0f3460',
+                  backgroundColor: '#1a1a1a',
+                  borderBottom: '1px solid #333',
                 }}
               >
-                <span style={{ color: '#e0e0e0', fontSize: '16px', fontWeight: '600' }}>
-                  📷 EAN-13 Barkod Okutma
+                <span
+                  style={{
+                    color: '#fff',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span style={{ fontSize: '20px' }}>📷</span> Barkod Tarayıcı
                 </span>
                 <button
                   type="button"
                   onClick={stopCamera}
                   style={{
-                    backgroundColor: '#e74c3c',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '6px',
+                    backgroundColor: 'transparent',
+                    color: '#888',
+                    border: '1px solid #444',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    fontWeight: '500',
                   }}
                 >
-                  ✕ Kapat
+                  Vazgeç
                 </button>
               </div>
 
-              {/* Kamera Alanı */}
+              {/* Kamera Görünümü */}
               <div
                 style={{
                   position: 'relative',
                   width: '100%',
-                  height: '300px',
+                  height: '320px',
                   backgroundColor: '#000',
                 }}
               >
@@ -226,68 +230,161 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
                   }}
                 />
 
-                {/* Yatay Tarama Çerçevesi */}
+                {/* Tarama Alanı (Maskeleme) */}
                 <div
                   style={{
                     position: 'absolute',
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: '85%',
+                    width: '88%',
                     height: '35%',
-                    border: '2px solid rgba(0, 255, 136, 0.8)',
-                    borderRadius: '10px',
                     boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
+                    borderRadius: '0px', // Dikdörtgen barkod için köşesiz
                   }}
                 >
-                  {/* Orta Lazer Çizgisi */}
+                  {/* ÜST ÇUBUK */}
                   <div
                     style={{
                       position: 'absolute',
-                      top: '50%',
+                      top: 0,
                       left: 0,
-                      width: '100%',
+                      right: 0,
                       height: '2px',
-                      backgroundColor: '#00ff88',
-                      boxShadow: '0 0 10px #00ff88',
-                      transform: 'translateY(-50%)',
+                      background: 'linear-gradient(90deg, transparent, #00ff88, transparent)',
+                    }}
+                  />
+                  {/* ALT ÇUBUK */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '2px',
+                      background: 'linear-gradient(90deg, transparent, #00ff88, transparent)',
+                    }}
+                  />
+
+                  {/* HAREKETLİ LAZER EFEKTI */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: '2%',
+                      width: '96%',
+                      height: '2px',
+                      background: '#00ff88',
+                      boxShadow: '0 0 12px 2px #00ff88',
+                      animation: 'scanMove 2.5s ease-in-out infinite',
+                      zIndex: 10,
+                    }}
+                  />
+
+                  {/* KÖŞE TASARIMLARI (Şık durması için) */}
+                  {/* Sol Üst */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      left: '-2px',
+                      width: '24px',
+                      height: '24px',
+                      borderTop: '3px solid #00ff88',
+                      borderLeft: '3px solid #00ff88',
+                    }}
+                  />
+                  {/* Sağ Üst */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '-2px',
+                      right: '-2px',
+                      width: '24px',
+                      height: '24px',
+                      borderTop: '3px solid #00ff88',
+                      borderRight: '3px solid #00ff88',
+                    }}
+                  />
+                  {/* Sol Alt */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      left: '-2px',
+                      width: '24px',
+                      height: '24px',
+                      borderBottom: '3px solid #00ff88',
+                      borderLeft: '3px solid #00ff88',
+                    }}
+                  />
+                  {/* Sağ Alt */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '-2px',
+                      right: '-2px',
+                      width: '24px',
+                      height: '24px',
+                      borderBottom: '3px solid #00ff88',
+                      borderRight: '3px solid #00ff88',
                     }}
                   />
                 </div>
 
-                {/* Kare Sayacı */}
+                {/* Alt Bilgi Ekranı (HUD) */}
                 <div
                   style={{
                     position: 'absolute',
-                    bottom: '10px',
-                    left: '10px',
-                    right: '10px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    color: '#00ff88',
-                    padding: '6px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontFamily: 'monospace',
-                    textAlign: 'center',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
+                    padding: '30px 16px 16px 16px',
+                    color: '#fff',
                   }}
                 >
-                  Taranan Kare: {scanCount} | EAN-13 Modu Aktif
+                  <div
+                    style={{
+                      backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                      border: '1px solid rgba(0, 255, 136, 0.3)',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      color: '#00ff88',
+                    }}
+                  >
+                    <span>● CANLI</span>
+                    <span>KARE: {scanCount}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Alt Bilgi */}
+              {/* Alt Yardım Metni */}
               <div
                 style={{
-                  padding: '16px',
+                  padding: '20px',
                   textAlign: 'center',
-                  color: '#a0a0a0',
+                  color: '#888',
                   fontSize: '14px',
-                  backgroundColor: '#1a1a2e',
+                  backgroundColor: '#121212',
                 }}
               >
-                Ürün üzerindeki dikey çizgili barkodu çerçeveye hizalayın
+                EAN-13 barkodunu çerçevenin içine hizalayın
               </div>
             </div>
+
+            {/* Lazer Animasyonu */}
+            <style>{`
+        @keyframes scanMove {
+          0% { top: 5%; opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { top: 90%; opacity: 0; }
+        }
+      `}</style>
           </div>,
           document.body,
         )
@@ -300,58 +397,60 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
       <div className={`${fieldBaseClass}__wrap`}>
         <FieldError path={path} message={errorMessage} showError={showError} />
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              id={`field-${path.replace(/\./g, '__')}`}
-              type="text"
-              name={path}
-              value={(value as string) || ''}
-              onChange={(e) => handleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  checkBarcode((value as string) || '')
-                }
-              }}
-              readOnly={readOnly || isScanning}
-              placeholder="EAN-13 barkodunu girin..."
-              disabled={readOnly || isScanning}
-              // ✅ Payload'ın kendi standart input class'ı (beyaz arka plan, standart border vs. gider)
-              className={`${fieldBaseClass}__input`}
-            />
-            {checking && (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 16,
-                  height: 16,
-                  border: '2px solid #e5e7eb',
-                  borderTopColor: '#2563eb',
-                  borderRadius: '50%',
-                  animation: 'spin 0.6s linear infinite',
-                }}
-              />
-            )}
-          </div>
+        {/* ✅ GÜZEL GÖRÜNEN STANDART PAYLOAD INPUT TASARIMI */}
+        <div className={`${fieldBaseClass}__input-wrap`} style={{ position: 'relative' }}>
+          <input
+            id={`field-${path.replace(/\./g, '__')}`}
+            type="text"
+            name={path}
+            value={(value as string) || ''}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                checkBarcode((value as string) || '')
+              }
+            }}
+            readOnly={readOnly || isScanning}
+            placeholder="EAN-13 barkodunu girin..."
+            disabled={readOnly || isScanning}
+            className={`${fieldBaseClass}__input`}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              // Butonun üzerine binmemesi için sağdan padding
+              paddingRight: !readOnly && isSupported ? '110px' : '12px',
+            }}
+          />
 
+          {/* ✅ INPUT'UN İÇİNE YERLEŞTİRİLMİŞ BUTON */}
           {!readOnly && (
             <button
               type="button"
               onClick={startCamera}
               disabled={isScanning || !isSupported}
               style={{
-                padding: '10px 16px',
-                background: !isSupported || isScanning ? '#6b7280' : '#2563eb',
+                position: 'absolute',
+                right: '4px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                padding: '6px 12px',
+                background:
+                  !isSupported || isScanning
+                    ? '#4b5563'
+                    : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '4px',
-                fontSize: '14px',
+                fontSize: '13px',
+                fontWeight: '500',
                 cursor: !isSupported || isScanning ? 'not-allowed' : 'pointer',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: !isSupported || isScanning ? 'none' : '0 2px 4px rgba(37, 99, 235, 0.3)',
+                transition: 'all 0.2s ease',
+                zIndex: 2,
               }}
             >
               📷 Okut
@@ -359,65 +458,122 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
           )}
         </div>
 
+        {/* Spinner */}
+        {checking && (
+          <div
+            style={{
+              marginTop: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              color: '#6b7280',
+              fontSize: '13px',
+            }}
+          >
+            <div
+              style={{
+                width: 14,
+                height: 14,
+                border: '2px solid #e5e7eb',
+                borderTopColor: '#2563eb',
+                borderRadius: '50%',
+                animation: 'spin 0.6s linear infinite',
+              }}
+            />
+            Sorgulanıyor...
+          </div>
+        )}
+
+        {/* Uyumsuzluk Uyarısı */}
         {!isSupported && !readOnly && (
           <p
             style={{
               margin: '8px 0 0',
-              color: '#b45309',
+              color: '#92400e',
               fontSize: '13px',
               background: '#fffbeb',
-              padding: '8px 12px',
-              borderRadius: '4px',
+              padding: '10px 12px',
+              borderRadius: '6px',
+              border: '1px solid #fde68a',
             }}
           >
             ⚠️ Tarayıcınız kamera ile barkod okumayı desteklemiyor. Lütfen manuel girin.
           </p>
         )}
 
+        {/* Kopya Ürün Uyarısı */}
         {foundProduct && !readOnly && (
           <div
             style={{
-              marginTop: '12px',
+              marginTop: '16px',
               background: '#fffbeb',
-              border: '1px solid #f59e0b',
-              borderRadius: '6px',
-              padding: '12px',
+              border: '1px solid #fbbf24',
+              borderRadius: '8px',
+              padding: '16px',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
             }}
           >
-            <p style={{ margin: '0 0 4px', color: '#92400e', fontSize: '14px', fontWeight: '600' }}>
+            <p
+              style={{
+                margin: '0 0 6px',
+                color: '#92400e',
+                fontSize: '14px',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
               ⚠️ Kopya Barkod Tespit Edildi
             </p>
-            <p style={{ margin: '0 0 8px', color: '#78350f', fontSize: '13px' }}>
-              Sistemde bu barkoda sahip kayıtlı bir ürün bulundu.
+            <p
+              style={{ margin: '0 0 12px', color: '#78350f', fontSize: '13px', lineHeight: '1.5' }}
+            >
+              Sistemde bu barkoda sahip kayıtlı bir ürün bulundu. Mevcut ürünü düzenlemeniz
+              önerilir.
             </p>
             <div
               style={{
                 background: '#fef3c7',
-                padding: '8px 10px',
-                borderRadius: '4px',
-                marginBottom: '10px',
+                padding: '10px 12px',
+                borderRadius: '6px',
+                marginBottom: '14px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                border: '1px solid #fde68a',
               }}
             >
-              <strong>{foundProduct.name}</strong>
-              <span style={{ fontSize: '12px', opacity: 0.8 }}>(Eşleşen Kayıt)</span>
+              <strong style={{ color: '#92400e' }}>{foundProduct.name}</strong>
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#b45309',
+                  background: '#fde68a',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+              >
+                Eşleşen Kayıt
+              </span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() =>
                   (window.location.href = `/admin/collections/products/${foundProduct.id}`)
                 }
                 style={{
-                  padding: '8px 14px',
+                  flex: 1,
+                  padding: '10px 14px',
                   background: '#f59e0b',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: '6px',
                   fontSize: '13px',
+                  fontWeight: '500',
                   cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)',
                 }}
               >
                 ✏️ Ürünü Düzenle
@@ -426,12 +582,14 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
                 type="button"
                 onClick={() => handleChange('')}
                 style={{
-                  padding: '8px 14px',
-                  background: '#e5e7eb',
+                  flex: 1,
+                  padding: '10px 14px',
+                  background: '#fff',
                   color: '#374151',
-                  border: 'none',
-                  borderRadius: '4px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
                   fontSize: '13px',
+                  fontWeight: '500',
                   cursor: 'pointer',
                 }}
               >
@@ -444,9 +602,7 @@ export const BarcodeFieldClient: React.FC<Props> = ({ path, field, readOnly }) =
         {admin?.description && <FieldDescription description={admin.description} path={path} />}
       </div>
 
-      {/* Spinner animasyonu için minimum düzey inline css */}
       <style>{`@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }`}</style>
-
       {cameraModal}
     </div>
   )
