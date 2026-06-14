@@ -89,7 +89,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                   product.frontImage.url && (
                     <Image
                       src={product.frontImage.url}
-                      alt={product.name}
+                      alt={'product.name'}
                       fill
                       className="object-contain p-4"
                       sizes="(max-width: 768px) 100vw, 50vw"
