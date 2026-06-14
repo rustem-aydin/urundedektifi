@@ -57,7 +57,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   // Tab kontrolü için
   const tabs = [
     { id: 'ingredients', label: '🧪 İçindekiler', hasData: ingredients.length > 0 },
-    { id: 'nutrition', label: '🥗 Besin Değerleri', hasData: !!product.nutritionFacts },
     { id: 'labels', label: '🏷️ Etiketler', hasData: labels.length > 0 },
     { id: 'specs', label: '📦 Teknik Özellikler', hasData: specifications.length > 0 },
     { id: 'warnings', label: '⚠️ Uyarılar', hasData: warnings.length > 0 },
@@ -303,63 +302,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 )}
 
                 {/* Besin Değerleri */}
-                {product.nutritionFacts && (
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                      Besin Değerleri (100g/ml)
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {Object.entries(product.nutritionFacts).map(([key, value]) => {
-                        if (!value || key === 'id') return null
-                        const labels: any = {
-                          energyKcal: '🔥 Enerji',
-                          energyKj: '⚡ Enerji',
-                          fat: '🥑 Yağ',
-                          saturatedFat: '🍔 Doymuş Yağ',
-                          transFat: '🚫 Trans Yağ',
-                          carbohydrates: '🍚 Karbonhidrat',
-                          sugars: '🍬 Şeker',
-                          addedSugars: '➕ Eklenmiş Şeker',
-                          fiber: '🌾 Lif',
-                          protein: '🥩 Protein',
-                          salt: '🧂 Tuz',
-                          sodium: '💧 Sodyum',
-                        }
-                        const units: any = {
-                          energyKcal: 'kcal',
-                          energyKj: 'kJ',
-                          fat: 'g',
-                          saturatedFat: 'g',
-                          transFat: 'g',
-                          carbohydrates: 'g',
-                          sugars: 'g',
-                          addedSugars: 'g',
-                          fiber: 'g',
-                          protein: 'g',
-                          salt: 'g',
-                          sodium: 'mg',
-                        }
-                        return (
-                          <div key={key} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {labels[key] || key}
-                            </p>
-                            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                              {typeof value === 'number' ? value.toFixed(1) : value}{' '}
-                              <span className="text-xs">{units[key] || ''}</span>
-                            </p>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    {product.nutriscore && (
-                      <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                        <span className="font-medium">Nutri-Score:</span>
-                        <span className="text-2xl font-bold uppercase">{product.nutriscore}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 {/* Etiketler */}
                 {labels.length > 0 && (
