@@ -596,105 +596,105 @@ export const Products: CollectionConfig = {
       },
     },
   ],
-  hooks: {
-    beforeChange: [
-      async ({ data, req, operation }) => {
-        // submittedBy ataması
-        if (operation === 'create' && req.user) {
-          data.submittedBy = req.user.id
-        }
+  // hooks: {
+  //   beforeChange: [
+  //     async ({ data, req, operation }) => {
+  //       // submittedBy ataması
+  //       if (operation === 'create' && req.user) {
+  //         data.submittedBy = req.user.id
+  //       }
 
-        // ✅ BARKOD KONTROLÜ
-        if (operation === 'create' && data?.barcode && req.payload) {
-          const existing = await req.payload.find({
-            collection: 'products',
-            where: { barcode: { equals: data.barcode } },
-            limit: 1,
-            depth: 0,
-          })
+  //       // ✅ BARKOD KONTROLÜ
+  //       if (operation === 'create' && data?.barcode && req.payload) {
+  //         const existing = await req.payload.find({
+  //           collection: 'products',
+  //           where: { barcode: { equals: data.barcode } },
+  //           limit: 1,
+  //           depth: 0,
+  //         })
 
-          if (existing.docs.length > 0) {
-            const product = existing.docs[0]
-            throw new Error(
-              `⚠️ BU BARKOD ZATEN KAYITLI!\n\n` +
-                `Ürün: "${product.name}"\n` +
-                `ID: ${product.id}\n\n` +
-                `Lütfen mevcut ürünü düzenleyin veya farklı barkod girin.`,
-            )
-          }
-        }
+  //         if (existing.docs.length > 0) {
+  //           const product = existing.docs[0]
+  //           throw new Error(
+  //             `⚠️ BU BARKOD ZATEN KAYITLI!\n\n` +
+  //               `Ürün: "${product.name}"\n` +
+  //               `ID: ${product.id}\n\n` +
+  //               `Lütfen mevcut ürünü düzenleyin veya farklı barkod girin.`,
+  //           )
+  //         }
+  //       }
 
-        // Ülke tespiti
-        if (operation === 'create' && data?.barcode && !data.country && req.payload) {
-          const detected = detectCountryFromBarcode(data.barcode)
-          if (detected) {
-            const result = await req.payload.find({
-              collection: 'countries',
-              where: { name: { equals: detected.country } },
-              limit: 1,
-              depth: 0,
-            })
-            if (result.docs[0]) {
-              data.country = result.docs[0].id
-              req.payload.logger.info(
-                `🌍 Barkod ${data.barcode} prefix'i (${detected.prefix}) → ülke otomatik atandı: ${detected.country}`,
-              )
-            }
-          }
-        }
+  //       // Ülke tespiti
+  //       if (operation === 'create' && data?.barcode && !data.country && req.payload) {
+  //         const detected = detectCountryFromBarcode(data.barcode)
+  //         if (detected) {
+  //           const result = await req.payload.find({
+  //             collection: 'countries',
+  //             where: { name: { equals: detected.country } },
+  //             limit: 1,
+  //             depth: 0,
+  //           })
+  //           if (result.docs[0]) {
+  //             data.country = result.docs[0].id
+  //             req.payload.logger.info(
+  //               `🌍 Barkod ${data.barcode} prefix'i (${detected.prefix}) → ülke otomatik atandı: ${detected.country}`,
+  //             )
+  //           }
+  //         }
+  //       }
 
-        // Fiyat sıralama
-        if (data?.prices && Array.isArray(data.prices)) {
-          const dated = data.prices
-            .filter((p: any) => p?.date)
-            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-            .slice(0, 10)
-          const undated = data.prices.filter((p: any) => !p?.date)
-          data.prices = [...dated, ...undated]
-        }
+  //       // Fiyat sıralama
+  //       if (data?.prices && Array.isArray(data.prices)) {
+  //         const dated = data.prices
+  //           .filter((p: any) => p?.date)
+  //           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  //           .slice(0, 10)
+  //         const undated = data.prices.filter((p: any) => !p?.date)
+  //         data.prices = [...dated, ...undated]
+  //       }
 
-        return data
-      },
-    ],
-    beforeValidate: [
-      ({ data, operation }) => {
-        if (operation === 'create' && data?.name && !data.slug) {
-          data.slug = data.name
-            .toLowerCase()
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ı/g, 'i')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
-        }
-        return data
-      },
-    ],
-    beforeOperation: [
-      ({ args, operation }) => {
-        if (operation !== 'create' && operation !== 'update') return
-        const data = (args.data as any) || {}
-        const images = [
-          data.frontImage,
-          data.ingredientsImage,
-          data.nutritionImage,
-          data.recyclingImage,
-        ]
-        const categorizedCount = images.filter(Boolean).length
-        const additionalCount = Array.isArray(data.additionalImages)
-          ? data.additionalImages.length
-          : 0
-        const total = categorizedCount + additionalCount
-        if (total > 6) {
-          throw new Error(`En fazla 6 fotoğraf eklenebilir. Şu an ${total} fotoğraf var.`)
-        }
-        if (Array.isArray(data.prices) && data.prices.length > 10) {
-          throw new Error(`En fazla 10 fiyat kaydı eklenebilir.`)
-        }
-      },
-    ],
-  },
+  //       return data
+  //     },
+  //   ],
+  //   beforeValidate: [
+  //     ({ data, operation }) => {
+  //       if (operation === 'create' && data?.name && !data.slug) {
+  //         data.slug = data.name
+  //           .toLowerCase()
+  //           .replace(/ğ/g, 'g')
+  //           .replace(/ü/g, 'u')
+  //           .replace(/ş/g, 's')
+  //           .replace(/ı/g, 'i')
+  //           .replace(/ö/g, 'o')
+  //           .replace(/ç/g, 'c')
+  //           .replace(/[^a-z0-9]+/g, '-')
+  //           .replace(/(^-|-$)/g, '')
+  //       }
+  //       return data
+  //     },
+  //   ],
+  //   beforeOperation: [
+  //     ({ args, operation }) => {
+  //       if (operation !== 'create' && operation !== 'update') return
+  //       const data = (args.data as any) || {}
+  //       const images = [
+  //         data.frontImage,
+  //         data.ingredientsImage,
+  //         data.nutritionImage,
+  //         data.recyclingImage,
+  //       ]
+  //       const categorizedCount = images.filter(Boolean).length
+  //       const additionalCount = Array.isArray(data.additionalImages)
+  //         ? data.additionalImages.length
+  //         : 0
+  //       const total = categorizedCount + additionalCount
+  //       if (total > 6) {
+  //         throw new Error(`En fazla 6 fotoğraf eklenebilir. Şu an ${total} fotoğraf var.`)
+  //       }
+  //       if (Array.isArray(data.prices) && data.prices.length > 10) {
+  //         throw new Error(`En fazla 10 fiyat kaydı eklenebilir.`)
+  //       }
+  //     },
+  //   ],
+  // },
 }
