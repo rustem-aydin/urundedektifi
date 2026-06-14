@@ -29,13 +29,24 @@ export const Products: CollectionConfig = {
         {
           label: '📋 Genel Bilgiler',
           fields: [
-            barcodeField({
+            // barcodeField({
+            //   name: 'barcode',
+            //   label: 'Barkod / QR Kod',
+            //   required: true,
+            //   description:
+            //     'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
+            // }),
+            {
               name: 'barcode',
-              label: 'Barkod / QR Kod',
-              required: true,
-              description:
-                'EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.',
-            }),
+              type: 'number',
+              label: 'Ürün Adı',
+              unique: true,
+              // required: true,
+              admin: {
+                description:
+                  'Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").',
+              },
+            },
             {
               name: 'name',
               type: 'text',
