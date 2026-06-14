@@ -380,11 +380,11 @@ export interface Product {
   /**
    * Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").
    */
-  name: string;
+  name?: string | null;
   /**
    * URL'de kullanılacak kısa ad. Otomatik üretilir.
    */
-  slug: string;
+  slug?: string | null;
   /**
    * Ürün hakkında genel açıklama. Düz metin olarak yazılır (satır sonları korunur).
    */
@@ -392,7 +392,7 @@ export interface Product {
   /**
    * Ürünün ana/ön yüz fotoğrafı. Listelerde ve ürün sayfasında hero olarak gösterilir. Marka logosu, ürün adı ve gramaj görünen kısım. Kare veya dikey format önerilir, en az 600x600 piksel.
    */
-  frontImage: number | Media;
+  frontImage?: (number | null) | Media;
   /**
    * Paket üzerindeki içindekiler tablosunun fotoğrafı. Sitede "İçindekiler" etiketiyle gösterilir.
    */
@@ -410,7 +410,7 @@ export interface Product {
    */
   additionalImages?:
     | {
-        image: number | Media;
+        image?: (number | null) | Media;
         /**
          * Bu görselin ne olduğunu açıklayan kısa metin (Örn: "Arka yüz", "Kullanım örneği", "Sertifika").
          */
@@ -421,11 +421,11 @@ export interface Product {
   /**
    * Ürünün markası. Listelerde marka logusu ile gösterilir.
    */
-  brand: number | Brand;
+  brand?: (number | null) | Brand;
   /**
    * Ürünün tipi (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik olabilir.
    */
-  category: number | Category;
+  category?: (number | null) | Category;
   /**
    * Ürünü fiziksel olarak üreten firma. Markadan farklıysa buraya yazın (Örn: "Marka: Coca-Cola, Üretici: The Coca-Cola Company İstanbul Şubesi").
    */
@@ -437,7 +437,7 @@ export interface Product {
   /**
    * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
    */
-  ingredients: (number | Ingredient)[];
+  ingredients?: (number | Ingredient)[] | null;
   /**
    * Bu üründe bulunan alerjenler. Çoklu seçim yapılabilir.
    */
@@ -597,7 +597,7 @@ export interface Product {
   /**
    * Sadece "Yayında" durumundaki ürünler sitede görünür ve taranabilir. Taslak ürünler admin panele özeldir.
    */
-  status: 'draft' | 'published' | 'archived';
+  status?: ('draft' | 'published' | 'archived') | null;
   /**
    * Ürünü sisteme ekleyen kullanıcı. Otomatik atanır.
    */
