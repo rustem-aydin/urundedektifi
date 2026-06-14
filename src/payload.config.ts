@@ -21,6 +21,7 @@ import { Ingredients } from './collections/Ingredients'
 import { Additives } from './collections/Additives'
 import { Countries } from './collections/Countries'
 import { migrations } from './migrations'
+import { Nutrients } from './collections/Nutrients'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -41,6 +42,7 @@ export default buildConfig({
     Categories,
     Topics,
     Brands,
+    Nutrients,
     Products,
     Pages,
     Experts,

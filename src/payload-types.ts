@@ -72,6 +72,7 @@ export interface Config {
     categories: Category;
     topics: Topic;
     brands: Brand;
+    nutrients: Nutrient;
     products: Product;
     pages: Page;
     experts: Expert;
@@ -92,6 +93,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     topics: TopicsSelect<false> | TopicsSelect<true>;
     brands: BrandsSelect<false> | BrandsSelect<true>;
+    nutrients: NutrientsSelect<false> | NutrientsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
@@ -350,6 +352,20 @@ export interface Brand {
   createdAt: string;
 }
 /**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nutrients".
+ */
+export interface Nutrient {
+  id: number;
+  name: string;
+  /**
+   * Teknik ad: energy-kj, fat, vitamin-c, vb.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Sistemdeki tüm ürün kayıtları. Kullanıcılar barkod okutarak veya arayarak bu ürünlere ulaşır. Aktif uzman kuralları sayfasında otomatik değerlendirilir.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -444,49 +460,17 @@ export interface Product {
   /**
    * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
    */
-  additives: (number | Additive)[];
-  nutritionFacts?: {
-    /**
-     * Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").
-     */
-    servingSize?: string | null;
-    /**
-     * Toplam paketteki porsiyon sayısı.
-     */
-    servingsPerPackage?: number | null;
-    energyKcal?: number | null;
-    energyKj?: number | null;
-    /**
-     * Tüm yağ miktarı, 100g başına.
-     */
-    fat?: number | null;
-    /**
-     * Doymuş yağ asitleri.
-     */
-    saturatedFat?: number | null;
-    /**
-     * Trans yağ asitleri (genelde sağlıksız).
-     */
-    transFat?: number | null;
-    carbohydrates?: number | null;
-    /**
-     * Doğal + eklenmiş tüm şekerler.
-     */
-    sugars?: number | null;
-    /**
-     * Üretim sırasında eklenen şeker (en zararlı).
-     */
-    addedSugars?: number | null;
-    fiber?: number | null;
-    protein?: number | null;
-    /**
-     * Sodyum klorür miktarı.
-     */
-    salt?: number | null;
-    /**
-     * Sodyum miktarı, miligram olarak. Tuz ≈ Sodyum × 2.5.
-     */
-    sodium?: number | null;
+  additives?: (number | Additive)[] | null;
+  nutrition: {
+    per: '100g' | '100ml' | 'serving';
+    items?:
+      | {
+          nutrient: number | Nutrient;
+          amount: number;
+          unit: string;
+          id?: string | null;
+        }[]
+      | null;
   };
   /**
    * Nutri-Score, ürünün genel besin değeri kalitesini gösteren A-E harfli etiket (A=en iyi, E=en kötü). Etikette yazıyorsa seçin.
@@ -1085,6 +1069,10 @@ export interface PayloadLockedDocument {
         value: number | Brand;
       } | null)
     | ({
+        relationTo: 'nutrients';
+        value: number | Nutrient;
+      } | null)
+    | ({
         relationTo: 'products';
         value: number | Product;
       } | null)
@@ -1291,6 +1279,16 @@ export interface BrandsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nutrients_select".
+ */
+export interface NutrientsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products_select".
  */
 export interface ProductsSelect<T extends boolean = true> {
@@ -1316,23 +1314,18 @@ export interface ProductsSelect<T extends boolean = true> {
   ingredients?: T;
   allergens?: T;
   additives?: T;
-  nutritionFacts?:
+  nutrition?:
     | T
     | {
-        servingSize?: T;
-        servingsPerPackage?: T;
-        energyKcal?: T;
-        energyKj?: T;
-        fat?: T;
-        saturatedFat?: T;
-        transFat?: T;
-        carbohydrates?: T;
-        sugars?: T;
-        addedSugars?: T;
-        fiber?: T;
-        protein?: T;
-        salt?: T;
-        sodium?: T;
+        per?: T;
+        items?:
+          | T
+          | {
+              nutrient?: T;
+              amount?: T;
+              unit?: T;
+              id?: T;
+            };
       };
   nutriscore?: T;
   labels?: T;

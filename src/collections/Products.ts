@@ -237,7 +237,6 @@ export const Products: CollectionConfig = {
               relationTo: 'additives',
               label: 'Katkı Maddesi',
               hasMany: true,
-              required: true,
               admin: {
                 description:
                   'Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).',
@@ -249,130 +248,45 @@ export const Products: CollectionConfig = {
           label: '🥗 Besin Değerleri',
           fields: [
             {
-              name: 'nutritionFacts',
+              name: 'nutrition',
               type: 'group',
-              label: 'Besin Değerleri Tablosu (100g/100ml başına)',
+              label: 'Besin Değerleri',
               fields: [
                 {
-                  type: 'row',
+                  name: 'per',
+                  type: 'select',
+                  label: 'Ölçüm',
+                  required: true,
+                  defaultValue: '100g',
+                  options: [
+                    { label: '100g', value: '100g' },
+                    { label: '100ml', value: '100ml' },
+                    { label: 'serving', value: 'serving' },
+                  ],
+                },
+                {
+                  name: 'items',
+                  type: 'array',
+                  label: 'Besinler',
                   fields: [
                     {
-                      name: 'servingSize',
+                      name: 'nutrient',
+                      type: 'relationship',
+                      relationTo: 'nutrients',
+                      required: true,
+                    },
+                    {
+                      name: 'amount',
+                      type: 'number',
+                      required: true,
+                    },
+                    {
+                      name: 'unit',
                       type: 'text',
-                      label: 'Porsiyon Boyutu',
-                      admin: {
-                        width: '50%',
-                        description:
-                          'Bir porsiyonun ağırlığı/hacmi (Örn: "30g", "1 bardak 250ml").',
-                      },
-                    },
-                    {
-                      name: 'servingsPerPackage',
-                      type: 'number',
-                      label: 'Paket Başına Porsiyon',
-                      admin: { width: '50%', description: 'Toplam paketteki porsiyon sayısı.' },
+                      required: true,
+                      defaultValue: 'mg',
                     },
                   ],
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'energyKcal',
-                      type: 'number',
-                      label: 'Enerji (kcal)',
-                      admin: { width: '50%' },
-                    },
-                    {
-                      name: 'energyKj',
-                      type: 'number',
-                      label: 'Enerji (kJ)',
-                      admin: { width: '50%' },
-                    },
-                  ],
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'fat',
-                      type: 'number',
-                      label: 'Toplam Yağ (g)',
-                      admin: { width: '33%', description: 'Tüm yağ miktarı, 100g başına.' },
-                    },
-                    {
-                      name: 'saturatedFat',
-                      type: 'number',
-                      label: 'Doymuş Yağ (g)',
-                      admin: { width: '33%', description: 'Doymuş yağ asitleri.' },
-                    },
-                    {
-                      name: 'transFat',
-                      type: 'number',
-                      label: 'Trans Yağ (g)',
-                      admin: {
-                        width: '34%',
-                        description: 'Trans yağ asitleri (genelde sağlıksız).',
-                      },
-                    },
-                  ],
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'carbohydrates',
-                      type: 'number',
-                      label: 'Karbonhidrat (g)',
-                      admin: { width: '33%' },
-                    },
-                    {
-                      name: 'sugars',
-                      type: 'number',
-                      label: 'Şeker (g)',
-                      admin: { width: '33%', description: 'Doğal + eklenmiş tüm şekerler.' },
-                    },
-                    {
-                      name: 'addedSugars',
-                      type: 'number',
-                      label: 'Eklenmiş Şeker (g)',
-                      admin: {
-                        width: '34%',
-                        description: 'Üretim sırasında eklenen şeker (en zararlı).',
-                      },
-                    },
-                  ],
-                },
-                {
-                  type: 'row',
-                  fields: [
-                    {
-                      name: 'fiber',
-                      type: 'number',
-                      label: 'Lif / Posa (g)',
-                      admin: { width: '33%' },
-                    },
-                    {
-                      name: 'protein',
-                      type: 'number',
-                      label: 'Protein (g)',
-                      admin: { width: '33%' },
-                    },
-                    {
-                      name: 'salt',
-                      type: 'number',
-                      label: 'Tuz (g)',
-                      admin: { width: '34%', description: 'Sodyum klorür miktarı.' },
-                    },
-                  ],
-                },
-                {
-                  name: 'sodium',
-                  type: 'number',
-                  label: 'Sodyum (mg)',
-                  admin: {
-                    description: 'Sodyum miktarı, miligram olarak. Tuz ≈ Sodyum × 2.5.',
-                  },
                 },
               ],
             },

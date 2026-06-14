@@ -41,6 +41,7 @@ export const Brands: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
+        hidden: true,
         description:
           "URL'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.",
       },

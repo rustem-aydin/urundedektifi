@@ -41,6 +41,7 @@ export const Categories: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
+        hidden: true,
         description:
           "URL'de kullanılacak kısa ad. Otomatik üretilir, Türkçe karakterler İngilizce karşılıklarına dönüşür. Sadece küçük harf, rakam ve tire kullanın.",
       },
