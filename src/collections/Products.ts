@@ -40,7 +40,7 @@ export const Products: CollectionConfig = {
               name: 'name',
               type: 'text',
               label: 'Ürün Adı',
-              required: true,
+              // required: true,
               admin: {
                 description:
                   'Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").',
@@ -50,7 +50,7 @@ export const Products: CollectionConfig = {
               name: 'slug',
               type: 'text',
               label: 'URL Kısa Adı (Slug)',
-              required: true,
+              // required: true,
               unique: true,
               index: true,
               admin: {
@@ -80,7 +80,7 @@ export const Products: CollectionConfig = {
               type: 'upload',
               relationTo: 'media',
               label: 'Ön Yüz Fotoğrafı (Zorunlu)',
-              required: true,
+              // required: true,
               admin: {
                 description:
                   'Ürünün ana/ön yüz fotoğrafı. Listelerde ve ürün sayfasında hero olarak gösterilir. Marka logosu, ürün adı ve gramaj görünen kısım. Kare veya dikey format önerilir, en az 600x600 piksel.',
@@ -132,7 +132,7 @@ export const Products: CollectionConfig = {
                   type: 'upload',
                   relationTo: 'media',
                   label: 'Görsel',
-                  required: true,
+                  // required: true,
                 },
                 {
                   name: 'caption',
@@ -155,7 +155,7 @@ export const Products: CollectionConfig = {
               type: 'relationship',
               relationTo: 'brands',
               label: 'Marka',
-              required: true,
+              // required: true,
               admin: {
                 description: 'Ürünün markası. Listelerde marka logusu ile gösterilir.',
               },
@@ -165,7 +165,7 @@ export const Products: CollectionConfig = {
               type: 'relationship',
               relationTo: 'categories',
               label: 'Ürün Kategorisi',
-              required: true,
+              // required: true,
               admin: {
                 description:
                   'Ürünün tipi (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik olabilir.',
@@ -199,7 +199,7 @@ export const Products: CollectionConfig = {
               name: 'ingredients',
               type: 'relationship',
               relationTo: 'ingredients',
-              required: true,
+              // required: true,
 
               label: 'İçindekiler',
               hasMany: true,
@@ -559,7 +559,7 @@ export const Products: CollectionConfig = {
       name: 'status',
       type: 'select',
       label: 'Yayın Durumu',
-      required: true,
+      // required: true,
       defaultValue: 'draft',
       options: [
         { label: '📝 Taslak', value: 'draft' },
