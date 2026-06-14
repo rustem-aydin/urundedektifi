@@ -41,6 +41,7 @@ export const Countries: CollectionConfig = {
       required: true,
       unique: true,
       index: true,
+      defaultValue: 'turkey',
       admin: {
         hidden: true,
         description:
