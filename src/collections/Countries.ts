@@ -35,6 +35,19 @@ export const Countries: CollectionConfig = {
       },
     },
     {
+      name: 'slug',
+      type: 'text',
+      label: 'URL Kısa Adı (Slug)',
+      required: true,
+      unique: true,
+      index: true,
+      admin: {
+        hidden: true,
+        description:
+          "URL'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.",
+      },
+    },
+    {
       name: 'code',
       type: 'text',
       label: 'GS1 Barkod Prefix (3 hane)',
