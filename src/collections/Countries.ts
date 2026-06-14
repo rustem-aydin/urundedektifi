@@ -38,7 +38,6 @@ export const Countries: CollectionConfig = {
       name: 'slug',
       type: 'text',
       label: 'URL Kısa Adı (Slug)',
-      required: true,
       unique: true,
       index: true,
       defaultValue: 'turkey',
