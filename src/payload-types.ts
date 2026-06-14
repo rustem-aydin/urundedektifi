@@ -620,7 +620,7 @@ export interface Country {
   /**
    * URL'de kullanılacak kısa ad. Otomatik üretilir. Sadece küçük harf, rakam ve tire kullanın.
    */
-  slug: string;
+  slug?: string | null;
   /**
    * Bu ülkeye ait ana GS1 barkod prefixi (3 hane, sıfır dolgulu). Örn: Türkiye="868", Almanya="400", ABD="000". Barkod girilirken ilk 3 hane bu alanla eşleşirse ülke otomatik atanır. Birden fazla prefix varsa birini buraya, diğerlerini "Ek Prefixler" alanına yazın.
    */
