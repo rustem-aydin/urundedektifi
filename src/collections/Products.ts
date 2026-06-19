@@ -585,6 +585,11 @@ export const Products: CollectionConfig = {
         description: 'Ürünü sisteme ekleyen kullanıcı. Otomatik atanır.',
       },
     },
+    {
+      name: 'is_submit',
+      type: 'checkbox',
+      label: 'Bakıldı mı?',
+    },
   ],
   // hooks: {
   //   beforeChange: [

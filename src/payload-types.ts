@@ -602,6 +602,7 @@ export interface Product {
    * Ürünü sisteme ekleyen kullanıcı. Otomatik atanır.
    */
   submittedBy?: (number | null) | User;
+  is_submit?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1364,6 +1365,7 @@ export interface ProductsSelect<T extends boolean = true> {
       };
   status?: T;
   submittedBy?: T;
+  is_submit?: T;
   updatedAt?: T;
   createdAt?: T;
 }
