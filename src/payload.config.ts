@@ -62,6 +62,7 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL || '',
     },
     prodMigrations: migrations,
+    push: process.env.NODE_ENV !== 'production',
   }),
   i18n: {
     supportedLanguages: { tr }, // default
