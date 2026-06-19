@@ -17,10 +17,16 @@ export const Products: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes(user?.role || ''),
-    update: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
-    delete: ({ req: { user } }) => user?.role === 'admin',
+    create: () => true,
+    update: () => true,
+    delete: () => true,
   },
+  // access: {
+  //   read: () => true,
+  //   create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes(user?.role || ''),
+  //   update: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
+  //   delete: ({ req: { user } }) => user?.role === 'admin',
+  // },
 
   fields: [
     {
