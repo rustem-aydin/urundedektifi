@@ -35,6 +35,11 @@ export const Ingredients: CollectionConfig = {
       },
     },
     {
+      name: 'slug',
+      type: 'text',
+      label: 'Standart Ad',
+    },
+    {
       name: 'aliases',
       type: 'array',
       labels: { singular: 'Alternatif Ad', plural: 'Alternatif Adlar / Eş Anlamlılar' },

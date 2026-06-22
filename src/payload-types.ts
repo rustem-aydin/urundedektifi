@@ -647,6 +647,7 @@ export interface Ingredient {
    * İçindekilerin standart Türkçe adı. Ürün etiketinde farklı yazılsa bile kural motoru buradan arar (Örn: "Palm Yağı", "Monosodyum Glutamat").
    */
   name: string;
+  slug?: string | null;
   /**
    * Etiketlerde farklı yazılabilecek alternatif adlar. Bunlardan biri geçtiğinde de eşleşir (Örn: Palm Yağı için ["Palm Oil", "Palmiye Yağı", "Yağ (palm)"]).
    */
@@ -1504,6 +1505,7 @@ export interface RatingScalesSelect<T extends boolean = true> {
  */
 export interface IngredientsSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   aliases?:
     | T
     | {
