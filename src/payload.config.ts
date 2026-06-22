@@ -22,6 +22,7 @@ import { Additives } from './collections/Additives'
 import { Countries } from './collections/Countries'
 import { migrations } from './migrations'
 import { Nutrients } from './collections/Nutrients'
+import { Allergens } from './collections/Allergens'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -44,6 +45,7 @@ export default buildConfig({
     Brands,
     Nutrients,
     Products,
+    Allergens,
     Pages,
     Experts,
     ExpertRules,

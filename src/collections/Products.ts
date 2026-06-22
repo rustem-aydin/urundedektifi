@@ -203,40 +203,37 @@ export const Products: CollectionConfig = {
           label: '🧪 İçindekiler',
           fields: [
             {
-              name: 'ingredients',
-              type: 'relationship',
-              relationTo: 'ingredients',
-              // required: true,
+              name: 'items',
+              type: 'array',
+              label: 'Besinler',
+              fields: [
+                {
+                  name: 'ingredients',
+                  type: 'relationship',
+                  relationTo: 'ingredients',
+                  // required: true,
 
-              label: 'İçindekiler',
-              hasMany: true,
-              admin: {
-                description:
-                  'İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.',
-              },
+                  label: 'İçindekiler',
+                  admin: {
+                    description:
+                      'İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.',
+                  },
+                },
+                {
+                  label: 'Yüzdelik',
+                  name: 'percent_estimate',
+                  type: 'number',
+                  required: true,
+                },
+              ],
             },
+
             {
               name: 'allergens',
-              type: 'select',
-              hasMany: true,
+              type: 'relationship',
+              relationTo: 'allergens',
               label: 'Alerjenler',
-              options: [
-                { label: 'Gluten / Buğday', value: 'gluten' },
-                { label: 'Süt / Laktoz', value: 'milk' },
-                { label: 'Yumurta', value: 'egg' },
-                { label: 'Soya', value: 'soy' },
-                { label: 'Yer fıstığı', value: 'peanut' },
-                { label: 'Ağaç yemişleri (badem, fındık vb.)', value: 'nuts' },
-                { label: 'Balık', value: 'fish' },
-                { label: 'Kabuklu deniz ürünleri', value: 'shellfish' },
-                { label: 'Susam', value: 'sesame' },
-                { label: 'Hardal', value: 'mustard' },
-                { label: 'Kereviz', value: 'celery' },
-                { label: 'Sülfit', value: 'sulphite' },
-              ],
-              admin: {
-                description: 'Bu üründe bulunan alerjenler. Çoklu seçim yapılabilir.',
-              },
+              required: true,
             },
             {
               name: 'additives',

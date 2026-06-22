@@ -74,6 +74,7 @@ export interface Config {
     brands: Brand;
     nutrients: Nutrient;
     products: Product;
+    allergens: Allergen;
     pages: Page;
     experts: Expert;
     'expert-rules': ExpertRule;
@@ -95,6 +96,7 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     nutrients: NutrientsSelect<false> | NutrientsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    allergens: AllergensSelect<false> | AllergensSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
     'expert-rules': ExpertRulesSelect<false> | ExpertRulesSelect<true>;
@@ -376,7 +378,7 @@ export interface Product {
   /**
    * EAN-13, UPC, EAN-8 veya QR kod. Kullanıcılar bu kod ile ürünü tarar. Aynı barkod girilirse sizi düzenleme sayfasına yönlendirir.
    */
-  barcode: string;
+  barcode?: string | null;
   /**
    * Ürünün tam adı. Paketin üzerindeki isimle aynı olmalı (Örn: "Coca-Cola Original 1L", "Ülker Çikolatalı Gofret 150g").
    */
@@ -434,29 +436,17 @@ export interface Product {
    * Ürünün fiziksel olarak üretildiği ülke. Barkod girildiğinde GS1 prefix'inden (ilk 3 hane) OTOMATİK doldurulur; isterseniz elle değiştirebilirsiniz. Kural motorunda ülke bazlı boykot analizi için kullanılır. Ülke listede yoksa önce "Ülkeler" bölümünden ekleyin.
    */
   country?: (number | null) | Country;
-  /**
-   * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
-   */
-  ingredients?: (number | Ingredient)[] | null;
-  /**
-   * Bu üründe bulunan alerjenler. Çoklu seçim yapılabilir.
-   */
-  allergens?:
-    | (
-        | 'gluten'
-        | 'milk'
-        | 'egg'
-        | 'soy'
-        | 'peanut'
-        | 'nuts'
-        | 'fish'
-        | 'shellfish'
-        | 'sesame'
-        | 'mustard'
-        | 'celery'
-        | 'sulphite'
-      )[]
+  items?:
+    | {
+        /**
+         * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
+         */
+        ingredients?: (number | null) | Ingredient;
+        percent_estimate: number;
+        id?: string | null;
+      }[]
     | null;
+  allergens: number | Allergen;
   /**
    * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
    */
@@ -670,6 +660,20 @@ export interface Ingredient {
    * Bu içindekiler hakkında kısa, nötr bilgi (kökeni, üretim yöntemi). Değer yargısı içermemeli — helal/vegan/sağlık/çevre yorumlarını uzman kural yazımında yapar.
    */
   description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allergens".
+ */
+export interface Allergen {
+  id: number;
+  name: string;
+  /**
+   * Teknik ad: energy-kj, fat, vitamin-c, vb.
+   */
+  slug: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1082,6 +1086,10 @@ export interface PayloadLockedDocument {
         value: number | Product;
       } | null)
     | ({
+        relationTo: 'allergens';
+        value: number | Allergen;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -1316,7 +1324,13 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   manufacturer?: T;
   country?: T;
-  ingredients?: T;
+  items?:
+    | T
+    | {
+        ingredients?: T;
+        percent_estimate?: T;
+        id?: T;
+      };
   allergens?: T;
   additives?: T;
   nutrition?:
@@ -1366,6 +1380,16 @@ export interface ProductsSelect<T extends boolean = true> {
   status?: T;
   submittedBy?: T;
   is_submit?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "allergens_select".
+ */
+export interface AllergensSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
   updatedAt?: T;
   createdAt?: T;
 }
