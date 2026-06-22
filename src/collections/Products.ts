@@ -233,7 +233,6 @@ export const Products: CollectionConfig = {
               type: 'relationship',
               relationTo: 'allergens',
               label: 'Alerjenler',
-              required: true,
             },
             {
               name: 'additives',
