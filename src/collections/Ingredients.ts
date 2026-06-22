@@ -36,6 +36,7 @@ export const Ingredients: CollectionConfig = {
     },
     {
       name: 'slug',
+      unique: true,
       type: 'text',
       label: 'Standart Ad',
     },
