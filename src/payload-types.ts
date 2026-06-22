@@ -446,7 +446,7 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
-  allergens: number | Allergen;
+  allergens?: (number | null) | Allergen;
   /**
    * Katkı master listesinden seçim yapın (Örn: E330 Sitrik Asit, E621 MSG).
    */
