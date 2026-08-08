@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { slugify } from '@/lib/slugify'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
@@ -101,16 +102,7 @@ export const Pages: CollectionConfig = {
     beforeValidate: [
       ({ data, operation }) => {
         if (operation === 'create' && data?.title && !data.slug) {
-          data.slug = data.title
-            .toLowerCase()
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ı/g, 'i')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
+          data.slug = slugify(data.title)
         }
         return data
       },

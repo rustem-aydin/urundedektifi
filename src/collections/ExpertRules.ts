@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { invalidateRuleSetCache } from '@/lib/productCase'
+import type { User } from '@/payload-types'
 
 const RULE_TYPES = [
   { label: '📝 İçindekiler listede (dropdown)', value: 'ingredient_text' },
@@ -30,15 +32,15 @@ export const ExpertRules: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes(user?.role || ''),
+    create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
     update: ({ req: { user } }) => {
-      if (['admin', 'editor'].includes(user?.role || '')) return true
-      if (user?.role === 'expert') {
+      if (['admin', 'editor'].includes((user as User | null)?.role || '')) return true
+      if ((user as User | null)?.role === 'expert') {
         return { 'expert.user': { equals: user?.id } } as any
       }
       return false
     },
-    delete: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
+    delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
   fields: [
     {
@@ -318,4 +320,8 @@ export const ExpertRules: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    afterChange: [() => invalidateRuleSetCache()],
+    afterDelete: [() => invalidateRuleSetCache()],
+  },
 }

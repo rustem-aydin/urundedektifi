@@ -2,9 +2,18 @@ import { getPayload } from 'payload'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { CaseCard } from '@/components/CaseCard'
+import { EvidenceTag } from '@/components/EvidenceTag'
+import { VerdictStamp } from '@/components/VerdictStamp'
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
+export const metadata: Metadata = {
+  title: 'Konu',
+}
 
 export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -52,33 +61,62 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       : { docs: [] }
 
   return (
-    <div className="container">
-      <header className="topic-header" style={{ borderTopColor: topic.color || '#374151' }}>
-        <h1>
-          <span className="topic-chip large" style={{ background: topic.color || '#374151' }}>
-            {topic.icon} {topic.name}
-          </span>
+    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <header
+        className="rounded-md border border-border border-l-4 bg-card p-5 shadow-sm"
+        // CMS renkleri serbest biçimde gelir; token dışı tek renk burada, inline stil ile uygulanır
+        style={{ borderLeftColor: (topic as any).color || undefined }}
+      >
+        <EvidenceTag>KONU DOSYASI</EvidenceTag>
+        <h1 className="mt-2 flex items-center gap-2 font-display text-2xl sm:text-3xl">
+          <span aria-hidden="true">{(topic as any).icon}</span>
+          {topic.name}
         </h1>
-        {topic.description && <p className="topic-desc">{topic.description}</p>}
+        {(topic as any).description && (
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            {(topic as any).description}
+          </p>
+        )}
       </header>
 
-      <section>
-        <h2>Bu Konuda Kural Yazan Uzmanlar ({experts.docs.length})</h2>
+      <section aria-labelledby="topic-experts-heading" className="mt-10">
+        <h2 id="topic-experts-heading" className="font-display text-xl">
+          Bu konuda kural yazan uzmanlar ({experts.docs.length})
+        </h2>
         {experts.docs.length === 0 ? (
-          <p>Bu konuda henüz uzman yok.</p>
+          <p className="mt-4 text-sm text-muted-foreground">Bu konuda henüz uzman yok.</p>
         ) : (
-          <div className="experts-grid">
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {experts.docs.map((e: any) => (
-              <Link key={e.id} href={`/uzmanlar/${e.slug}`} className="expert-card-link">
-                <article className="expert-card-large">
-                  {e.avatar?.url && (
-                    <img src={e.avatar.url} alt={e.name} className="expert-avatar" />
+              <Link
+                key={e.id}
+                href={`/uzmanlar/${e.slug}`}
+                className="group rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <CaseCard className="h-full transition-shadow group-hover:shadow-md">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      {e.avatar?.url && (
+                        <img
+                          src={e.avatar.url}
+                          alt={e.name}
+                          className="size-10 rounded-full border border-border object-cover"
+                        />
+                      )}
+                      <CardTitle>{e.name}</CardTitle>
+                    </div>
+                    {e.verified && (
+                      <VerdictStamp variant="safe" className="mt-2">
+                        Doğrulandı
+                      </VerdictStamp>
+                    )}
+                  </CardHeader>
+                  {e.title && (
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{e.title}</p>
+                    </CardContent>
                   )}
-                  <h2>
-                    {e.name} {e.verified && <span className="verified">✓</span>}
-                  </h2>
-                  {e.title && <p className="muted">{e.title}</p>}
-                </article>
+                </CaseCard>
               </Link>
             ))}
           </div>
@@ -86,45 +124,52 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
       </section>
 
       {rules.docs.length > 0 && (
-        <section>
-          <h2>Bu Konudaki Aktif Kurallar ({rules.totalDocs})</h2>
-          <p className="muted">Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.</p>
-          <div className="grid">
+        <section aria-labelledby="topic-rules-heading" className="mt-10">
+          <h2 id="topic-rules-heading" className="font-display text-xl">
+            Bu konudaki aktif kurallar ({rules.totalDocs})
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {rules.docs.map((rule: any) => {
               const expert = rule.expert
               return (
-                <article key={rule.id} className="rule-card">
-                  {rule.rating && (
-                    <span
-                      className="verdict-badge"
-                      style={{
-                        background: rule.rating.color || '#6b7280',
-                        color: '#fff',
-                      }}
-                      title={rule.rating.description || rule.rating.name}
-                    >
-                      {rule.rating.name}
-                    </span>
-                  )}
-                  <h3>{rule.name}</h3>
-                  <p
-                    className="muted"
-                    style={{
-                      fontSize: '0.875rem',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {rule.description}
-                  </p>
-                  {expert?.name && (
-                    <p className="author">
-                      <Link href={`/uzmanlar/${expert.slug}`}>— {expert.name}</Link>
-                    </p>
-                  )}
-                </article>
+                <CaseCard key={rule.id} tape>
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-3">
+                      <EvidenceTag variant="evidence">DELİL</EvidenceTag>
+                      {rule.rating && (
+                        <span
+                          className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"
+                          // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
+                          style={{ color: rule.rating.color || undefined }}
+                          title={rule.rating.description || rule.rating.name}
+                        >
+                          {rule.rating.name}
+                        </span>
+                      )}
+                    </div>
+                    <CardTitle className="mt-2">{rule.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-2">
+                    {rule.description && (
+                      <p className="line-clamp-3 text-sm text-muted-foreground">
+                        {rule.description}
+                      </p>
+                    )}
+                    {expert?.name && (
+                      <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                        <Link
+                          href={`/uzmanlar/${expert.slug}`}
+                          className="hover:text-foreground hover:underline underline-offset-4"
+                        >
+                          — {expert.name}
+                        </Link>
+                      </p>
+                    )}
+                  </CardContent>
+                </CaseCard>
               )
             })}
           </div>

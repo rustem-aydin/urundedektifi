@@ -25,14 +25,18 @@ type Rule = {
 type Product = {
   id: string
   name: string
-  ingredientsAnalyzed?: any[]
+  /** Products.items[] — { ingredients: relationship, percent_estimate }[] */
+  items?: any[]
+  /** Products.additives — düz relationship dizisi (ID[] veya obje[]) */
   additives?: any[]
-  allergens?: string[]
+  /** Products.allergens — 'allergens' collection'ına relationship (slug ile eşleştirilir) */
+  allergens?: any[]
   country?: any
   brand?: any
   category?: any
   labels?: string[]
-  nutritionFacts?: any
+  /** Products.nutrition — { per, items: { nutrient: relationship, amount, unit }[] } */
+  nutrition?: any
 }
 
 export type RatingInfo = {
@@ -80,6 +84,29 @@ function getRelObj(rel: any): any | null {
   return null
 }
 
+function normalizeKey(s: any): string {
+  return String(s ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+}
+
+/** nutrition.items[] içinden nutrient slug/name'ine göre amount bulur */
+function findNutritionAmount(product: Product, field: string): number | undefined {
+  const items = product.nutrition?.items
+  if (!Array.isArray(items)) return undefined
+  const target = normalizeKey(field)
+  for (const item of items) {
+    const nutrient = item?.nutrient
+    if (!nutrient) continue
+    const slug = typeof nutrient === 'object' ? nutrient.slug : null
+    const name = typeof nutrient === 'object' ? nutrient.name : null
+    if (normalizeKey(slug) === target || normalizeKey(name) === target) {
+      return typeof item.amount === 'number' ? item.amount : undefined
+    }
+  }
+  return undefined
+}
+
 function evaluateRule(rule: Rule, product: Product): { matched: boolean; matchedValue?: string } {
   const rt = rule.ruleType
 
@@ -88,8 +115,8 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
       const ing = getRelObj(rule.ingredient)
       if (!ing) return { matched: false }
       const ingId = ing.id
-      const found = product.ingredientsAnalyzed?.some((ia: any) => {
-        const id = getId(ia.ingredient)
+      const found = product.items?.some((ia: any) => {
+        const id = getId(ia?.ingredients)
         return id === ingId
       })
       return found
@@ -100,8 +127,8 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
       const ing = getRelObj(rule.ingredient)
       if (!ing) return { matched: false }
       const ingId = ing.id
-      const found = product.ingredientsAnalyzed?.some((ia: any) => {
-        const id = getId(ia.ingredient)
+      const found = product.items?.some((ia: any) => {
+        const id = getId(ia?.ingredients)
         return id === ingId
       })
       if (found) return { matched: false }
@@ -111,17 +138,19 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
       const additive = getRelObj(rule.additive)
       if (!additive) return { matched: false }
       const addId = additive.id
-      const found = product.additives?.some((a: any) => {
-        const id = getId(a.additive)
-        return id === addId
-      })
+      const found = product.additives?.some((a: any) => getId(a) === addId)
       return found
         ? { matched: true, matchedValue: `${additive.code} (${additive.name}) içeriyor` }
         : { matched: false }
     }
     case 'allergen': {
       if (!rule.allergen) return { matched: false }
-      const found = product.allergens?.some((a: string) => a === rule.allergen)
+      const target = normalizeKey(rule.allergen)
+      const found = product.allergens?.some((a: any) => {
+        if (typeof a === 'string') return normalizeKey(a) === target
+        const slug = a?.slug ?? a?.name
+        return normalizeKey(slug) === target
+      })
       return found
         ? { matched: true, matchedValue: `Alerjen içeriyor: ${rule.allergen}` }
         : { matched: false }
@@ -168,7 +197,7 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
     case 'nutrition_max': {
       const field = rule.nutritionField
       if (!field) return { matched: false }
-      const val = product.nutritionFacts?.[field]
+      const val = findNutritionAmount(product, field)
       if (typeof val === 'number' && val > (rule.nutritionThreshold || 0)) {
         return {
           matched: true,
@@ -180,7 +209,7 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
     case 'nutrition_min': {
       const field = rule.nutritionField
       if (!field) return { matched: false }
-      const val = product.nutritionFacts?.[field]
+      const val = findNutritionAmount(product, field)
       if (typeof val === 'number' && val < (rule.nutritionThreshold || 0)) {
         return {
           matched: true,
@@ -222,30 +251,34 @@ function normalizeRating(raw: any): RatingInfo | undefined {
   return undefined
 }
 
-export async function evaluateProductRules(
-  payload: Payload,
-  product: Product,
-): Promise<VerdictResult> {
-  const result: VerdictResult = { byTopic: [], byExpert: [], totalMatched: 0 }
-
-  let allRules: any
+/**
+ * Aktif uzman kurallarını tek sorguda yükler.
+ * getProductCase / listProductCases bunu bir kez çağırır;
+ * eşleştirme bellek içinde yapılır (N+1 yok).
+ */
+export async function loadRuleSet(payload: Payload): Promise<Rule[]> {
   try {
-    allRules = await payload.find({
+    const allRules = await payload.find({
       collection: 'expert-rules',
       where: { isActive: { equals: true } },
       limit: 2000,
       depth: 1,
     })
+    return allRules.docs as any as Rule[]
   } catch (e) {
     console.error('Kurallar yüklenemedi', e)
-    return result
+    return []
   }
+}
+
+/** Saf eşleştirme: ürün + önceden yüklenmiş kural seti → hüküm. DB erişimi yok. */
+export function evaluateProduct(product: Product, rules: Rule[]): VerdictResult {
+  const result: VerdictResult = { byTopic: [], byExpert: [], totalMatched: 0 }
 
   const topicMap: Record<string, TopicVerdict> = {}
   const expertMap: Record<string, ExpertVerdict> = {}
-  const allRatings = new Set<string>()
 
-  for (const rule of allRules.docs as any as Rule[]) {
+  for (const rule of rules) {
     const { matched, matchedValue } = evaluateRule(rule, product)
     if (!matched) continue
 
@@ -274,7 +307,6 @@ export async function evaluateProductRules(
         : null
 
     const rating = normalizeRating(rule.rating)
-    if (rating) allRatings.add(rating.id)
 
     const matchedRule: MatchedRule = {
       ...rule,
@@ -322,4 +354,13 @@ export async function evaluateProductRules(
   result.byExpert.sort((a, b) => a.expert.name.localeCompare(b.expert.name, 'tr'))
 
   return result
+}
+
+/** Geriye dönük uyumluluk: tek ürün için kural setini kendisi yükler. */
+export async function evaluateProductRules(
+  payload: Payload,
+  product: Product,
+): Promise<VerdictResult> {
+  const rules = await loadRuleSet(payload)
+  return evaluateProduct(product, rules)
 }

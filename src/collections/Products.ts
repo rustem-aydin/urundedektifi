@@ -1,6 +1,9 @@
 import type { CollectionConfig } from 'payload'
 import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
+import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
+import { getProductCase, invalidateProductCaseCache } from '@/lib/productCase'
+import type { User } from '@/payload-types'
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -18,15 +21,27 @@ export const Products: CollectionConfig = {
   access: {
     read: () => true,
     create: () => true,
-    update: () => true,
-    delete: () => true,
+    update: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
+    delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
-  // access: {
-  //   read: () => true,
-  //   create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes(user?.role || ''),
-  //   update: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
-  //   delete: ({ req: { user } }) => user?.role === 'admin',
-  // },
+
+  endpoints: [
+    {
+      path: '/case/:barcode',
+      method: 'get',
+      handler: async (req) => {
+        const barcode = req.routeParams?.barcode as string | undefined
+        if (!barcode) {
+          return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+        }
+        const productCase = await getProductCase(req.payload, barcode)
+        if (!productCase) {
+          return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+        }
+        return Response.json(productCase)
+      },
+    },
+  ],
 
   fields: [
     {
@@ -591,107 +606,93 @@ export const Products: CollectionConfig = {
       name: 'is_submit',
       type: 'checkbox',
       label: 'Bakıldı mı?',
+      admin: {
+        position: 'sidebar',
+        description: 'Editör tarafından incelendi olarak işaretle.',
+      },
     },
   ],
-  // hooks: {
-  //   beforeChange: [
-  //     async ({ data, req, operation }) => {
-  //       // submittedBy ataması
-  //       if (operation === 'create' && req.user) {
-  //         data.submittedBy = req.user.id
-  //       }
+  hooks: {
+    afterChange: [
+      ({ doc }) => {
+        invalidateProductCaseCache(doc?.barcode)
+      },
+    ],
+    afterDelete: [
+      ({ doc }) => {
+        invalidateProductCaseCache(doc?.barcode)
+      },
+    ],
+    beforeValidate: [
+      ({ data, operation }) => {
+        // Otomatik slug üretimi
+        if (operation === 'create' && data?.name && !data.slug) {
+          data.slug = slugify(data.name)
+        }
+        return data
+      },
+    ],
+    beforeChange: [
+      async ({ data, req, operation }) => {
+        // submittedBy ataması
+        if (operation === 'create' && req.user) {
+          data.submittedBy = req.user.id
+        }
 
-  //       // ✅ BARKOD KONTROLÜ
-  //       if (operation === 'create' && data?.barcode && req.payload) {
-  //         const existing = await req.payload.find({
-  //           collection: 'products',
-  //           where: { barcode: { equals: data.barcode } },
-  //           limit: 1,
-  //           depth: 0,
-  //         })
+        // Ülke tespiti (barkod GS1 prefix'inden)
+        if (operation === 'create' && data?.barcode && !data.country && req.payload) {
+          const detected = detectCountryFromBarcode(String(data.barcode))
+          if (detected) {
+            const result = await req.payload.find({
+              collection: 'countries',
+              where: { name: { equals: detected.country } },
+              limit: 1,
+              depth: 0,
+            })
+            if (result.docs[0]) {
+              data.country = result.docs[0].id
+              req.payload.logger.info(
+                `Barkod ${data.barcode} → ülke otomatik atandı: ${detected.country}`,
+              )
+            }
+          }
+        }
 
-  //         if (existing.docs.length > 0) {
-  //           const product = existing.docs[0]
-  //           throw new Error(
-  //             `⚠️ BU BARKOD ZATEN KAYITLI!\n\n` +
-  //               `Ürün: "${product.name}"\n` +
-  //               `ID: ${product.id}\n\n` +
-  //               `Lütfen mevcut ürünü düzenleyin veya farklı barkod girin.`,
-  //           )
-  //         }
-  //       }
+        // Fiyat sıralama (en yeni önce, maks 10 kayıt)
+        if (data?.prices && Array.isArray(data.prices)) {
+          const dated = data.prices
+            .filter((p: any) => p?.date)
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 10)
+          const undated = data.prices.filter((p: any) => !p?.date)
+          data.prices = [...dated, ...undated]
+        }
 
-  //       // Ülke tespiti
-  //       if (operation === 'create' && data?.barcode && !data.country && req.payload) {
-  //         const detected = detectCountryFromBarcode(data.barcode)
-  //         if (detected) {
-  //           const result = await req.payload.find({
-  //             collection: 'countries',
-  //             where: { name: { equals: detected.country } },
-  //             limit: 1,
-  //             depth: 0,
-  //           })
-  //           if (result.docs[0]) {
-  //             data.country = result.docs[0].id
-  //             req.payload.logger.info(
-  //               `🌍 Barkod ${data.barcode} prefix'i (${detected.prefix}) → ülke otomatik atandı: ${detected.country}`,
-  //             )
-  //           }
-  //         }
-  //       }
-
-  //       // Fiyat sıralama
-  //       if (data?.prices && Array.isArray(data.prices)) {
-  //         const dated = data.prices
-  //           .filter((p: any) => p?.date)
-  //           .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  //           .slice(0, 10)
-  //         const undated = data.prices.filter((p: any) => !p?.date)
-  //         data.prices = [...dated, ...undated]
-  //       }
-
-  //       return data
-  //     },
-  //   ],
-  //   beforeValidate: [
-  //     ({ data, operation }) => {
-  //       if (operation === 'create' && data?.name && !data.slug) {
-  //         data.slug = data.name
-  //           .toLowerCase()
-  //           .replace(/ğ/g, 'g')
-  //           .replace(/ü/g, 'u')
-  //           .replace(/ş/g, 's')
-  //           .replace(/ı/g, 'i')
-  //           .replace(/ö/g, 'o')
-  //           .replace(/ç/g, 'c')
-  //           .replace(/[^a-z0-9]+/g, '-')
-  //           .replace(/(^-|-$)/g, '')
-  //       }
-  //       return data
-  //     },
-  //   ],
-  //   beforeOperation: [
-  //     ({ args, operation }) => {
-  //       if (operation !== 'create' && operation !== 'update') return
-  //       const data = (args.data as any) || {}
-  //       const images = [
-  //         data.frontImage,
-  //         data.ingredientsImage,
-  //         data.nutritionImage,
-  //         data.recyclingImage,
-  //       ]
-  //       const categorizedCount = images.filter(Boolean).length
-  //       const additionalCount = Array.isArray(data.additionalImages)
-  //         ? data.additionalImages.length
-  //         : 0
-  //       const total = categorizedCount + additionalCount
-  //       if (total > 6) {
-  //         throw new Error(`En fazla 6 fotoğraf eklenebilir. Şu an ${total} fotoğraf var.`)
-  //       }
-  //       if (Array.isArray(data.prices) && data.prices.length > 10) {
-  //         throw new Error(`En fazla 10 fiyat kaydı eklenebilir.`)
-  //       }
-  //     },
-  //   ],
-  // },
+        return data
+      },
+    ],
+    beforeOperation: [
+      ({ args, operation }) => {
+        if (operation !== 'create' && operation !== 'update') return
+        const data = (args.data as any) || {}
+        const images = [
+          data.frontImage,
+          data.ingredientsImage,
+          data.nutritionImage,
+          data.recyclingImage,
+        ]
+        const categorizedCount = images.filter(Boolean).length
+        const additionalCount = Array.isArray(data.additionalImages)
+          ? data.additionalImages.length
+          : 0
+        const total = categorizedCount + additionalCount
+        if (total > 6) {
+          throw new Error(`En fazla 6 fotoğraf eklenebilir. Şu an ${total} fotoğraf var.`)
+        }
+        if (Array.isArray(data.prices) && data.prices.length > 10) {
+          throw new Error(`En fazla 10 fiyat kaydı eklenebilir.`)
+        }
+      },
+    ],
+  },
 }

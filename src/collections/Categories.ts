@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { slugify } from '@/lib/slugify'
+import type { User } from '@/payload-types'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -14,13 +16,10 @@ export const Categories: CollectionConfig = {
       'Ürünlerin tip kategorileri (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik yapıdadır — alt kategori eklenebilir.',
   },
   access: {
-    create: () => true,
-    delete: ({ req: { user } }) => user?.role === 'admin',
-    update: ({ req: { user }, id }) => {
-      if (user?.role === 'admin') return true
-      return user?.id === id
-    },
     read: () => true,
+    create: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
+    update: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
+    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
   fields: [
     {
@@ -89,16 +88,7 @@ export const Categories: CollectionConfig = {
     beforeValidate: [
       ({ data, operation }) => {
         if (operation === 'create' && data?.name && !data.slug) {
-          data.slug = data.name
-            .toLowerCase()
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ı/g, 'i')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
+          data.slug = slugify(data.name)
         }
         return data
       },

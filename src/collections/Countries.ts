@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import type { User } from '@/payload-types'
 
 export const Countries: CollectionConfig = {
   slug: 'countries',
@@ -14,13 +15,10 @@ export const Countries: CollectionConfig = {
       'Üretim yeri ülkelerin master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "İsrail menşeli ürünler → Boykot" kuralı). "code" alanı GS1 barkod prefixidir (3 hane).',
   },
   access: {
-    create: () => true,
-    delete: ({ req: { user } }) => user?.role === 'admin',
-    update: ({ req: { user }, id }) => {
-      if (user?.role === 'admin') return true
-      return user?.id === id
-    },
     read: () => true,
+    create: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
+    update: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
+    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
   fields: [
     {

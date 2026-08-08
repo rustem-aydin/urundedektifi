@@ -1,19 +1,23 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { getProduct } from '@/actions/product'
 import { GeneratedForm } from './AddProduct'
-import { Brand, Category, Product } from '@/payload-types'
+import { VerdictStamp } from '@/components/VerdictStamp'
+import { EvidenceTag } from '@/components/EvidenceTag'
+import { Button } from '@/components/ui/button'
 export const dynamic = 'force-dynamic'
 
 export default function BarcodeScanner() {
+  const router = useRouter()
   const scannerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor...')
   const [isChecking, setIsChecking] = useState(false)
   const [scannedBarcode, setScannedBarcode] = useState<string>('')
-  const [productData, setProductData] = useState<Product | null>(null)
   const [isNotFound, setIsNotFound] = useState(false)
 
   useEffect(() => {
@@ -73,16 +77,19 @@ export default function BarcodeScanner() {
       }
 
       if (result && result.docs && result.docs.length > 0) {
-        setProductData(result?.docs[0] as Product)
-        setCameraStatus('✅ Ürün bulundu!')
+        setCameraStatus('Ürün bulundu!')
+        toast.success('Ürün bulundu, dosyası açılıyor.')
+        router.push(`/urun/${barcodeText}`)
       } else {
         setIsNotFound(true)
-        setCameraStatus('⚠️ Ürün bulunamadı!')
+        setCameraStatus('Ürün bulunamadı!')
+        toast.error('Ürün bulunamadı — ilk ekleyen siz olun.')
       }
     } catch (error) {
       console.error('Sorgulama hatası:', error)
       setError('Ürün sorgulanırken bir hata oluştu!')
       setCameraStatus('Hata oluştu, tekrar deneniyor...')
+      toast.error('Ürün sorgulanırken bir hata oluştu!')
 
       setTimeout(() => {
         if (scannerRef.current && isReady) {
@@ -147,6 +154,7 @@ export default function BarcodeScanner() {
         scannerRef.current.stop().catch(console.error)
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady])
 
   // Ürün bulunamadı → GeneratedForm göster
@@ -154,89 +162,42 @@ export default function BarcodeScanner() {
     return <GeneratedForm barcode={scannedBarcode} />
   }
 
-  // Ürün bulundu → Ürün bilgilerini göster
-  if (productData) {
-    return (
-      <div className="p-6 max-w-md mx-auto bg-white rounded-lg shadow-lg">
-        <div className="text-center mb-6">
-          <div className="text-green-500 text-5xl mb-3">✅</div>
-          <h2 className="text-xl font-bold text-gray-800">Ürün Bulundu</h2>
-          <p className="text-sm text-gray-500 mt-1">Barkod: {scannedBarcode}</p>
-        </div>
-
-        <div className="space-y-3">
-          {productData.name && (
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <span className="text-xs text-gray-500">Ürün Adı</span>
-              <p className="font-semibold text-gray-800">{productData.name}</p>
-            </div>
-          )}
-          {productData.brand && (
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <span className="text-xs text-gray-500">Marka</span>
-              <p className="font-semibold text-gray-800">{(productData.brand as Brand).name}</p>
-            </div>
-          )}
-          {productData.category && (
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <span className="text-xs text-gray-500">Kategori</span>
-              <p className="font-semibold text-gray-800">
-                {(productData.category as Category).name}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={() => {
-              setProductData(null)
-              setScannedBarcode('')
-              setIsNotFound(false)
-              restartScanner()
-            }}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Yeni Tarat
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   // Hata durumu
   if (error) {
     return (
-      <div className="p-4 bg-red-100 border border-red-400 rounded">
-        <p className="text-red-700 font-bold">Hata:</p>
-        <p className="text-red-600">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
+      <div className="mx-auto flex w-full max-w-md flex-col items-start gap-4 rounded-md border border-border bg-card p-5">
+        <VerdictStamp variant="danger">Hata</VerdictStamp>
+        <p className="text-sm text-muted-foreground">{error}</p>
+        <Button variant="outline" onClick={() => window.location.reload()}>
           Tekrar Dene
-        </button>
+        </Button>
       </div>
     )
   }
 
   // Tarayıcı aktif
   return (
-    <div className="flex flex-col items-center">
-      <div className="mb-4 text-center">
-        <div className={`text-sm font-medium ${isChecking ? 'text-yellow-600' : 'text-gray-600'}`}>
+    <div className="flex flex-col items-center gap-4">
+      <div className="flex items-center gap-3">
+        <span
+          className={`font-mono text-xs tracking-[0.18em] uppercase ${
+            isChecking ? 'text-stamp' : 'text-muted-foreground'
+          }`}
+        >
           {cameraStatus}
-        </div>
+        </span>
         {isChecking && (
-          <div className="mt-2 flex justify-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-          </div>
+          <span className="size-4 animate-spin rounded-full border-2 border-border border-b-stamp" />
         )}
       </div>
-      <div id="reader" style={{ width: '100%', maxWidth: '500px' }}></div>
-      <div className="mt-4 text-xs text-gray-500 text-center">
-        Barkodu kameraya gösterin, otomatik olarak algılanacaktır.
+      <div className="relative w-full max-w-[500px]">
+        <div id="reader" className="w-full overflow-hidden rounded-md border border-border" />
+        <span
+          aria-hidden="true"
+          className="animate-scanline pointer-events-none absolute inset-x-3 top-0 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100%]"
+        />
       </div>
+      <EvidenceTag>Barkodu kameraya gösterin</EvidenceTag>
     </div>
   )
 }

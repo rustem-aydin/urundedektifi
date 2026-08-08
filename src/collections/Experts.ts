@@ -1,4 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { slugify } from '@/lib/slugify'
+import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
   slug: 'experts',
@@ -15,15 +17,15 @@ export const Experts: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
+    create: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
     update: ({ req: { user } }) => {
-      if (['admin', 'editor'].includes(user?.role || '')) return true
-      if (user?.role === 'expert') {
+      if (['admin', 'editor'].includes((user as User | null)?.role || '')) return true
+      if ((user as User | null)?.role === 'expert') {
         return { user: { equals: user?.id } } as any
       }
       return false
     },
-    delete: ({ req: { user } }) => user?.role === 'admin',
+    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
   fields: [
     {
@@ -190,16 +192,7 @@ export const Experts: CollectionConfig = {
     beforeValidate: [
       ({ data, operation }) => {
         if (operation === 'create' && data?.name && !data.slug) {
-          data.slug = data.name
-            .toLowerCase()
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ı/g, 'i')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
+          data.slug = slugify(data.name)
         }
         return data
       },

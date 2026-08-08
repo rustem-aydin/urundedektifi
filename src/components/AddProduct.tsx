@@ -84,7 +84,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.value)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Ürüne ait baarcode"
+                  placeholder="Ürüne ait barkod"
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -106,7 +106,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.value)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder="Ürün adı"
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -153,9 +153,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandInput placeholder="Aramak için yazın..." className="h-10" />
                         <CommandList>
-                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
                           <CommandGroup>
                             {options.map(({ label, value }) => (
                               <CommandItem
@@ -224,9 +224,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandInput placeholder="Aramak için yazın..." className="h-10" />
                         <CommandList>
-                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
                           <CommandGroup>
                             {options.map(({ label, value }) => (
                               <CommandItem
@@ -295,7 +295,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.value)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder=""
                 />
                 <FieldDescription>
                   Ürünün fiziksel olarak üretildiği ülke. Barkod girildiğinde GS1 prefix\'inden (ilk
@@ -576,9 +576,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandInput placeholder="Aramak için yazın..." className="h-10" />
                         <CommandList>
-                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
                           <CommandGroup>
                             {options.map(({ label, value }) => (
                               <CommandItem
@@ -629,7 +629,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       >
                         {field.value
                           ? field.options.find((option: any) => option.value === field.value)?.label
-                          : 'tap to search language'}
+                          : 'Dil seçiniz'}
                         <ChevronsUpDown className="opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -638,9 +638,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandInput placeholder="Aramak için yazın..." className="h-10" />
                         <CommandList>
-                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
                           <CommandGroup>
                             {options.map(({ label, value }) => (
                               <CommandItem
@@ -712,9 +712,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                       align="start"
                     >
                       <Command>
-                        <CommandInput placeholder="tap to search..." className="h-10" />
+                        <CommandInput placeholder="Aramak için yazın..." className="h-10" />
                         <CommandList>
-                          <CommandEmpty>No items found.</CommandEmpty>
+                          <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
                           <CommandGroup>
                             {options.map(({ label, value }) => (
                               <CommandItem
@@ -855,7 +855,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.valueAsNumber)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder=""
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -1009,7 +1009,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.valueAsNumber)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder=""
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -1031,7 +1031,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.valueAsNumber)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder=""
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -1053,7 +1053,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
                     field.onChange(e.target.valueAsNumber)
                   }}
                   aria-invalid={fieldState.invalid}
-                  placeholder="Enter your text"
+                  placeholder=""
                 />
 
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -1102,7 +1102,7 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
 
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select an option" />
+                      <SelectValue placeholder="Bir seçenek belirleyin" />
                     </SelectTrigger>
                     <SelectContent>
                       {options.map((option) => (
@@ -1144,9 +1144,9 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
           >
             <Check className="size-8" />
           </motion.div>
-          <h2 className="text-center text-2xl text-pretty font-bold mb-2">Thank you</h2>
+          <h2 className="text-center text-2xl text-pretty font-bold mb-2">Teşekkürler</h2>
           <p className="text-center text-lg text-pretty text-muted-foreground">
-            Form submitted successfully, we will get back to you soon
+            Kaydınız alındı — dosya incelendikten sonra yayına alınacak.
           </p>
         </motion.div>
       </div>
@@ -1171,13 +1171,13 @@ export function GeneratedForm({ barcode }: { barcode: string }) {
             <FormFooter>
               <PreviousButton>
                 <ChevronLeft />
-                Previous
+                Geri
               </PreviousButton>
               <NextButton>
-                Next <ChevronRight />
+                İleri <ChevronRight />
               </NextButton>
               <SubmitButton type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit'}
+                {isSubmitting ? 'Gönderiliyor…' : 'Dosyayı Gönder'}
               </SubmitButton>
             </FormFooter>
           </MultiStepFormContent>

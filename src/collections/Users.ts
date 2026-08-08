@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import type { User } from '@/payload-types'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -19,13 +20,13 @@ export const Users: CollectionConfig = {
     description: 'Sistem kullanıcıları. Admin, editör, uzman ve normal üye olabilirler.',
   },
   access: {
-    create: ({ req: { user } }) => user?.role === 'admin',
-    delete: ({ req: { user } }) => user?.role === 'admin',
+    create: ({ req: { user } }) => (user as User | null)?.role === 'admin',
+    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
     update: ({ req: { user }, id }) => {
-      if (user?.role === 'admin') return true
+      if ((user as User | null)?.role === 'admin') return true
       return user?.id === id
     },
-    read: ({ req: { user } }) => user?.role === 'admin',
+    read: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
   fields: [
     {
@@ -50,7 +51,7 @@ export const Users: CollectionConfig = {
         { label: 'Kullanıcı (Standart üye)', value: 'user' },
       ],
       access: {
-        update: ({ req: { user } }) => user?.role === 'admin',
+        update: ({ req: { user } }) => (user as User | null)?.role === 'admin',
       },
       admin: {
         position: 'sidebar',

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import type { User } from '@/payload-types'
 
 export const RatingScales: CollectionConfig = {
   slug: 'rating-scales',
@@ -16,15 +17,15 @@ export const RatingScales: CollectionConfig = {
   access: {
     read: () => true,
     create: ({ req: { user } }) =>
-      ['admin', 'editor', 'expert'].includes(user?.role || ''),
+      ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
     update: ({ req: { user } }) => {
-      if (['admin', 'editor'].includes(user?.role || '')) return true
-      if (user?.role === 'expert') {
+      if (['admin', 'editor'].includes((user as User | null)?.role || '')) return true
+      if ((user as User | null)?.role === 'expert') {
         return { 'expert.user': { equals: user?.id } } as any
       }
       return false
     },
-    delete: ({ req: { user } }) => ['admin', 'editor'].includes(user?.role || ''),
+    delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
   fields: [
     {

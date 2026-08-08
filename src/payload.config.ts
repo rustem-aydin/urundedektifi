@@ -5,7 +5,10 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import { s3Storage } from '@payloadcms/storage-s3'
+import { mcpPlugin } from '@payloadcms/plugin-mcp'
 import { tr } from '@payloadcms/translations/languages/tr'
+
+import { mcpProductsPluginOptions } from './lib/mcpOptions'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
@@ -86,6 +89,7 @@ export default buildConfig({
         forcePathStyle: true,
       },
     }),
+    mcpPlugin(mcpProductsPluginOptions),
   ],
   graphQL: {
     disable: false,
