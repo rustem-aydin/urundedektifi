@@ -1,6 +1,5 @@
-import { createRequire } from 'module'
-
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp'
+import { z as zod3 } from 'zod3'
 
 import { getProductCase } from './productCase'
 
@@ -8,17 +7,8 @@ type ZodRawShape = NonNullable<
   NonNullable<NonNullable<MCPPluginConfig['mcp']>['tools']>[number]['parameters']
 >
 
-// Root zod is v4 but the plugin's ZodRawShape expects its own zod v3 — resolve zod from the plugin's dependencies
-const require = createRequire(import.meta.url)
-const pluginZodPath = require.resolve('zod', {
-  paths: [require.resolve('@payloadcms/plugin-mcp')],
-})
-const { z } = require(pluginZodPath) as {
-  z: {
-    object: (shape: Record<string, unknown>) => { shape: ZodRawShape }
-    string: () => { describe: (description: string) => unknown }
-  }
-}
+// Root zod is v4 but the plugin's ZodRawShape expects its own zod v3 — alias `zod3` resolves to zod@3.25.76 via package.json
+const z = zod3
 
 export const mcpProductsPluginOptions: MCPPluginConfig = {
   collections: {
