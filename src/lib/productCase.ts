@@ -1,6 +1,12 @@
 import type { Payload } from 'payload'
 import { LRUCache } from 'lru-cache'
-import { evaluateProduct, loadRuleSet, type VerdictResult } from './verdictEngine'
+import {
+  evaluateProduct,
+  evaluateRule,
+  loadRuleSet,
+  type Rule,
+  type VerdictResult,
+} from './verdictEngine'
 
 /**
  * Ürün Dosyası — barkoda ait derin, sunuma hazır paket.
@@ -43,7 +49,7 @@ export type ProductCase = {
   nutriscore: string | null
   labels: { value: string; name: string }[]
   gallery: GalleryImage[]
-  ingredients: { name: string; pct: number | null }[]
+  ingredients: { name: string; slug: string | null; pct: number | null }[]
   additives: { code?: string; name?: string }[]
   allergens: string[]
   nutrition: {
@@ -150,6 +156,7 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
   const ingredients = (product.items || [])
     .map((it: any) => ({
       name: relObj(it?.ingredients)?.name ?? null,
+      slug: relObj(it?.ingredients)?.slug ?? null,
       pct: typeof it?.percent_estimate === 'number' ? it.percent_estimate : null,
     }))
     .filter((it: any) => it.name)
@@ -358,4 +365,26 @@ export async function listProductCases(
   const rules = await getCachedRuleSet(payload)
   const docs = products.docs.map((p) => toProductCase(p, rules))
   return { docs, totalDocs: products.totalDocs }
+}
+
+/**
+ * Yayındaki ürünlerden tek bir kurala takılanları Dosya'ya çevirir.
+ * Kural detay sayfası ve `/api/expert-rules/:id/products` ucu bunu kullanır;
+ * eşleştirme `verdictEngine`'in tek kaynağından gelir (kopya mantık yok).
+ */
+export async function listProductsMatchingRule(
+  payload: Payload,
+  rule: Rule,
+): Promise<ProductCase[]> {
+  const products = await payload.find({
+    collection: 'products',
+    where: { status: { equals: 'published' } },
+    limit: 500,
+    depth: 2,
+    select: PRODUCT_SELECT,
+  })
+
+  return products.docs
+    .filter((product) => evaluateRule(rule, product).matched)
+    .map((product) => toProductCase(product, [rule]))
 }

@@ -1,9 +1,11 @@
 import { getPayload } from 'payload'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { VerdictStamp } from '@/components/VerdictStamp'
@@ -141,7 +143,12 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
                     )}
                   </div>
                   <div className="flex flex-col gap-2 px-4 pb-4">
-                    <p className="font-medium">{r.name}</p>
+                    <Link
+                      href={`/kural/${r.id}`}
+                      className="font-medium underline-offset-4 hover:underline"
+                    >
+                      {r.name}
+                    </Link>
                     <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
                       {ruleTypeLabel(r.ruleType)}
                       {r.topic && typeof r.topic === 'object' && (
@@ -169,22 +176,4 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
       </section>
     </div>
   )
-}
-
-function ruleTypeLabel(rt: string): string {
-  const labels: Record<string, string> = {
-    ingredient_text: 'İçindekilerde ara',
-    ingredient_excludes: 'İçindekilerde olmamalı',
-    additive_code: 'Katkı kodu',
-    allergen: 'Alerjen',
-    country: 'Ülke',
-    brand: 'Marka',
-    brand_boycotted: 'Marka boykotlu',
-    category: 'Kategori',
-    nutrition_max: 'Besin değeri üstünde',
-    nutrition_min: 'Besin değeri altında',
-    label_has: 'Etiket mevcut',
-    label_missing: 'Etiket eksik',
-  }
-  return labels[rt] || rt
 }

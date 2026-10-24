@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 
-type Rule = {
-  id: string
+export type Rule = {
+  id: string | number
   name: string
   expert: any
   topic: any
@@ -12,29 +12,29 @@ type Rule = {
   brand?: any
   country?: any
   productType?: any
-  allergen?: string
-  label?: string
-  nutritionField?: string
-  nutritionThreshold?: number
+  allergen?: string | null
+  label?: string | null
+  nutritionField?: string | null
+  nutritionThreshold?: number | null
   description: string
-  evidence?: any[]
-  sources?: any[]
-  isActive: boolean
+  evidence?: any[] | null
+  sources?: any[] | null
+  isActive?: boolean | null
 }
 
-type Product = {
-  id: string
-  name: string
+export type Product = {
+  id: string | number
+  name?: string | null
   /** Products.items[] — { ingredients: relationship, percent_estimate }[] */
-  items?: any[]
+  items?: any[] | null
   /** Products.additives — düz relationship dizisi (ID[] veya obje[]) */
-  additives?: any[]
-  /** Products.allergens — 'allergens' collection'ına relationship (slug ile eşleştirilir) */
-  allergens?: any[]
+  additives?: any[] | null
+  /** Products.allergens — tek ilişki (kodda diziye normalize edilir) */
+  allergens?: any
   country?: any
   brand?: any
   category?: any
-  labels?: string[]
+  labels?: string[] | null
   /** Products.nutrition — { per, items: { nutrient: relationship, amount, unit }[] } */
   nutrition?: any
 }
@@ -107,7 +107,7 @@ function findNutritionAmount(product: Product, field: string): number | undefine
   return undefined
 }
 
-function evaluateRule(rule: Rule, product: Product): { matched: boolean; matchedValue?: string } {
+export function evaluateRule(rule: Rule, product: Product): { matched: boolean; matchedValue?: string } {
   const rt = rule.ruleType
 
   switch (rt) {

@@ -272,10 +272,23 @@ export default async function ProductDetailPage({
                 <ul className="flex flex-wrap gap-2">
                   {product.ingredients.map((it, i) => (
                     <li key={i}>
-                      <EvidenceTag>
-                        {it.name}
-                        {it.pct !== null && <span className="text-faded">%{it.pct}</span>}
-                      </EvidenceTag>
+                      {it.slug ? (
+                        <Link
+                          href={`/icerik/${it.slug}`}
+                          title={`${it.name} kuralını gör`}
+                          className="inline-flex"
+                        >
+                          <EvidenceTag>
+                            {it.name}
+                            {it.pct !== null && <span className="text-faded">%{it.pct}</span>}
+                          </EvidenceTag>
+                        </Link>
+                      ) : (
+                        <EvidenceTag>
+                          {it.name}
+                          {it.pct !== null && <span className="text-faded">%{it.pct}</span>}
+                        </EvidenceTag>
+                      )}
                     </li>
                   ))}
                 </ul>

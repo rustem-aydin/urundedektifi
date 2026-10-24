@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { invalidateRuleSetCache } from '@/lib/productCase'
+import { invalidateRuleSetCache, listProductsMatchingRule } from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 const RULE_TYPES = [
@@ -42,6 +42,30 @@ export const ExpertRules: CollectionConfig = {
     },
     delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
+  endpoints: [
+    {
+      // Kuralın eşleştiği yayındaki ürünler — kural detay sayfası ve mobil ekran kullanır.
+      path: '/:id/products',
+      method: 'get',
+      handler: async (req) => {
+        const rawId = req.routeParams?.id
+        const id = typeof rawId === 'string' || typeof rawId === 'number' ? rawId : null
+        if (!id) {
+          return Response.json({ error: 'Kural kimliği gerekli' }, { status: 400 })
+        }
+
+        const rule = await req.payload
+          .findByID({ collection: 'expert-rules', id, depth: 2 })
+          .catch(() => null)
+        if (!rule) {
+          return Response.json({ error: 'Kural bulunamadı' }, { status: 404 })
+        }
+
+        const products = await listProductsMatchingRule(req.payload, rule)
+        return Response.json({ rule, products })
+      },
+    },
+  ],
   fields: [
     {
       name: 'name',
