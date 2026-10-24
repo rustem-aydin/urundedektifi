@@ -31,6 +31,19 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
   const topic = rule.topic && typeof rule.topic === 'object' ? rule.topic : null
   const expert = rule.expert && typeof rule.expert === 'object' ? rule.expert : null
 
+  // `sources` ve `evidence` aynı bağlantıyı taşıyabilir: URL'e göre tekilleştir.
+  const seenUrls = new Set<string>()
+  const links = [
+    ...(rule.sources || []).map((source) => ({ title: source.title, url: source.url })),
+    ...(rule.evidence || [])
+      .filter((item) => item.type === 'link' && item.url)
+      .map((item) => ({ title: item.caption || item.url || '', url: item.url || '' })),
+  ].filter((link) => {
+    if (!link.url || seenUrls.has(link.url)) return false
+    seenUrls.add(link.url)
+    return true
+  })
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
       {expert?.slug ? (
@@ -76,38 +89,24 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
           <p className="whitespace-pre-line text-sm text-muted-foreground">{rule.description}</p>
         ) : null}
 
-        {(rule.sources?.length || rule.evidence?.length) && (
+        {links.length > 0 && (
           <div className="flex flex-col gap-2 border-t border-border pt-3">
             <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
               Kaynaklar
             </p>
             <ul className="flex flex-col gap-1 text-sm">
-              {(rule.sources || []).map((source, index) => (
-                <li key={`source-${index}`}>
+              {links.map((link, index) => (
+                <li key={`link-${index}`}>
                   <a
-                    href={source.url}
+                    href={link.url}
                     target="_blank"
                     rel="noreferrer"
                     className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                   >
-                    {source.title}
+                    {link.title}
                   </a>
                 </li>
               ))}
-              {(rule.evidence || []).map((item, index) =>
-                item.type === 'link' && item.url ? (
-                  <li key={`evidence-${index}`}>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-                    >
-                      {item.caption || item.url}
-                    </a>
-                  </li>
-                ) : null,
-              )}
             </ul>
           </div>
         )}
