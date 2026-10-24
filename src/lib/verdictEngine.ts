@@ -146,10 +146,17 @@ function evaluateRule(rule: Rule, product: Product): { matched: boolean; matched
     case 'allergen': {
       if (!rule.allergen) return { matched: false }
       const target = normalizeKey(rule.allergen)
-      const found = product.allergens?.some((a: any) => {
+      // `allergens` koleksiyonda tek ilişki; eski veri dizisi gelebilir.
+      const allergenRelations = Array.isArray(product.allergens)
+        ? product.allergens
+        : product.allergens
+          ? [product.allergens]
+          : []
+      const found = allergenRelations.some((a: unknown) => {
         if (typeof a === 'string') return normalizeKey(a) === target
-        const slug = a?.slug ?? a?.name
-        return normalizeKey(slug) === target
+        if (!a || typeof a !== 'object') return false
+        const candidate = 'slug' in a ? a.slug : 'name' in a ? a.name : null
+        return normalizeKey(typeof candidate === 'string' ? candidate : null) === target
       })
       return found
         ? { matched: true, matchedValue: `Alerjen içeriyor: ${rule.allergen}` }

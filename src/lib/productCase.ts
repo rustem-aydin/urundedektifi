@@ -158,8 +158,14 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
     .map((a: any) => (relObj(a) ? { code: a.code, name: a.name } : null))
     .filter(Boolean) as { code?: string; name?: string }[]
 
-  const allergens = (product.allergens || [])
-    .map((a: any) => relObj(a)?.name ?? null)
+  // `allergens` koleksiyonda tek ilişki olarak tanımlı; eski veri dizisi gelebilir.
+  const allergenRelations = Array.isArray(product.allergens)
+    ? product.allergens
+    : product.allergens
+      ? [product.allergens]
+      : []
+  const allergens = allergenRelations
+    .map((a: unknown) => relObj(a)?.name ?? null)
     .filter(Boolean) as string[]
 
   const nutritionItems = (product.nutrition?.items || [])
