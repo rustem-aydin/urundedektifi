@@ -74,21 +74,26 @@ export default buildConfig({
   },
   sharp,
   plugins: [
-    s3Storage({
-      collections: {
-        media: true,
-      },
-      bucket: process.env.S3_BUCKET!,
-      config: {
-        credentials: {
-          accessKeyId: process.env.S3_ACCESS_KEY!,
-          secretAccessKey: process.env.S3_SECRET_KEY!,
-        },
-        region: process.env.S3_REGION,
-        endpoint: process.env.S3_ENDPOINT,
-        forcePathStyle: true,
-      },
-    }),
+    // Yerel geliştirmede S3 anahtarları boşsa medya diske yazılır (media/ dizini).
+    ...(process.env.S3_BUCKET
+      ? [
+          s3Storage({
+            collections: {
+              media: true,
+            },
+            bucket: process.env.S3_BUCKET,
+            config: {
+              credentials: {
+                accessKeyId: process.env.S3_ACCESS_KEY!,
+                secretAccessKey: process.env.S3_SECRET_KEY!,
+              },
+              region: process.env.S3_REGION,
+              endpoint: process.env.S3_ENDPOINT,
+              forcePathStyle: true,
+            },
+          }),
+        ]
+      : []),
     mcpPlugin(mcpProductsPluginOptions),
   ],
   graphQL: {

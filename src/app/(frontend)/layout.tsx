@@ -5,6 +5,7 @@ import { Inter, Special_Elite, JetBrains_Mono } from 'next/font/google'
 import './index.css'
 
 import { ThemeProvider } from '@/components/theme-provider'
+import { SessionProvider } from '@/components/session-provider'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
@@ -48,10 +49,12 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     >
       <body className="flex min-h-svh flex-col font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-          <Toaster position="bottom-right" />
+          <SessionProvider>
+            <SiteHeader />
+            <main className="flex-1">{children}</main>
+            <SiteFooter />
+            <Toaster position="bottom-right" />
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

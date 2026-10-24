@@ -10,11 +10,13 @@ import config from '@/payload.config'
 import { getProductCase } from '@/lib/productCase'
 import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { ExpertVerdicts, type ExpertAvatar } from '@/components/ExpertVerdicts'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
 import { ProductGallery } from '@/components/ProductGallery'
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ProductAdminActions } from '@/components/ProductAdminActions'
+import { CardContent } from '@/components/ui/card'
 
 export async function generateMetadata({
   params,
@@ -80,6 +82,22 @@ export default async function ProductDetailPage({
   const hasIngredients =
     product.ingredients.length > 0 || product.additives.length > 0 || product.allergens.length > 0
 
+  // Uzman hükümleri satırının solu: uzman avatarı (hüküm nesnesi avatar taşımaz, experts'ten eşlenir)
+  const expertSlugs = verdict.byExpert.map((entry) => entry.expert.slug).filter(Boolean)
+  const expertAvatars: Record<string, ExpertAvatar> = {}
+  if (expertSlugs.length > 0) {
+    const experts = await payload.find({
+      collection: 'experts',
+      where: { slug: { in: expertSlugs } },
+      limit: 100,
+      depth: 1,
+    })
+    for (const expert of experts.docs) {
+      const avatar = typeof expert.avatar === 'object' && expert.avatar ? expert.avatar : null
+      expertAvatars[expert.slug] = { url: avatar?.url ?? null, alt: avatar?.alt ?? null }
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
       <Link
@@ -111,6 +129,8 @@ export default async function ProductDetailPage({
               <p className="mt-1 text-muted-foreground">{product.brand.name}</p>
             )}
           </div>
+
+          <ProductAdminActions id={String(product.id)} name={product.name} />
 
           {(product.labels.length > 0 || product.nutriscore) && (
             <div className="flex flex-wrap items-center gap-2">
@@ -163,68 +183,7 @@ export default async function ProductDetailPage({
           hasData={verdict.totalMatched > 0}
           emptyMessage="Bu ürünle eşleşen aktif kural bulunamadı. Uzmanlar yeni kurallar ekledikçe bu dosya otomatik güncellenir."
         >
-          <div className="mt-4 flex flex-col gap-6">
-            {verdict.byTopic.map((tv) => (
-              <div key={tv.topic.id}>
-                <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
-                  <span aria-hidden="true">{tv.topic.icon}</span>
-                  <Link href={`/konu/${tv.topic.slug}`} className="hover:underline underline-offset-4">
-                    {tv.topic.name}
-                  </Link>
-                  <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                    {tv.matchedRules.length} eşleşme
-                  </span>
-                </h3>
-                <ul className="mt-3 flex flex-col gap-3">
-                  {tv.matchedRules.map((r) => (
-                    <li key={r.id}>
-                      <CaseCard tape>
-                        <CardHeader>
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <EvidenceTag variant="evidence">DELİL</EvidenceTag>
-                            {r.rating?.name && (
-                              <span
-                                className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"
-                                // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
-                                style={{ color: r.rating.color || undefined }}
-                                title={r.rating.description || r.rating.name}
-                              >
-                                {r.rating.name}
-                              </span>
-                            )}
-                          </div>
-                          <CardTitle className="mt-2">{r.name}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-2">
-                          {r.matchedValue && (
-                            <p className="text-sm">
-                              <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                                Eşleşme:{' '}
-                              </span>
-                              {r.matchedValue}
-                            </p>
-                          )}
-                          {r.description && (
-                            <p className="text-sm text-muted-foreground">{r.description}</p>
-                          )}
-                          {r.expertName && (
-                            <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                              <Link
-                                href={`/uzmanlar/${r.expertSlug}`}
-                                className="hover:text-foreground hover:underline underline-offset-4"
-                              >
-                                — {r.expertName}
-                              </Link>
-                            </p>
-                          )}
-                        </CardContent>
-                      </CaseCard>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <ExpertVerdicts verdicts={verdict.byExpert} avatars={expertAvatars} />
         </CaseSection>
 
         {/* UYARILAR */}

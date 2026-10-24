@@ -238,7 +238,10 @@ export const Products: CollectionConfig = {
                   label: 'Yüzdelik',
                   name: 'percent_estimate',
                   type: 'number',
-                  required: true,
+                  admin: {
+                    description:
+                      'Etikette yazıyorsa yüzde değeri. Bilinmiyorsa boş bırakın (Örn: "Şeker %12,5").',
+                  },
                 },
               ],
             },

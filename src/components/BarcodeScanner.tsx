@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { getProduct } from '@/actions/product'
-import { GeneratedForm } from './AddProduct'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { Button } from '@/components/ui/button'
@@ -17,8 +16,6 @@ export default function BarcodeScanner() {
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor...')
   const [isChecking, setIsChecking] = useState(false)
-  const [scannedBarcode, setScannedBarcode] = useState<string>('')
-  const [isNotFound, setIsNotFound] = useState(false)
 
   useEffect(() => {
     let Html5QrcodeModule: any
@@ -60,7 +57,6 @@ export default function BarcodeScanner() {
     try {
       setIsChecking(true)
       setCameraStatus('Barkod sorgulanıyor...')
-      setScannedBarcode(barcodeText)
 
       const barcodeNumber = parseInt(barcodeText, 10)
 
@@ -81,9 +77,9 @@ export default function BarcodeScanner() {
         toast.success('Ürün bulundu, dosyası açılıyor.')
         router.push(`/urun/${barcodeText}`)
       } else {
-        setIsNotFound(true)
-        setCameraStatus('Ürün bulunamadı!')
-        toast.error('Ürün bulunamadı — ilk ekleyen siz olun.')
+        setCameraStatus('Ürün bulunamadı — yeni dosya sihirbazı açılıyor.')
+        toast.message('Ürün bulunamadı — ilk ekleyen siz olun.')
+        router.push(`/ekle?barcode=${encodeURIComponent(barcodeText)}`)
       }
     } catch (error) {
       console.error('Sorgulama hatası:', error)
@@ -156,11 +152,6 @@ export default function BarcodeScanner() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady])
-
-  // Ürün bulunamadı → GeneratedForm göster
-  if (isNotFound) {
-    return <GeneratedForm barcode={scannedBarcode} />
-  }
 
   // Hata durumu
   if (error) {

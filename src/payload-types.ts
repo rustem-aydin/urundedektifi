@@ -463,7 +463,10 @@ export interface Product {
          * İçindekilerin her bir öğesinin ayrı ayrı listesi. Her öğeyi master listeden seçin (Örn: "Palm Yağı", "Su", "Şeker"). Kural motoru bu seçimlere göre çalışır.
          */
         ingredients?: (number | null) | Ingredient;
-        percent_estimate: number;
+        /**
+         * Etikette yazıyorsa yüzde değeri. Bilinmiyorsa boş bırakın (Örn: "Şeker %12,5").
+         */
+        percent_estimate?: number | null;
         id?: string | null;
       }[]
     | null;
@@ -1096,6 +1099,222 @@ export interface PayloadMcpApiKey {
      */
     delete?: boolean | null;
   };
+  categories?: {
+    /**
+     * Allow clients to find categories.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create categories.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update categories.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete categories.
+     */
+    delete?: boolean | null;
+  };
+  topics?: {
+    /**
+     * Allow clients to find topics.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create topics.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update topics.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete topics.
+     */
+    delete?: boolean | null;
+  };
+  brands?: {
+    /**
+     * Allow clients to find brands.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create brands.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update brands.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete brands.
+     */
+    delete?: boolean | null;
+  };
+  nutrients?: {
+    /**
+     * Allow clients to find nutrients.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create nutrients.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update nutrients.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete nutrients.
+     */
+    delete?: boolean | null;
+  };
+  allergens?: {
+    /**
+     * Allow clients to find allergens.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create allergens.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update allergens.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete allergens.
+     */
+    delete?: boolean | null;
+  };
+  ingredients?: {
+    /**
+     * Allow clients to find ingredients.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create ingredients.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update ingredients.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete ingredients.
+     */
+    delete?: boolean | null;
+  };
+  additives?: {
+    /**
+     * Allow clients to find additives.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create additives.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update additives.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete additives.
+     */
+    delete?: boolean | null;
+  };
+  countries?: {
+    /**
+     * Allow clients to find countries.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create countries.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update countries.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete countries.
+     */
+    delete?: boolean | null;
+  };
+  ratingScales?: {
+    /**
+     * Allow clients to find rating-scales.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create rating-scales.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update rating-scales.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete rating-scales.
+     */
+    delete?: boolean | null;
+  };
+  experts?: {
+    /**
+     * Allow clients to find experts.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create experts.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update experts.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete experts.
+     */
+    delete?: boolean | null;
+  };
+  expertRules?: {
+    /**
+     * Allow clients to find expert-rules.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create expert-rules.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update expert-rules.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete expert-rules.
+     */
+    delete?: boolean | null;
+  };
+  pages?: {
+    /**
+     * Allow clients to find pages.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create pages.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update pages.
+     */
+    update?: boolean | null;
+    /**
+     * Allow clients to delete pages.
+     */
+    delete?: boolean | null;
+  };
   'payload-mcp-tool'?: {
     /**
      * Barkoda ait tam Ürün Dosyasını (çözümlenmiş ürün + hükümler + galeri + fiyat özeti) tek çağrıda döndürür.
@@ -1660,6 +1879,102 @@ export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
   label?: T;
   description?: T;
   products?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  categories?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  topics?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  brands?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  nutrients?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  allergens?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  ingredients?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  additives?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  countries?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  ratingScales?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  experts?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  expertRules?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+        delete?: T;
+      };
+  pages?:
     | T
     | {
         find?: T;

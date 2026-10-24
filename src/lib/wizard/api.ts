@@ -1,0 +1,223 @@
+import type {
+  AuthResponse,
+  MasterCollection,
+  MasterOption,
+  MediaRef,
+  PayloadList,
+  ProductDoc,
+  ProductWriteData,
+  RawProduct,
+  User,
+} from './types'
+
+/**
+ * Ekle/Düzenle yazma yolu (ADR 0008/0009). Web, Payload ile aynı kaynakta çalışır; bu yüzden
+ * taban yol görelidir (`/api`) ve CORS gerekmez. Tüm yazma çağrıları JWT ister.
+ */
+
+export const API_BASE = (process.env.NEXT_PUBLIC_PAYLOAD_API_URL ?? '/api').replace(/\/+$/, '')
+
+export type ApiErrorKind = 'notFound' | 'unauthorized' | 'offline' | 'server'
+
+export class ApiError extends Error {
+  kind: ApiErrorKind
+  status: number
+
+  constructor(kind: ApiErrorKind, status: number, message: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.kind = kind
+    this.status = status
+  }
+}
+
+const REQUEST_TIMEOUT_MS = 15000
+
+async function request<T>(path: string, init: RequestInit = {}, token?: string | null): Promise<T> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  // FormData gövdesinde Content-Type'ı fetch kendisi (boundary ile) üretir.
+  const isForm = typeof FormData !== 'undefined' && init.body instanceof FormData
+
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        ...(init.body && !isForm ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `JWT ${token}` } : {}),
+        ...init.headers,
+      },
+    })
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : ''
+    throw new ApiError(
+      'offline',
+      0,
+      detail ? `Sunucuya ulaşılamadı: ${detail}` : 'Sunucuya ulaşılamadı.',
+    )
+  } finally {
+    clearTimeout(timer)
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new ApiError('unauthorized', response.status, 'Bu işlem için yetkiniz yok.')
+  }
+  if (response.status === 404) {
+    throw new ApiError('notFound', 404, 'Kayıt bulunamadı.')
+  }
+  if (!response.ok) {
+    // Payload hata gövdesi: { errors: [{ message }] } — kullanıcıya sunucunun cümlesini göster.
+    const detail = await response
+      .json()
+      .then((body: unknown) => {
+        if (body && typeof body === 'object' && 'errors' in body && Array.isArray(body.errors)) {
+          const first = body.errors[0]
+          if (first && typeof first === 'object' && 'message' in first && typeof first.message === 'string') {
+            return first.message
+          }
+        }
+        return null
+      })
+      .catch(() => null)
+    throw new ApiError(
+      'server',
+      response.status,
+      detail ? `Sunucu hatası (${response.status}): ${detail}` : `Sunucu hatası (${response.status}).`,
+    )
+  }
+
+  return (await response.json()) as T
+}
+
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  return request<AuthResponse>('/users/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export async function fetchMe(token: string): Promise<User> {
+  const result = await request<User | { user: User }>('/users/me', {}, token)
+  return 'user' in result ? result.user : result
+}
+
+/** Master listeleri tek tek sayfalar hâlinde toplar (marka 700+, içindekiler yüzlerce olabilir). */
+export async function fetchMasterOptions(collection: MasterCollection): Promise<MasterOption[]> {
+  const pageSize = 200
+  const collected: MasterOption[] = []
+  let page = 1
+  let totalPages = 1
+  do {
+    const result = await request<PayloadList<Record<string, unknown>>>(
+      `/${collection}?limit=${pageSize}&depth=0&page=${page}`,
+    )
+    for (const doc of result.docs) collected.push(toMasterOption(doc))
+    totalPages = result.totalPages
+    page += 1
+  } while (page <= totalPages)
+  return collected
+}
+
+function toMasterOption(doc: Record<string, unknown>): MasterOption {
+  const name = typeof doc.name === 'string' ? doc.name : typeof doc.code === 'string' ? doc.code : ''
+  const aliases = Array.isArray(doc.aliases)
+    ? doc.aliases
+        .map((row) => {
+          if (!row || typeof row !== 'object') return null
+          const value = 'alias' in row ? row.alias : null
+          return typeof value === 'string' ? value : null
+        })
+        .filter((value): value is string => Boolean(value))
+    : []
+  return {
+    id: String(doc.id ?? ''),
+    name,
+    code: typeof doc.code === 'string' ? doc.code : null,
+    aliases,
+  }
+}
+
+/** Barkodla ham doküman (durumdan bağımsız; taslak ürünler de bulunur). */
+export async function findProductByBarcode(barcode: string): Promise<RawProduct | null> {
+  const page = await request<PayloadList<RawProduct>>(
+    `/products?limit=1&depth=0&where[barcode][equals]=${encodeURIComponent(barcode)}`,
+  )
+  return page.docs[0] ?? null
+}
+
+/** Düzenle ekranının formu: ilişkileri açılmış ham doküman (`depth=2`). */
+export async function fetchProductDoc(id: string): Promise<ProductDoc | null> {
+  try {
+    // Payload tekil doküman ucunda `{ doc }` sarmalı yok: gövde doğrudan ürün.
+    return await request<ProductDoc>(`/products/${encodeURIComponent(id)}?depth=2`)
+  } catch (error) {
+    if (error instanceof ApiError && error.kind === 'notFound') return null
+    throw error
+  }
+}
+
+/** Ürünü siler (sunucu `delete` yetkisini admin/editör ile sınırlıyor). */
+export async function deleteProduct(id: string, token: string): Promise<void> {
+  await request<unknown>(`/products/${encodeURIComponent(id)}`, { method: 'DELETE' }, token)
+}
+
+/** Medya yüklemesi: multipart, `file` alanı + isteğe bağlı `alt`. */
+export async function uploadMedia(blob: Blob, fileName: string, token: string, alt?: string): Promise<MediaRef> {
+  const form = new FormData()
+  form.append('file', new File([blob], fileName, { type: blob.type || 'image/jpeg' }))
+  if (alt) form.append('alt', alt)
+  const result = await request<{ doc: MediaRef }>('/media', { method: 'POST', body: form }, token)
+  return result.doc
+}
+
+export async function createProduct(data: ProductWriteData, token: string): Promise<RawProduct> {
+  const result = await request<{ doc: RawProduct }>(
+    '/products',
+    { method: 'POST', body: JSON.stringify(data) },
+    token,
+  )
+  return result.doc
+}
+
+export async function updateProduct(
+  id: string,
+  data: ProductWriteData,
+  token: string,
+): Promise<RawProduct> {
+  const result = await request<{ doc: RawProduct }>(
+    `/products/${encodeURIComponent(id)}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+    token,
+  )
+  return result.doc
+}
+
+export async function createMasterDoc(
+  collection: MasterCollection,
+  data: { name?: string; code?: string; slug?: string },
+  token: string,
+): Promise<{ id: string }> {
+  const result = await request<{ doc: { id: string | number } }>(
+    `/${collection}`,
+    { method: 'POST', body: JSON.stringify(data) },
+    token,
+  )
+  return { id: String(result.doc.id) }
+}
+
+/** Master kayıt arama (ör. "yeni oluştur" 400 dönerse mevcut kaydı bulmak için). */
+export async function findMasterDoc(
+  collection: MasterCollection,
+  field: 'name' | 'code',
+  value: string,
+): Promise<{ id: string; name: string } | null> {
+  const page = await request<
+    PayloadList<{ id: string | number; name?: string | null; code?: string | null }>
+  >(`/${collection}?limit=1&depth=0&where[${field}][equals]=${encodeURIComponent(value)}`)
+  const doc = page.docs[0]
+  if (!doc) return null
+  return { id: String(doc.id), name: doc.name ?? doc.code ?? value }
+}
