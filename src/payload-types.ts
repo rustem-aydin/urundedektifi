@@ -75,6 +75,7 @@ export interface Config {
     brands: Brand;
     nutrients: Nutrient;
     products: Product;
+    'product-feedback': ProductFeedback;
     allergens: Allergen;
     pages: Page;
     experts: Expert;
@@ -99,6 +100,7 @@ export interface Config {
     brands: BrandsSelect<false> | BrandsSelect<true>;
     nutrients: NutrientsSelect<false> | NutrientsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    'product-feedback': ProductFeedbackSelect<false> | ProductFeedbackSelect<true>;
     allergens: AllergensSelect<false> | AllergensSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
@@ -868,6 +870,34 @@ export interface Additive {
   createdAt: string;
 }
 /**
+ * Kullanıcıların ürün verisi doğrulamaları ve yorumları. Doğrulama oyu kendi yorum metnini taşır; panelde yalnız inceleme ve silme yapılır. Yazma, ürünün kendi uçlarından geçer.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-feedback".
+ */
+export interface ProductFeedback {
+  id: number;
+  product: number | Product;
+  /**
+   * Serbest yorumlarda boştur. Doğrulama oylarında hangi dosya bölümünün oylandığını gösterir.
+   */
+  target?:
+    | ('uyarilar' | 'icindekiler' | 'besin-degerleri' | 'genel-bilgiler' | 'teknik-ozellikler' | 'aciklama')
+    | null;
+  kind: 'vote' | 'comment';
+  /**
+   * Yalnız doğrulama oylarında dolar.
+   */
+  verdict?: ('confirm' | 'refute') | null;
+  /**
+   * Doğrulama oylarında varsayılan metin sunucuda yazılır ("Verilerin doğruluğunu teyit ediyorum." / "Doğru olmadığını bildiriyorum çünkü ...").
+   */
+  text: string;
+  author: number | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Hakkımızda, Metodoloji, Gizlilik Politikası, Kullanım Şartları gibi statik içerik sayfaları.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1447,6 +1477,10 @@ export interface PayloadLockedDocument {
         value: number | Product;
       } | null)
     | ({
+        relationTo: 'product-feedback';
+        value: number | ProductFeedback;
+      } | null)
+    | ({
         relationTo: 'allergens';
         value: number | Allergen;
       } | null)
@@ -1760,6 +1794,20 @@ export interface ProductsSelect<T extends boolean = true> {
   status?: T;
   submittedBy?: T;
   is_submit?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-feedback_select".
+ */
+export interface ProductFeedbackSelect<T extends boolean = true> {
+  product?: T;
+  target?: T;
+  kind?: T;
+  verdict?: T;
+  text?: T;
+  author?: T;
   updatedAt?: T;
   createdAt?: T;
 }

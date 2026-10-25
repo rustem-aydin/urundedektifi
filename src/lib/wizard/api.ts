@@ -1,6 +1,9 @@
 import type {
   AuthResponse,
   ExpertStats,
+  FeedbackTargetKey,
+  FeedbackVerdict,
+  ProductFeedback,
   MasterCollection,
   MasterOption,
   MediaRef,
@@ -13,6 +16,7 @@ import type {
   User,
 } from './types'
 import type { ExpertVerdict } from '@/lib/verdictEngine'
+import { normalizeText } from './match'
 
 /**
  * Ekle/Düzenle yazma yolu (ADR 0008/0009). Web, Payload ile aynı kaynakta çalışır; bu yüzden
@@ -73,10 +77,13 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string |
     throw new ApiError('notFound', 404, 'Kayıt bulunamadı.')
   }
   if (!response.ok) {
-    // Payload hata gövdesi: { errors: [{ message }] } — kullanıcıya sunucunun cümlesini göster.
+    // Payload hata gövdesi: { errors: [{ message }] }; özel uçlar { error: 'cümle' } döner.
     const detail = await response
       .json()
       .then((body: unknown) => {
+        if (body && typeof body === 'object' && 'error' in body && typeof body.error === 'string') {
+          return body.error
+        }
         if (body && typeof body === 'object' && 'errors' in body && Array.isArray(body.errors)) {
           const first = body.errors[0]
           if (first && typeof first === 'object' && 'message' in first && typeof first.message === 'string') {
@@ -116,7 +123,9 @@ export async function fetchMasterOptions(collection: MasterCollection): Promise<
   let totalPages = 1
   do {
     const result = await request<PayloadList<Record<string, unknown>>>(
-      `/${collection}?limit=${pageSize}&depth=0&page=${page}`,
+      // `sort=createdAt`: aynı ad birden çok kez açılmışsa öneri EN ESKİ (kanonik) kaydı göstersin,
+      // yeni kopya eklendikçe öneri kaymasın. Kayıt anındaki arama (`findMasterByName`) de böyle.
+      `/${collection}?limit=${pageSize}&depth=0&sort=createdAt&page=${page}`,
     )
     for (const doc of result.docs) collected.push(toMasterOption(doc))
     totalPages = result.totalPages
@@ -227,6 +236,32 @@ export async function findMasterDoc(
 }
 
 /**
+ * Ada göre master arama — eşlemede "Yeni oluştur" denmiş olsa bile aynı adlı kayıt varsa
+ * onu bağlamak için. Payload `like` büyük/küçük harf duyarsızdır ama ALT DİZE eşler
+ * ("su" → "Susam"), bu yüzden aday listesi `normalizeText` ile tam eşitliğe süzülür.
+ * `equals` kullanılmaz: Türkçe harf ve büyük/küçük farkı yüzünden mevcut kaydı kaçırır.
+ * Aynı ad birden çok kez açılmışsa **en eski** kayıt seçilir (`sort=createdAt`): kopyalar
+ * sonradan açıldığı için kanonik satır odur.
+ */
+export async function findMasterByName(
+  collection: MasterCollection,
+  name: string,
+): Promise<{ id: string; name: string } | null> {
+  const needle = normalizeText(name)
+  if (!needle) return null
+  const page = await request<
+    PayloadList<{ id: string | number; name?: string | null }>
+  >(
+    `/${collection}?limit=100&depth=0&sort=createdAt&where[name][like]=${encodeURIComponent(name.trim())}`,
+  )
+  const doc = page.docs.find(
+    (row) => typeof row.name === 'string' && normalizeText(row.name) === needle,
+  )
+  if (!doc) return null
+  return { id: String(doc.id), name: doc.name ?? name }
+}
+
+/**
  * Tüketici hesabı açma. Sunucu `users.create`'i herkese açtı; rol hook'ta `user`'a sabitlenir.
  * Kayıt jeton döndürmez — hemen ardından `login()` çağrılır.
  */
@@ -321,4 +356,61 @@ export async function fetchMatchCounts(
     token ?? undefined,
   )
   return result.counts ?? {}
+}
+
+// --- Ürün verisi doğrulaması + yorumlar (ADR 0013) ---
+
+export async function fetchProductFeedback(
+  barcode: string,
+  token?: string | null,
+  options: { page?: number; limit?: number } = {},
+): Promise<ProductFeedback> {
+  const query = new URLSearchParams({
+    page: String(options.page ?? 0),
+    limit: String(options.limit ?? 20),
+  })
+  return request<ProductFeedback>(
+    `/products/feedback/${encodeURIComponent(barcode)}?${query.toString()}`,
+    {},
+    token,
+  )
+}
+
+export async function submitFeedbackVote(
+  barcode: string,
+  input: { target: FeedbackTargetKey; verdict: FeedbackVerdict; note?: string },
+  token: string,
+): Promise<ProductFeedback> {
+  return request<ProductFeedback>(
+    `/products/feedback/${encodeURIComponent(barcode)}/vote`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ target: input.target, verdict: input.verdict, note: input.note ?? '' }),
+    },
+    token,
+  )
+}
+
+export async function submitFeedbackComment(
+  barcode: string,
+  text: string,
+  token: string,
+): Promise<ProductFeedback> {
+  return request<ProductFeedback>(
+    `/products/feedback/${encodeURIComponent(barcode)}/comment`,
+    { method: 'POST', body: JSON.stringify({ text }) },
+    token,
+  )
+}
+
+export async function deleteFeedbackComment(
+  barcode: string,
+  id: string,
+  token: string,
+): Promise<ProductFeedback> {
+  return request<ProductFeedback>(
+    `/products/feedback/${encodeURIComponent(barcode)}/comment/${encodeURIComponent(id)}`,
+    { method: 'DELETE' },
+    token,
+  )
 }

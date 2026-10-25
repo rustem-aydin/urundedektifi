@@ -84,3 +84,21 @@ _Avoid_: markdown gövde, kaynak metin
 **Hikâye Rayı**:
 Anasayfada Takip edilen uzmanların son 14 gündeki yazılarını yuvarlak avatar olarak gösteren yatay şerit. Uzman başına tek avatar (en yeni yazı); "okundu" bilgisi cihazda tutulur, sunucuya yazılmaz ve 24 saatte silinmez.
 _Avoid_: story, hikâye (tek başına), akış
+
+### Doğrulama ve Yorumlar
+
+**Ürün Geri Bildirimi**:
+`product-feedback` koleksiyonundaki tek kayıt: bir Tüketici Hesabının bir ürün bölümü hakkındaki doğrulama oyu ya da serbest yorumu. Ham REST'i kapalıdır; yalnız ürün uçlarından yazılır, panelde inceleme/silme yapılır.
+_Avoid_: geri bildirim formu, ticket
+
+**Doğrulama Oyu**:
+Bir Hesabın Ürün Dosyasındaki tek bir veri bölümünü (`uyarilar`, `icindekiler`, `besin-degerleri`, `genel-bilgiler`, `teknik-ozellikler`, `aciklama`) `confirm` ya da `refute` işaretlemesi. Hesap + ürün + bölüm başına tek kayıttır; tekrar oy aynı satırı günceller. Dosya 01 (uzman hükümleri) ve Dosya 08 (fiyat kayıtları) kapsam dışıdır.
+_Avoid_: puan, rating, anket
+
+**Doğrulama Oranı**:
+Bölüm başına `round(confirm × 100 / (confirm + refute))`. Hiç oy yoksa gösterilmez; yanında doğrulama ve itiraz sayısı basılır.
+_Avoid_: güven skoru, doğruluk puanı
+
+**Yorum**:
+`kind: 'comment'` olan Ürün Geri Bildirimi: ürün geneli serbest metin (≤500 karakter, düz metin). Doğrulama oyları da yorum listesinde görünür; ayrı liste yoktur, thread yoktur.
+_Avoid_: değerlendirme, inceleme, review

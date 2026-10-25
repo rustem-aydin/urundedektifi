@@ -16,6 +16,7 @@ import { Categories } from './collections/Categories'
 import { Topics } from './collections/Topics'
 import { Brands } from './collections/Brands'
 import { Products } from './collections/Products'
+import { ProductFeedback } from './collections/ProductFeedback'
 import { Pages } from './collections/Pages'
 import { Experts } from './collections/Experts'
 import { ExpertRules } from './collections/ExpertRules'
@@ -52,6 +53,7 @@ export default buildConfig({
     Brands,
     Nutrients,
     Products,
+    ProductFeedback,
     Allergens,
     Pages,
     Experts,

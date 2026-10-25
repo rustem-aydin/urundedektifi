@@ -12,6 +12,11 @@ import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { type ExpertAvatar } from '@/components/ExpertVerdicts'
 import { MatchedStamp, ProductVerdictProvider, VerdictSection } from '@/components/ProductVerdicts'
+import {
+  FeedbackAside,
+  FeedbackCommentsSection,
+  ProductFeedbackProvider,
+} from '@/components/ProductFeedback'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
@@ -101,6 +106,7 @@ export default async function ProductDetailPage({
 
   return (
     <ProductVerdictProvider barcode={String(product.barcode ?? barcode)}>
+      <ProductFeedbackProvider barcode={String(product.barcode ?? barcode)}>
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
       <Link
         href="/urunler"
@@ -183,6 +189,7 @@ export default async function ProductDetailPage({
           id="uyarilar"
           eyebrow="Dosya 02"
           title="Uyarılar"
+          aside={<FeedbackAside target="uyarilar" />}
           hasData={product.warnings.length > 0}
           emptyMessage="Bu ürün için kayıtlı uyarı yok."
         >
@@ -214,6 +221,7 @@ export default async function ProductDetailPage({
           id="icindekiler"
           eyebrow="Dosya 03"
           title="İçindekiler"
+          aside={<FeedbackAside target="icindekiler" />}
           hasData={hasIngredients}
           emptyMessage="İçindekiler bilgisi henüz girilmemiş. Paketin arka yüzündeki listeyi ekleyerek dosyayı tamamlayın."
         >
@@ -285,11 +293,14 @@ export default async function ProductDetailPage({
           eyebrow="Dosya 04"
           title="Besin değerleri"
           aside={
-            product.nutrition && (
-              <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                {product.nutrition.perLabel}
-              </span>
-            )
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {product.nutrition && (
+                <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                  {product.nutrition.perLabel}
+                </span>
+              )}
+              <FeedbackAside target="besin-degerleri" />
+            </div>
           }
           hasData={Boolean(product.nutrition)}
           emptyMessage="Besin değerleri henüz kaydedilmemiş."
@@ -317,6 +328,7 @@ export default async function ProductDetailPage({
           id="genel-bilgiler"
           eyebrow="Dosya 05"
           title="Genel bilgiler"
+          aside={<FeedbackAside target="genel-bilgiler" />}
           hasData={filledInfo.length > 0}
           emptyMessage="Genel bilgi alanları henüz doldurulmamış."
         >
@@ -344,6 +356,7 @@ export default async function ProductDetailPage({
           id="teknik-ozellikler"
           eyebrow="Dosya 06"
           title="Teknik özellikler"
+          aside={<FeedbackAside target="teknik-ozellikler" />}
           hasData={product.specifications.length > 0}
           emptyMessage="Teknik özellik kaydı yok."
         >
@@ -374,6 +387,7 @@ export default async function ProductDetailPage({
           id="aciklama"
           eyebrow="Dosya 07"
           title="Açıklama"
+          aside={<FeedbackAside target="aciklama" />}
           hasData={Boolean(product.description || product.usage)}
           emptyMessage="Açıklama eklenmemiş."
         >
@@ -422,8 +436,11 @@ export default async function ProductDetailPage({
             ))}
           </ul>
         </CaseSection>
+
+        <FeedbackCommentsSection />
       </div>
       </div>
+      </ProductFeedbackProvider>
     </ProductVerdictProvider>
   )
 }

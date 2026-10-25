@@ -152,3 +152,48 @@ export type MasterCollection =
   | 'nutrients'
   | 'brands'
   | 'categories'
+
+/**
+ * Ürün verisi doğrulaması + yorumlar (ADR 0013).
+ * Doğrulama birimi dosya bölümleridir; bir oy kendi yorum metnini taşır.
+ */
+export type FeedbackTargetKey =
+  | 'uyarilar'
+  | 'icindekiler'
+  | 'besin-degerleri'
+  | 'genel-bilgiler'
+  | 'teknik-ozellikler'
+  | 'aciklama'
+
+export type FeedbackVerdict = 'confirm' | 'refute'
+
+export type FeedbackTargetSummary = {
+  confirm: number
+  refute: number
+  total: number
+  percent: number | null
+}
+
+export type FeedbackEntry = {
+  id: string
+  target: FeedbackTargetKey | null
+  targetLabel: string | null
+  kind: 'vote' | 'comment'
+  verdict: FeedbackVerdict | null
+  text: string
+  authorName: string
+  createdAt: string
+  mine: boolean
+  canDelete: boolean
+}
+
+export type ProductFeedback = {
+  barcode: string
+  productName: string
+  targets: Record<FeedbackTargetKey, FeedbackTargetSummary>
+  comments: FeedbackEntry[]
+  totalComments: number
+  hasMore: boolean
+  myVotes: Partial<Record<FeedbackTargetKey, FeedbackVerdict>>
+  signedIn: boolean
+}

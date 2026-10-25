@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
 import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
 import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
@@ -8,7 +8,36 @@ import {
   matchedRuleCountsByBarcode,
   verdictForExperts,
 } from '@/lib/productCase'
+import {
+  addFeedbackComment,
+  assertTarget,
+  assertVerdict,
+  buildFeedbackSummary,
+  castFeedbackVote,
+  feedbackProduct,
+  removeFeedbackComment,
+  type FeedbackProduct,
+} from '@/lib/productFeedback'
 import type { User } from '@/payload-types'
+
+/** Ürün uçlarının ortak kapanışı: yazma sonrası istemci tek istekte taze özet alır. */
+async function feedbackSummaryFor(req: PayloadRequest, product: FeedbackProduct) {
+  return buildFeedbackSummary({
+    payload: req.payload,
+    product,
+    user: (req.user as User | null) ?? null,
+  })
+}
+
+function feedbackError(error: unknown): Response | null {
+  if (error instanceof APIError) {
+    return Response.json({ error: error.message }, { status: error.status ?? 400 })
+  }
+  if (error instanceof SyntaxError) {
+    return Response.json({ error: 'Geçersiz istek gövdesi.' }, { status: 400 })
+  }
+  return null
+}
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -93,6 +122,118 @@ export const Products: CollectionConfig = {
         )
         const counts = await matchedRuleCountsByBarcode(req.payload, barcodes, following)
         return Response.json({ counts })
+      },
+    },
+    {
+      // Ürün verisi doğrulamaları (bölüm bazlı) + yorumlar: tek okuma ucu.
+      // Misafir sayaçları ve yorumları görür; `myVotes` yalnız oturum sahibinde dolar.
+      path: '/feedback/:barcode',
+      method: 'get',
+      handler: async (req) => {
+        const barcode = String(req.routeParams?.barcode ?? '')
+        if (!barcode) return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+
+        const product = await feedbackProduct(req.payload, barcode)
+        if (!product) return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+
+        const query = (req.query ?? {}) as Record<string, unknown>
+        const page = Number.parseInt(String(query.page ?? '0'), 10)
+        const limit = Number.parseInt(String(query.limit ?? ''), 10)
+        return Response.json(
+          await buildFeedbackSummary({
+            payload: req.payload,
+            product,
+            user: (req.user as User | null) ?? null,
+            page: Number.isFinite(page) ? page : 0,
+            limit: Number.isFinite(limit) ? limit : undefined,
+          }),
+        )
+      },
+    },
+    {
+      // Doğrulama oyu. Aynı zamanda yorumdur: metni yorum listesinde görünür.
+      // Kullanıcı + ürün + bölüm başına tek kayıt; tekrar oy aynı kaydı günceller.
+      path: '/feedback/:barcode/vote',
+      method: 'post',
+      handler: async (req) => {
+        const barcode = String(req.routeParams?.barcode ?? '')
+        if (!barcode) return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+
+        const product = await feedbackProduct(req.payload, barcode)
+        if (!product) return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+
+        try {
+          const body = (await req.json?.()) as
+            | { target?: unknown; verdict?: unknown; note?: unknown }
+            | null
+          await castFeedbackVote({
+            payload: req.payload,
+            product,
+            user: (req.user as User | null) ?? null,
+            target: assertTarget(body?.target),
+            verdict: assertVerdict(body?.verdict),
+            note: typeof body?.note === 'string' ? body.note : null,
+          })
+          return Response.json(await feedbackSummaryFor(req, product))
+        } catch (error) {
+          const response = feedbackError(error)
+          if (response) return response
+          throw error
+        }
+      },
+    },
+    {
+      // Serbest yorum (bölüm seçmeden). Giriş zorunlu.
+      path: '/feedback/:barcode/comment',
+      method: 'post',
+      handler: async (req) => {
+        const barcode = String(req.routeParams?.barcode ?? '')
+        if (!barcode) return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+
+        const product = await feedbackProduct(req.payload, barcode)
+        if (!product) return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+
+        try {
+          const body = (await req.json?.()) as { text?: unknown } | null
+          await addFeedbackComment({
+            payload: req.payload,
+            product,
+            user: (req.user as User | null) ?? null,
+            text: typeof body?.text === 'string' ? body.text : '',
+          })
+          return Response.json(await feedbackSummaryFor(req, product))
+        } catch (error) {
+          const response = feedbackError(error)
+          if (response) return response
+          throw error
+        }
+      },
+    },
+    {
+      // Yorumu sil: yazar kendi yorumunu, admin/editör her yorumu silebilir.
+      path: '/feedback/:barcode/comment/:id',
+      method: 'delete',
+      handler: async (req) => {
+        const barcode = String(req.routeParams?.barcode ?? '')
+        const id = String(req.routeParams?.id ?? '')
+        if (!barcode || !id) return Response.json({ error: 'Barkod ve yorum gerekli' }, { status: 400 })
+
+        const product = await feedbackProduct(req.payload, barcode)
+        if (!product) return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+
+        try {
+          await removeFeedbackComment({
+            payload: req.payload,
+            product,
+            user: (req.user as User | null) ?? null,
+            id,
+          })
+          return Response.json(await feedbackSummaryFor(req, product))
+        } catch (error) {
+          const response = feedbackError(error)
+          if (response) return response
+          throw error
+        }
       },
     },
   ],
