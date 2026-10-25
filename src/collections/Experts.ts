@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
+import { listProductsForRules } from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -27,6 +28,65 @@ export const Experts: CollectionConfig = {
     },
     delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
+  endpoints: [
+    {
+      // Takipçi sayısı: `users.read` yalnız kendi dokümanına açık olduğu için anonim
+      // istemci `users` sorgusu yapamaz; sayı uzman üzerinden public servis edilir.
+      path: '/:id/stats',
+      method: 'get',
+      handler: async (req) => {
+        const id = req.routeParams?.id as string | undefined
+        if (!id) return Response.json({ error: 'Uzman kimliği gerekli' }, { status: 400 })
+
+        const expert = await req.payload.findByID({
+          collection: 'experts',
+          id,
+          depth: 0,
+          overrideAccess: true,
+        })
+        if (!expert || expert.isPublic === false) {
+          return Response.json({ error: 'Uzman bulunamadı' }, { status: 404 })
+        }
+
+        const followers = await req.payload.count({
+          collection: 'users',
+          where: { following: { in: [id] } },
+          overrideAccess: true,
+        })
+
+        return Response.json({ followerCount: followers.totalDocs })
+      },
+    },
+    {
+      // Uzmanın kurallarına takılan yayınlanmış ürünler — mobil profil bu uçtan okur.
+      path: '/:id/products',
+      method: 'get',
+      handler: async (req) => {
+        const id = req.routeParams?.id as string | undefined
+        if (!id) return Response.json({ error: 'Uzman kimliği gerekli' }, { status: 400 })
+
+        const expert = await req.payload.findByID({
+          collection: 'experts',
+          id,
+          depth: 0,
+          overrideAccess: true,
+        })
+        if (!expert || expert.isPublic === false) {
+          return Response.json({ error: 'Uzman bulunamadı' }, { status: 404 })
+        }
+
+        const rules = await req.payload.find({
+          collection: 'expert-rules',
+          where: { and: [{ expert: { equals: id } }, { isActive: { equals: true } }] },
+          limit: 200,
+          depth: 1,
+        })
+
+        const products = await listProductsForRules(req.payload, rules.docs as never)
+        return Response.json({ products: products.slice(0, 6) })
+      },
+    },
+  ],
   fields: [
     {
       name: 'name',
@@ -75,6 +135,16 @@ export const Experts: CollectionConfig = {
       label: 'Profil Fotoğrafı',
       admin: {
         description: 'Kare formatında, en az 400x400 piksel önerilir. Şeffaf arka plan opsiyonel.',
+      },
+    },
+    {
+      name: 'cover',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Profil Kapak Görseli',
+      admin: {
+        description:
+          'Profil sayfasının üst şeridi. Opsiyonel; boşsa dosya estetiğinde tipografik zemin üretilir.',
       },
     },
     {

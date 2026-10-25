@@ -20,7 +20,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
 
-  const next = searchParams.get('next') || '/ekle'
+  const next = searchParams.get('next') || '/'
   const corporate = Boolean(user && CORPORATE_ROLES.includes(user.role))
 
   async function submit(event: React.FormEvent) {
@@ -79,9 +79,9 @@ export function LoginForm() {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={submit}>
-      <WizardIntro eyebrow="SİSTEM KULLANICISI" title="Giriş">
-        Payload hesabınla giriş yap. Yalnız admin ve editör rolleri ürün ekleyip düzenleyebilir; diğer
-        kullanıcılar tarama ve okuma yüzeylerini kullanmaya devam eder.
+      <WizardIntro eyebrow="HESAP" title="Giriş">
+        Hesabınla giriş yap. Uzmanları takip etmek ve yazılarını anasayfada görmek için ücretsiz
+        hesap yeterlidir; ürün ekleme yalnız admin ve editör rollerine açıktır.
       </WizardIntro>
       <TextField
         label="E-posta"
@@ -98,9 +98,17 @@ export function LoginForm() {
         onChange={setPassword}
       />
       {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
-      <Button type="submit" className="w-fit" disabled={busy || !email || !password}>
-        {busy ? 'Giriş yapılıyor…' : 'Giriş yap'}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" className="w-fit" disabled={busy || !email || !password}>
+          {busy ? 'Giriş yapılıyor…' : 'Giriş yap'}
+        </Button>
+        <Link
+          href={`/kayit${next && next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}
+          className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          Hesabın yok mu? Kayıt ol
+        </Link>
+      </div>
     </form>
   )
 }

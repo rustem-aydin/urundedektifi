@@ -1,9 +1,12 @@
 import type {
   AuthResponse,
+  ExpertStats,
   MasterCollection,
   MasterOption,
   MediaRef,
   PayloadList,
+  PostDoc,
+  PostListItem,
   ProductDoc,
   ProductWriteData,
   RawProduct,
@@ -220,4 +223,71 @@ export async function findMasterDoc(
   const doc = page.docs[0]
   if (!doc) return null
   return { id: String(doc.id), name: doc.name ?? doc.code ?? value }
+}
+
+/**
+ * Tüketici hesabı açma. Sunucu `users.create`'i herkese açtı; rol hook'ta `user`'a sabitlenir.
+ * Kayıt jeton döndürmez — hemen ardından `login()` çağrılır.
+ */
+export async function register(input: {
+  name: string
+  email: string
+  password: string
+}): Promise<void> {
+  await request<{ doc: unknown }>('/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+/** Takip listesini tümüyle yazar (hasMany alanı; sunucu yalnız kendi dokümanına izin verir). */
+export async function updateFollowing(
+  userId: string | number,
+  expertIds: string[],
+  token: string,
+): Promise<void> {
+  // Postgres ilişkileri tamsayı kimlik bekler; "2" dizesi doğrulamada reddedilir.
+  const values = expertIds.map((id) => (/^\d+$/.test(id) ? Number(id) : id))
+  await request<{ doc: unknown }>(
+    `/users/${encodeURIComponent(String(userId))}`,
+    { method: 'PATCH', body: JSON.stringify({ following: values }) },
+    token,
+  )
+}
+
+export async function fetchExpertStats(expertId: string): Promise<ExpertStats> {
+  return request<ExpertStats>(`/experts/${encodeURIComponent(expertId)}/stats`)
+}
+
+/**
+ * Takip edilen uzmanların yayınlanmış yazıları (ray + profil listesi).
+ * `expert.isPublic` koşulu public olmayan uzmanın yazılarını sorgu düzeyinde düşürür.
+ */
+export async function fetchPostsByExperts(
+  expertIds: string[],
+  options: { limit?: number; since?: Date } = {},
+): Promise<PostListItem[]> {
+  if (!expertIds.length) return []
+  const params = new URLSearchParams()
+  params.set('limit', String(options.limit ?? 24))
+  // depth=2: yazının uzmanı ve uzmanın avatarı ray için açılmış gelsin.
+  params.set('depth', '2')
+  params.set('sort', '-publishedAt')
+  params.set('where[and][0][status][equals]', 'published')
+  params.set('where[and][1][expert.isPublic][equals]', 'true')
+  expertIds.forEach((id, index) => {
+    params.set(`where[and][2][expert][in][${index}]`, id)
+  })
+  if (options.since) {
+    params.set('where[and][3][publishedAt][greater_than_equal]', options.since.toISOString())
+  }
+  const page = await request<PayloadList<PostListItem>>(`/posts?${params.toString()}`)
+  return page.docs
+}
+
+export async function fetchPostBySlug(slug: string): Promise<PostDoc | null> {
+  const page = await request<PayloadList<PostDoc>>(
+    `/posts?limit=1&depth=2&where[slug][equals]=${encodeURIComponent(slug)}`,
+  )
+  return page.docs[0] ?? null
 }

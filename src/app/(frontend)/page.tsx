@@ -10,6 +10,7 @@ import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
 import { ProductCard } from '@/components/ProductCard'
+import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const STEPS = [
@@ -82,6 +83,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Takip edilen uzmanların yazıları: oturum + takip yoksa kendini gizler. */}
+      <StoryRail />
 
       <section aria-labelledby="how-heading" className="border-y border-border py-10">
         <h2 id="how-heading" className="font-display text-xl sm:text-2xl">

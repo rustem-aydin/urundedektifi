@@ -9,6 +9,8 @@ type CaseSectionProps = {
   aside?: React.ReactNode
   hasData: boolean
   emptyMessage: React.ReactNode
+  /** Boş durumda mesajın altında gösterilecek eylem (ör. "Uzmanları keşfet" düğmesi). */
+  emptyAction?: React.ReactNode
   className?: string
   children: React.ReactNode
 }
@@ -20,6 +22,7 @@ export function CaseSection({
   aside,
   hasData,
   emptyMessage,
+  emptyAction,
   className,
   children,
 }: CaseSectionProps) {
@@ -41,8 +44,9 @@ export function CaseSection({
       {hasData ? (
         children
       ) : (
-        <div className="mt-4 rounded-md border border-dashed border-border bg-card/60 px-5 py-4">
+        <div className="mt-4 flex flex-col items-start gap-3 rounded-md border border-dashed border-border bg-card/60 px-5 py-4">
           <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          {emptyAction}
         </div>
       )}
     </section>

@@ -54,3 +54,29 @@ _Avoid_: besinler (bununla karıştırma)
 
 **Boykotlu**:
 Bir markanın `isBoycotted` flag'tir işaretli olması. Ürün Dosyasında üst seviye damga olarak gösterilir.
+
+### Tüketici Hesabı, Takip ve Yazılar
+
+**Tüketici Hesabı**:
+`users` koleksiyonunda `role: 'user'` olan üyelik. Açık kayıtla (`POST /api/users`) oluşturulur; rol istemciden bağımsız olarak hook'ta `user`'a sabitlenir ve admin paneline giremez (`access.admin`).
+_Avoid_: üye, abone, müşteri
+
+**Takip**:
+Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir erişim kapısı değildir; yalnız Hikâye Rayını ve uzman profilindeki durumu belirler.
+_Avoid_: abonelik, favori
+
+**Takipçi**:
+Bir Uzmanı takip eden Tüketici Hesabı sayısı. Anonim istemci `users` okuyamadığı için `GET /api/experts/:id/stats` ucundan servis edilir.
+_Avoid_: hayran, follower
+
+**Uzman Yazısı**:
+Bir Uzmanın paylaştığı yazı (`posts` koleksiyonu). Gövde Lexical JSON'dur; yayın modeli ürünlerdeki gibi `status: draft|published`.
+_Avoid_: blog yazısı, makale, post
+
+**Markdown Sürümü**:
+`posts.bodyMarkdown`: Lexical gövdeden `beforeChange` hook'unda türetilen gizli metin alanıdır; API tüketicileri ve SEO için hazırdır, elle düzenlenemez. Kanonik biçim her zaman Lexical'dır.
+_Avoid_: markdown gövde, kaynak metin
+
+**Hikâye Rayı**:
+Anasayfada Takip edilen uzmanların son 14 gündeki yazılarını yuvarlak avatar olarak gösteren yatay şerit. Uzman başına tek avatar (en yeni yazı); "okundu" bilgisi cihazda tutulur, sunucuya yazılmaz ve 24 saatte silinmez.
+_Avoid_: story, hikâye (tek başına), akış

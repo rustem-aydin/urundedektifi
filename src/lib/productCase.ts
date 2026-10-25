@@ -368,6 +368,31 @@ export async function listProductCases(
 }
 
 /**
+ * Bir uzmanın kurallarına takılan yayınlanmış ürünler.
+ *
+ * `listProductsMatchingRule` kural başına ayrı tarama yapar; uzman profili tek istekte
+ * tüm kuralları istediği için ürün listesi bir kez çekilip kurallar bellekte değerlendirilir.
+ */
+export async function listProductsForRules(
+  payload: Payload,
+  rules: Rule[],
+): Promise<ProductCase[]> {
+  if (rules.length === 0) return []
+
+  const products = await payload.find({
+    collection: 'products',
+    where: { status: { equals: 'published' } },
+    limit: 500,
+    depth: 2,
+    select: PRODUCT_SELECT,
+  })
+
+  return products.docs
+    .filter((product) => rules.some((rule) => evaluateRule(rule, product as never).matched))
+    .map((product) => toProductCase(product, rules))
+}
+
+/**
  * Yayındaki ürünlerden tek bir kurala takılanları Dosya'ya çevirir.
  * Kural detay sayfası ve `/api/expert-rules/:id/products` ucu bunu kullanır;
  * eşleştirme `verdictEngine`'in tek kaynağından gelir (kopya mantık yok).

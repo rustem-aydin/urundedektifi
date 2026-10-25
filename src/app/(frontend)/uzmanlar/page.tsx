@@ -5,10 +5,8 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { CaseCard } from '@/components/CaseCard'
+import { ExpertCards } from '@/components/ExpertCards'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { VerdictStamp } from '@/components/VerdictStamp'
-import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -159,40 +157,20 @@ export default async function ExpertsPage({
       {expertsWithStats.length === 0 ? (
         <p className="mt-8 text-sm text-muted-foreground">Bu konuda henüz uzman yok.</p>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {expertsWithStats.map((e: any) => (
-            <Link
-              key={e.id}
-              href={`/uzmanlar/${e.slug}`}
-              className="group rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <CaseCard className="h-full transition-shadow group-hover:shadow-md">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    {e.avatar?.url && (
-                      <img
-                        src={e.avatar.url}
-                        alt={e.avatar.alt || e.name}
-                        className="size-11 rounded-full border border-border object-cover"
-                      />
-                    )}
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <CardTitle className="truncate">{e.name}</CardTitle>
-                      {e.verified && <VerdictStamp variant="safe">Doğrulandı</VerdictStamp>}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2">
-                  {e.title && <p className="text-sm text-muted-foreground">{e.title}</p>}
-                  {e.bio && <p className="line-clamp-2 text-sm text-muted-foreground">{e.bio}</p>}
-                  <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                    {e.ruleCount} aktif kural · {e.ratingCount} derece
-                  </p>
-                </CardContent>
-              </CaseCard>
-            </Link>
-          ))}
-        </div>
+        <ExpertCards
+          experts={expertsWithStats.map((e: any) => ({
+            id: String(e.id),
+            slug: e.slug,
+            name: e.name,
+            title: e.title ?? null,
+            bio: e.bio ?? null,
+            avatarUrl: typeof e.avatar === 'object' ? (e.avatar?.url ?? null) : null,
+            avatarAlt: typeof e.avatar === 'object' ? (e.avatar?.alt ?? null) : null,
+            verified: Boolean(e.verified),
+            ruleCount: e.ruleCount,
+            ratingCount: e.ratingCount,
+          }))}
+        />
       )}
     </div>
   )

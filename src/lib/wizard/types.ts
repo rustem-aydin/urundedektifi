@@ -19,11 +19,44 @@ export type MediaRef = {
 
 export type UserRole = 'admin' | 'editor' | 'expert' | 'user'
 
+export type FollowingRef = string | number | { id: string | number }
+
 export type User = {
   id: string | number
   email: string
   name: string
   role: UserRole
+  /** Takip edilen uzmanlar (`users.following`, hasMany). Derinliğe göre id ya da nesne gelir. */
+  following?: FollowingRef[] | null
+}
+
+/** `/api/experts/:id/stats` yanıtı. */
+export type ExpertStats = { followerCount: number }
+
+/** Ray/kart için hafif uzman özeti (`depth=1` ile gelir). */
+export type ExpertSummary = {
+  id: string
+  name: string
+  slug: string
+  title?: string | null
+  avatar?: MediaRef | null
+}
+
+export type PostListItem = {
+  id: string
+  title: string
+  slug: string
+  excerpt?: string | null
+  cover?: MediaRef | null
+  expert: ExpertSummary | string | number
+  topics?: ({ id: string; name: string; slug: string; color?: string | null; icon?: string | null } | string | number)[] | null
+  publishedAt?: string | null
+  createdAt?: string
+}
+
+export type PostDoc = PostListItem & {
+  body?: unknown
+  bodyMarkdown?: string | null
 }
 
 export type AuthResponse = { token: string; user: User; exp?: number }

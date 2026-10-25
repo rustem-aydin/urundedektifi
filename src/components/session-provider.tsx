@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { ApiError, fetchMe, login as requestLogin } from '@/lib/wizard/api'
-import type { User, UserRole } from '@/lib/wizard/types'
+import { ApiError, fetchMe, login as requestLogin, register, updateFollowing } from '@/lib/wizard/api'
+import { consumeFollow } from '@/lib/followIntent'
+import type { FollowingRef, User, UserRole } from '@/lib/wizard/types'
 
 /**
  * Web oturumu: Payload kullanıcısı + JWT.
@@ -15,6 +16,13 @@ const TOKEN_KEY = 'payload-token'
 
 export const CORPORATE_ROLES: UserRole[] = ['admin', 'editor']
 
+/** `following` alanı derinliğe göre id ya da { id } döndürür; tek biçime indirilir. */
+export function normalizeFollowing(refs: FollowingRef[] | null | undefined): string[] {
+  return (refs ?? [])
+    .map((ref) => (typeof ref === 'object' && ref !== null ? String(ref.id) : String(ref)))
+    .filter(Boolean)
+}
+
 type SessionValue = {
   user: User | null
   token: string | null
@@ -22,8 +30,14 @@ type SessionValue = {
   restoring: boolean
   busy: boolean
   canAddProduct: boolean
+  /** Takip edilen uzman kimlikleri (oturum sahibinin `users.following` alanı). */
+  followingIds: string[]
   signIn: (email: string, password: string) => Promise<void>
+  signUp: (input: { name: string; email: string; password: string }) => Promise<void>
   signOut: () => void
+  isFollowing: (expertId: string | number) => boolean
+  /** İyimser güncelleme; sunucu yazımı başarısızsa geri alınır. */
+  toggleFollow: (expertId: string | number) => Promise<void>
 }
 
 const SessionContext = createContext<SessionValue | null>(null)
@@ -31,6 +45,7 @@ const SessionContext = createContext<SessionValue | null>(null)
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [followingIds, setFollowingIds] = useState<string[]>([])
   const [restoring, setRestoring] = useState(true)
   const [busy, setBusy] = useState(false)
 
@@ -46,6 +61,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         setToken(stored)
         setUser(me)
+        setFollowingIds(normalizeFollowing(me.following))
       })
       .catch((error: unknown) => {
         if (cancelled) return
@@ -62,6 +78,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  /** Girişsizken "Takip et"e basılmışsa giriş/kayıt sonrası takibi tamamlar. */
+  const completePendingFollow = useCallback(async (current: User, sessionToken: string) => {
+    const pending = consumeFollow()
+    if (!pending) return
+    const next = Array.from(new Set([...normalizeFollowing(current.following), pending]))
+    try {
+      await updateFollowing(current.id, next, sessionToken)
+      setFollowingIds(next)
+    } catch {
+      // Niyet düştü; kullanıcı takibi profilden tekrar başlatabilir.
+    }
+  }, [])
+
   const signIn = useCallback(async (email: string, password: string) => {
     setBusy(true)
     try {
@@ -69,16 +98,65 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       window.localStorage.setItem(TOKEN_KEY, result.token)
       setToken(result.token)
       setUser(result.user)
+      setFollowingIds(normalizeFollowing(result.user.following))
+      await completePendingFollow(result.user, result.token)
     } finally {
       setBusy(false)
     }
-  }, [])
+  }, [completePendingFollow])
+
+  const signUp = useCallback(
+    async (input: { name: string; email: string; password: string }) => {
+      setBusy(true)
+      try {
+        await register(input)
+        const result = await requestLogin(input.email, input.password)
+        window.localStorage.setItem(TOKEN_KEY, result.token)
+        setToken(result.token)
+        setUser(result.user)
+        setFollowingIds(normalizeFollowing(result.user.following))
+        await completePendingFollow(result.user, result.token)
+      } finally {
+        setBusy(false)
+      }
+    },
+    [completePendingFollow],
+  )
 
   const signOut = useCallback(() => {
     window.localStorage.removeItem(TOKEN_KEY)
     setToken(null)
     setUser(null)
+    setFollowingIds([])
   }, [])
+
+  const toggleFollow = useCallback(
+    async (expertId: string | number) => {
+      if (!user || !token) {
+        throw new ApiError('unauthorized', 401, 'Takip etmek için giriş yapın.')
+      }
+      // API'den gelen ilişki kimlikleri sayı, listede tutulanlar dizedir: tek biçime indir.
+      const id = String(expertId)
+      const previous = followingIds
+      const next = previous.includes(id)
+        ? previous.filter((entry) => entry !== id)
+        : [...previous, id]
+      // İyimser: buton anında tepki verir, hata olursa geri alınır.
+      setFollowingIds(next)
+      try {
+        await updateFollowing(user.id, next, token)
+      } catch (error) {
+        setFollowingIds(previous)
+        throw error
+      }
+    },
+    [followingIds, token, user],
+  )
+
+  const isFollowing = useCallback(
+    (expertId: string | number) => followingIds.includes(String(expertId)),
+    [followingIds],
+  )
 
   const value = useMemo<SessionValue>(
     () => ({
@@ -87,10 +165,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       restoring,
       busy,
       canAddProduct: Boolean(user && CORPORATE_ROLES.includes(user.role)),
+      followingIds,
       signIn,
+      signUp,
       signOut,
+      isFollowing,
+      toggleFollow,
     }),
-    [user, token, restoring, busy, signIn, signOut],
+    [user, token, restoring, busy, followingIds, signIn, signUp, signOut, isFollowing, toggleFollow],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

@@ -79,6 +79,7 @@ export interface Config {
     pages: Page;
     experts: Expert;
     'expert-rules': ExpertRule;
+    posts: Post;
     'rating-scales': RatingScale;
     ingredients: Ingredient;
     additives: Additive;
@@ -102,6 +103,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
     'expert-rules': ExpertRulesSelect<false> | ExpertRulesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
     'rating-scales': RatingScalesSelect<false> | RatingScalesSelect<true>;
     ingredients: IngredientsSelect<false> | IngredientsSelect<true>;
     additives: AdditivesSelect<false> | AdditivesSelect<true>;
@@ -165,7 +167,7 @@ export interface PayloadMcpApiKeyAuthOperations {
   };
 }
 /**
- * Sistem kullanıcıları. Admin, editör, uzman ve normal üye olabilirler.
+ * Sistem kullanıcıları. Admin, editör, uzman ve normal üye olabilirler. Normal üyeler yalnızca site ve mobil uygulamada oturum açar, panele giremez.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
@@ -184,6 +186,10 @@ export interface User {
    * Kare formatında, en az 200x200 piksel önerilir.
    */
   avatar?: (number | null) | Media;
+  /**
+   * Kullanıcının takip ettiği uzmanlar. Anasayfadaki yazı rayını ve uzman profillerindeki takip durumunu besler.
+   */
+  following?: (number | Expert)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -260,6 +266,92 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * Ürün değerlendirmesi yapan uzmanlar. Her uzman kendi derecelendirme ölçeğini oluşturur (Boykot, Helal, Sağlık vb.) ve kendi kurallarını yazar. Sadece doğrulanmış ve "Herkese Açık" işaretli uzmanlar sitede görünür.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "experts".
+ */
+export interface Expert {
+  id: number;
+  /**
+   * Uzmanın gerçek adı ve soyadı. Sitede her yerde bu isim görünür.
+   */
+  name: string;
+  /**
+   * URL'de kullanılacak kısa ad. /uzmanlar/ahmet-hocam gibi. Otomatik üretilir.
+   */
+  slug: string;
+  /**
+   * Uzmanın admin panele giriş yapacağı kullanıcı hesabı (opsiyonel). Boş bırakılırsa sadece admin tarafından yönetilir.
+   */
+  user?: (number | null) | User;
+  /**
+   * Uzmanın mesleki ünvanı (Örn: "Gıda Mühendisi", "Helal Denetçisi", "Diyetisyen", "Çevre Mühendisi").
+   */
+  title?: string | null;
+  /**
+   * Kare formatında, en az 400x400 piksel önerilir. Şeffaf arka plan opsiyonel.
+   */
+  avatar?: (number | null) | Media;
+  /**
+   * Profil sayfasının üst şeridi. Opsiyonel; boşsa dosya estetiğinde tipografik zemin üretilir.
+   */
+  cover?: (number | null) | Media;
+  /**
+   * Uzman hakkında kısa biyografi. Uzman profili sayfasında ve kartında görüntülenir (2-3 paragraf önerilir).
+   */
+  bio?: string | null;
+  credentials?:
+    | {
+        /**
+         * Sertifika veya belgenin tam adı (Örn: "Helal Gıda Denetçisi Sertifikası").
+         */
+        title: string;
+        /**
+         * Alındığı yıl (Örn: 2020).
+         */
+        year?: number | null;
+        /**
+         * Sertifikayı veren kurum (Örn: "GIMDES", "TÜBİTAK", "Üniversite Adı").
+         */
+        issuer?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Admin tarafından doğrulanmış uzman. Sadece doğrulanmış uzmanlar anasayfada ve filtrelerde gösterilir.
+   */
+  verified?: boolean | null;
+  /**
+   * Sitede görüntülensin mi? İşaret kaldırılırsa uzman sadece admin panelde görünür.
+   */
+  isPublic?: boolean | null;
+  socialLinks?: {
+    /**
+     * Uzmanın kendi web sitesi (https:// ile birlikte).
+     */
+    website?: string | null;
+    /**
+     * Twitter profil URL'i.
+     */
+    twitter?: string | null;
+    /**
+     * Instagram profil URL'i.
+     */
+    instagram?: string | null;
+    /**
+     * LinkedIn profil URL'i.
+     */
+    linkedin?: string | null;
+    /**
+     * YouTube kanal URL'i.
+     */
+    youtube?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Ürünlerin tip kategorileri (içecek, atıştırmalık, süt ürünleri vb.). Hiyerarşik yapıdadır — alt kategori eklenebilir.
@@ -817,88 +909,6 @@ export interface Page {
   createdAt: string;
 }
 /**
- * Ürün değerlendirmesi yapan uzmanlar. Her uzman kendi derecelendirme ölçeğini oluşturur (Boykot, Helal, Sağlık vb.) ve kendi kurallarını yazar. Sadece doğrulanmış ve "Herkese Açık" işaretli uzmanlar sitede görünür.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "experts".
- */
-export interface Expert {
-  id: number;
-  /**
-   * Uzmanın gerçek adı ve soyadı. Sitede her yerde bu isim görünür.
-   */
-  name: string;
-  /**
-   * URL'de kullanılacak kısa ad. /uzmanlar/ahmet-hocam gibi. Otomatik üretilir.
-   */
-  slug: string;
-  /**
-   * Uzmanın admin panele giriş yapacağı kullanıcı hesabı (opsiyonel). Boş bırakılırsa sadece admin tarafından yönetilir.
-   */
-  user?: (number | null) | User;
-  /**
-   * Uzmanın mesleki ünvanı (Örn: "Gıda Mühendisi", "Helal Denetçisi", "Diyetisyen", "Çevre Mühendisi").
-   */
-  title?: string | null;
-  /**
-   * Kare formatında, en az 400x400 piksel önerilir. Şeffaf arka plan opsiyonel.
-   */
-  avatar?: (number | null) | Media;
-  /**
-   * Uzman hakkında kısa biyografi. Uzman profili sayfasında ve kartında görüntülenir (2-3 paragraf önerilir).
-   */
-  bio?: string | null;
-  credentials?:
-    | {
-        /**
-         * Sertifika veya belgenin tam adı (Örn: "Helal Gıda Denetçisi Sertifikası").
-         */
-        title: string;
-        /**
-         * Alındığı yıl (Örn: 2020).
-         */
-        year?: number | null;
-        /**
-         * Sertifikayı veren kurum (Örn: "GIMDES", "TÜBİTAK", "Üniversite Adı").
-         */
-        issuer?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Admin tarafından doğrulanmış uzman. Sadece doğrulanmış uzmanlar anasayfada ve filtrelerde gösterilir.
-   */
-  verified?: boolean | null;
-  /**
-   * Sitede görüntülensin mi? İşaret kaldırılırsa uzman sadece admin panelde görünür.
-   */
-  isPublic?: boolean | null;
-  socialLinks?: {
-    /**
-     * Uzmanın kendi web sitesi (https:// ile birlikte).
-     */
-    website?: string | null;
-    /**
-     * Twitter profil URL'i.
-     */
-    twitter?: string | null;
-    /**
-     * Instagram profil URL'i.
-     */
-    instagram?: string | null;
-    /**
-     * LinkedIn profil URL'i.
-     */
-    linkedin?: string | null;
-    /**
-     * YouTube kanal URL'i.
-     */
-    youtube?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Uzmanların ürünlere otomatik olarak uygulanan değerlendirme kuralları. Her kural tipi için ilgili master listeden (Marka, Ülke, İçindekiler, Katkı, Konu vb.) dropdown ile seçim yapılır — manuel metin girişi yoktur. Kural eşleştiğinde uzmanın kendi derecelendirme ölçeğinden seçtiği "Derece" gösterilir.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1058,6 +1068,62 @@ export interface RatingScale {
    * Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama kanıtlanmamış").
    */
   description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Uzmanların paylaştığı yazılar. Yayınlanan yazılar anasayfadaki hikâye rayında ve uzman profilinde görünür. Gövde Lexical olarak yazılır; markdown sürümü kayıtta otomatik üretilir.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  /**
+   * Yazının başlığı. Rayda ve kartlarda bu başlık görünür.
+   */
+  title: string;
+  /**
+   * Boş bırakılırsa başlıktan üretilir. /yazilar/<slug> adresinde kullanılır.
+   */
+  slug?: string | null;
+  /**
+   * Yazının sahibi. Uzman rolüyle giriş yapan kullanıcıda otomatik doldurulur ve değiştirilemez.
+   */
+  expert: number | Expert;
+  /**
+   * Kart ve ray için 1-2 cümlelik özet. Boşsa gövdenin ilk paragrafı kullanılır.
+   */
+  excerpt?: string | null;
+  /**
+   * Opsiyonel. Boşsa dosya estetiğinde tipografik zemin üretilir.
+   */
+  cover?: (number | null) | Media;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * Gövdeden otomatik üretilir, elle düzenlenemez. API tüketicileri ve SEO için hazır markdown.
+   */
+  bodyMarkdown?: string | null;
+  topics?: (number | Topic)[] | null;
+  status: 'draft' | 'published';
+  /**
+   * Yayına alındığında boşsa otomatik doldurulur.
+   */
+  publishedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1397,6 +1463,10 @@ export interface PayloadLockedDocument {
         value: number | ExpertRule;
       } | null)
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
         relationTo: 'rating-scales';
         value: number | RatingScale;
       } | null)
@@ -1476,6 +1546,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   avatar?: T;
+  following?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -1731,6 +1802,7 @@ export interface ExpertsSelect<T extends boolean = true> {
   user?: T;
   title?: T;
   avatar?: T;
+  cover?: T;
   bio?: T;
   credentials?:
     | T
@@ -1791,6 +1863,24 @@ export interface ExpertRulesSelect<T extends boolean = true> {
         id?: T;
       };
   isActive?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  expert?: T;
+  excerpt?: T;
+  cover?: T;
+  body?: T;
+  bodyMarkdown?: T;
+  topics?: T;
+  status?: T;
+  publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

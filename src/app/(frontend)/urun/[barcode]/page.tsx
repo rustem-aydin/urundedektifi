@@ -181,7 +181,15 @@ export default async function ProductDetailPage({
           eyebrow="Dosya 01"
           title={<>Uzman hükümleri <span className="font-mono text-base text-faded">({verdict.totalMatched})</span></>}
           hasData={verdict.totalMatched > 0}
-          emptyMessage="Bu ürünle eşleşen aktif kural bulunamadı. Uzmanlar yeni kurallar ekledikçe bu dosya otomatik güncellenir."
+          emptyMessage="Bu ürün için henüz uzman hükmü yok. Kuralları görmek için uzmanları takip edin."
+          emptyAction={
+            <Link
+              href="/uzmanlar"
+              className="inline-flex min-h-9 items-center rounded-sm border border-foreground/25 bg-card px-3 text-sm font-medium transition-colors hover:border-foreground/60 hover:bg-muted"
+            >
+              Uzmanlara git
+            </Link>
+          }
         >
           <ExpertVerdicts verdicts={verdict.byExpert} avatars={expertAvatars} />
         </CaseSection>

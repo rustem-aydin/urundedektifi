@@ -19,6 +19,7 @@ import { Products } from './collections/Products'
 import { Pages } from './collections/Pages'
 import { Experts } from './collections/Experts'
 import { ExpertRules } from './collections/ExpertRules'
+import { Posts } from './collections/Posts'
 import { RatingScales } from './collections/RatingScales'
 import { Ingredients } from './collections/Ingredients'
 import { Additives } from './collections/Additives'
@@ -40,6 +41,9 @@ export default buildConfig({
       titleSuffix: ' — Ürün Dedektifi',
     },
   },
+  // Yerelde mobil uygulamanın web hedefi (Expo web) API'ye başka porttan erişir.
+  // Üretimde istemciler ya aynı kaynakta (web) ya da yerel (mobil) çalışır; CORS kapalı kalır.
+  cors: process.env.NODE_ENV !== 'production' ? '*' : [],
   collections: [
     Users,
     Media,
@@ -52,6 +56,7 @@ export default buildConfig({
     Pages,
     Experts,
     ExpertRules,
+    Posts,
     RatingScales,
     Ingredients,
     Additives,

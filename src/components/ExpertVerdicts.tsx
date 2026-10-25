@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { FollowButton } from '@/components/FollowButton'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import {
   Dialog,
@@ -39,40 +40,47 @@ export function ExpertVerdicts({
         {verdicts.map((verdict) => {
           const avatar = avatars[verdict.expert.slug]
           return (
-            <li key={verdict.expert.id}>
+            <li
+              key={verdict.expert.id}
+              className="group flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/40 hover:ring-foreground/30"
+            >
               <button
                 type="button"
                 onClick={() => setOpen(verdict)}
                 aria-label={`${verdict.expert.name}: ${verdict.ratings
                   .map((rating) => rating.name)
                   .join(', ')}. Ayrıntıyı aç.`}
-                className="group w-full rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stamp"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stamp"
               >
-                <span className="flex w-full items-center gap-3 rounded-xl bg-card px-4 py-3 text-sm ring-1 ring-foreground/10 transition-colors group-hover:bg-muted/40 group-hover:ring-foreground/30">
-                  <ExpertAvatarImage avatar={avatar} name={verdict.expert.name} />
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate font-medium">{verdict.expert.name}</span>
-                    <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                      {verdict.matchedRules.length} delil
-                    </span>
-                  </span>
-                  <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-                    {verdict.ratings.map((rating) => (
-                      <VerdictStamp
-                        key={rating.id}
-                        // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
-                        style={{ color: rating.color || undefined }}
-                        title={rating.description || rating.name}
-                      >
-                        {rating.name}
-                      </VerdictStamp>
-                    ))}
-                  </span>
-                  <span aria-hidden="true" className="font-mono text-faded">
-                    ›
+                <ExpertAvatarImage avatar={avatar} name={verdict.expert.name} />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate font-medium">{verdict.expert.name}</span>
+                  <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                    {verdict.matchedRules.length} delil
                   </span>
                 </span>
+                <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+                  {verdict.ratings.map((rating) => (
+                    <VerdictStamp
+                      key={rating.id}
+                      // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
+                      style={{ color: rating.color || undefined }}
+                      title={rating.description || rating.name}
+                    >
+                      {rating.name}
+                    </VerdictStamp>
+                  ))}
+                </span>
+                <span aria-hidden="true" className="font-mono text-faded">
+                  ›
+                </span>
               </button>
+              <FollowButton
+                expertId={verdict.expert.id}
+                expertName={verdict.expert.name}
+                variant="chip"
+                className="shrink-0"
+              />
             </li>
           )
         })}
