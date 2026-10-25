@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { invalidateProductCaseCache } from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 export const RatingScales: CollectionConfig = {
@@ -77,4 +78,9 @@ export const RatingScales: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    // Derecenin adı/rengi/açıklaması hüküm damgalarında görünür: case önbelleği düşsün.
+    afterChange: [() => invalidateProductCaseCache()],
+    afterDelete: [() => invalidateProductCaseCache()],
+  },
 }

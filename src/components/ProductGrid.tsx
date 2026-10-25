@@ -39,6 +39,8 @@ export function ProductGrid({
     .map((product) => product.barcode)
     .filter((barcode): barcode is string => Boolean(barcode))
   const barcodeKey = barcodes.join(',')
+  // Takip kümesi değişince rozetler yeniden çekilir (aynı sayıda takip bile farklı uzman olabilir).
+  const followingKey = [...followingIds].sort().join(',')
 
   useEffect(() => {
     if (restoring) return
@@ -57,8 +59,8 @@ export function ProductGrid({
     return () => {
       cancelled = true
     }
-    // barcodeKey: aynı barkod kümesi için tekrar istek atılmaz.
-  }, [barcodeKey, token, restoring, followingIds.length])
+    // barcodeKey + followingKey: aynı küme için tekrar istek atılmaz.
+  }, [barcodeKey, followingKey, token, restoring, followingIds.length])
 
   return (
     <div className={className ?? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'}>

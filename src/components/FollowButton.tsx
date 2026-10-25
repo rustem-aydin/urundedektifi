@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { useSession } from '@/components/session-provider'
@@ -28,6 +28,7 @@ export function FollowButton({
 }) {
   const { user, restoring, isFollowing, toggleFollow } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
   const [pending, setPending] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
 
@@ -78,6 +79,8 @@ export function FollowButton({
           setPending(true)
           try {
             await toggleFollow(expertId)
+            // Sunucu-render edilen takipçi sayısı/profil verisi de tazelensin.
+            router.refresh()
           } catch {
             setFailure('Takip güncellenemedi.')
           } finally {

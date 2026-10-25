@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
-import { listProductsForRules } from '@/lib/productCase'
+import { invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -267,5 +267,8 @@ export const Experts: CollectionConfig = {
         return data
       },
     ],
+    // Uzman adı/slug/avatarı ürün dosyasındaki hüküm satırlarında görünür: case önbelleği düşsün.
+    afterChange: [() => invalidateProductCaseCache()],
+    afterDelete: [() => invalidateProductCaseCache()],
   },
 }

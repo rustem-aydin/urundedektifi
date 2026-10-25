@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { invalidateProductCaseCache } from '@/lib/productCase'
 import { slugify } from '@/lib/slugify'
 
 export const Topics: CollectionConfig = {
@@ -87,5 +88,8 @@ export const Topics: CollectionConfig = {
         return data
       },
     ],
+    // Konu adı/rengi/ikonu hükümlerde görünür: case önbelleği düşsün.
+    afterChange: [() => invalidateProductCaseCache()],
+    afterDelete: [() => invalidateProductCaseCache()],
   },
 }

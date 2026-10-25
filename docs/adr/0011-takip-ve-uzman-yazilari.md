@@ -53,6 +53,12 @@ Tasarım oturumunda (grilling) tüketici tarafı şöyle kararlaştırıldı:
   etmez**: `ProductVerdictProvider` (client) JWT ile `/verdict/:barcode`'u çeker, üst bilgi
   rozeti (`MatchedStamp`) ve Dosya 01 (`VerdictSection`) aynı isteği paylaşır. Takip listesi
   değişince istek yenilenir. Mobil ürün ekranı aynı ucu `useVerdict` ile kullanır.
+- **Önbellek invalidation.** Takip/giriş/çıkış sonrası istemci bağımlı veriyi yeniler: web'de
+  `followingIds` değişince `ProductVerdictProvider` hükmü, `ProductGrid` kart rozetlerini
+  yeniden çeker ve `FollowButton` `router.refresh()` ile sunucu-render edilen takipçi sayısını
+  tazeler. Sunucuda kural/uzman/derece/konu değişimleri `invalidateProductCaseCache()` ile
+  paylaşılan Dosya önbelleğini düşürür; aksi hâlde admin'de eklenen kural ürün sayfasına
+  10 dakikaya kadar yansımıyordu.
 - **`posts` koleksiyonu.** Alanlar: `expert`, `title`, `slug`, `excerpt`, `cover`, `body`
   (Lexical), `bodyMarkdown` (hook türetir), `topics`, `status`, `publishedAt`.
   Okuma **yalnız yayında** (`{ status: { equals: 'published' } }`) — `products`'taki
