@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useMemo, useState } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
-import { FollowButton } from '@/components/FollowButton'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { useSession } from '@/components/session-provider'
 import { cn } from '@/lib/utils'
@@ -103,14 +102,6 @@ export function ExpertCards({ experts }: { experts: ExpertCardData[] }) {
                 <p className="mt-auto font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
                   {expert.ruleCount} aktif kural · {expert.ratingCount} derece
                 </p>
-              </div>
-              <div className="absolute bottom-3 right-3 z-20">
-                <FollowButton
-                  expertId={expert.id}
-                  expertName={expert.name}
-                  variant="chip"
-                  className="bg-background"
-                />
               </div>
             </CaseCard>
           ))}
