@@ -13,10 +13,11 @@ hükümleri ve kuralları vardı ama takip edilemiyor, uzman kendi kaleminden ya
 Tasarım oturumunda (grilling) tüketici tarafı şöyle kararlaştırıldı:
 
 - Tüketici hesabı = mevcut `users` koleksiyonunda `role: 'user'`; ayrı auth koleksiyonu yok.
-- Takip, ürün dosyasındaki hükümleri **değiştirmez** (kurallar zaten herkese görünür).
-  Takibin tek somut çıktısı anasayfadaki **Hikâye Rayı** ve profildeki takipçi sayısıdır.
-- CTA: hüküm yoksa "uzmanları takip edin" + **Uzmanlara git**; hüküm varsa uzmanın yanında
-  **Takip et** çipi.
+- Takip bir **kapıdır**: ürün dosyasında yalnız takip edilen uzmanların hükümleri görünür;
+  ürün kartlarındaki "N kural eşleşti" rozeti yalnız takip edilen uzmanların eşleşen
+  kurallarını sayar. Takip yoksa hüküm bölümü "uzmanları takip edin" boş durumunu gösterir.
+- CTA: hüküm yoksa (ya da takip yoksa) **Uzmanlara git**; hüküm satırlarında takip düğmesi
+  **yoktur** — satırlar zaten yalnız takip edilen uzmanları gösterir.
 - Yazı gövdesi Payload'ın Lexical editörüyle yazılır; **kanonik biçim Lexical JSON**'dur,
   markdown türetilmiş çıktıdır (`bodyMarkdown`).
 - Mobil istemci markdown yerine Lexical JSON'u doğrudan basar (mobil ADR 0012).
@@ -39,6 +40,19 @@ Tasarım oturumunda (grilling) tüketici tarafı şöyle kararlaştırıldı:
   koleksiyonu yok: takip tarihi hiçbir yüzeyde kullanılmıyor, ray yazı tarihine göre sıralanıyor.
   Takipçi sayısı `GET /api/experts/:id/stats` ile public servis edilir; anonim istemci `users`
   sorgulayamaz (`read` yalnız kendi dokümanı).
+- **Takibe bağlı hüküm.** `GET /api/products/verdict/:barcode` JWT varsa kullanıcının
+  `following` listesini okur, `getProductCase`'in (paylaşılan, önbellekli) sonucunu
+  `verdictForExperts` ile süzer ve `totalMatched`'i kalan uzmanların eşleşen kurallarından
+  yeniden hesaplar. Misafir/boş takip → `{ totalMatched: 0, byExpert: [] }`. Paylaşılan case
+  önbelleği bozulmaz; süzme istek başına yapılır.
+- **Kart rozeti.** `GET /api/products/match-counts?barcodes=a,b,c` (≤60) takip edilen uzmanların
+  kurallarını önbellekteki kural setinden süzüp yalnız istenen ürünleri değerlendirir; yanıt
+  `{ counts: { [barcode]: n } }`. Web'de `ProductGrid`, mobilde `ProductCard` bu sayıyı
+  "N kural eşleşti" olarak basar; misafirde rozet yoktur.
+- **İstemci akışı.** Web ürün sayfası sunucuda tam `ProductCase` üretir ama hükmü **render
+  etmez**: `ProductVerdictProvider` (client) JWT ile `/verdict/:barcode`'u çeker, üst bilgi
+  rozeti (`MatchedStamp`) ve Dosya 01 (`VerdictSection`) aynı isteği paylaşır. Takip listesi
+  değişince istek yenilenir. Mobil ürün ekranı aynı ucu `useVerdict` ile kullanır.
 - **`posts` koleksiyonu.** Alanlar: `expert`, `title`, `slug`, `excerpt`, `cover`, `body`
   (Lexical), `bodyMarkdown` (hook türetir), `topics`, `status`, `publishedAt`.
   Okuma **yalnız yayında** (`{ status: { equals: 'published' } }`) — `products`'taki
@@ -69,6 +83,10 @@ Tasarım oturumunda (grilling) tüketici tarafı şöyle kararlaştırıldı:
 
 ## Consequences
 
+- **Misafir artık hüküm görmez.** Ürün sayfasındaki hüküm bölümü SEO'da boş kalır; içerik
+  değeri "uzmanları takip edin" CTA'sına kayar. Hüküm verisi API'de `/products/case/:barcode`
+  içinde hâlâ ham hâlde durur (iç kullanım/uzman panelleri); kişisel kapı yalnız yeni
+  `/verdict` ucundadır.
 - Açık kayıt, spam hesap riskini getirir. Bu sürümde e-posta doğrulama yok (repoda e-posta
   adaptörü yok) ve captcha yok; yalnız giriş denemesi kilidi var. Spam görülürse e-posta
   doğrulama veya Turnstile eklenir.

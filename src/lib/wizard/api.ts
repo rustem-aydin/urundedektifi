@@ -12,6 +12,7 @@ import type {
   RawProduct,
   User,
 } from './types'
+import type { ExpertVerdict } from '@/lib/verdictEngine'
 
 /**
  * Ekle/Düzenle yazma yolu (ADR 0008/0009). Web, Payload ile aynı kaynakta çalışır; bu yüzden
@@ -290,4 +291,34 @@ export async function fetchPostBySlug(slug: string): Promise<PostDoc | null> {
     `/posts?limit=1&depth=2&where[slug][equals]=${encodeURIComponent(slug)}`,
   )
   return page.docs[0] ?? null
+}
+
+/** Oturum sahibinin takip ettiği uzmanlara daraltılmış hüküm (misafir → boş). */
+export type ProductVerdict = {
+  totalMatched: number
+  byExpert: ExpertVerdict[]
+  /** Takip edilmeyen uzmanların eşleşmeleri var mı? (boş durumun nedenini ayırt eder) */
+  hasOtherMatches?: boolean
+}
+
+export async function fetchVerdict(barcode: string, token?: string | null): Promise<ProductVerdict> {
+  return request<ProductVerdict>(
+    `/products/verdict/${encodeURIComponent(barcode)}`,
+    {},
+    token ?? undefined,
+  )
+}
+
+/** Barkod → takip edilen uzmanların eşleşen kural sayısı (liste kartları). */
+export async function fetchMatchCounts(
+  barcodes: string[],
+  token?: string | null,
+): Promise<Record<string, number>> {
+  if (barcodes.length === 0) return {}
+  const result = await request<{ counts: Record<string, number> }>(
+    `/products/match-counts?barcodes=${encodeURIComponent(barcodes.join(','))}`,
+    {},
+    token ?? undefined,
+  )
+  return result.counts ?? {}
 }

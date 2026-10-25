@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 import config from '@/payload.config'
 import { listProductCases } from '@/lib/productCase'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { ProductCard } from '@/components/ProductCard'
+import { ProductGrid } from '@/components/ProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
 import { Button } from '@/components/ui/button'
 
@@ -144,24 +144,22 @@ export default async function ProductsPage({
           <p className="mt-6 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase" aria-live="polite">
             {products.totalDocs} ürün bulundu
           </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {docs.map((p) => {
-              const frontImage = p.gallery[0] ?? null
-              const href = p.barcode ? `/urun/${p.barcode}` : null
-              return (
-                <ProductCard
-                  key={p.id}
-                  href={href}
-                  name={p.name || 'İsimsiz ürün'}
-                  brandName={p.brand?.name ?? null}
-                  categoryName={p.category?.name ?? null}
-                  barcode={p.barcode}
-                  imageUrl={frontImage?.url || null}
-                  imageAlt={frontImage?.alt || p.name}
-                  verdictCount={p.verdict.totalMatched}
-                />
-              )
-            })}
+          <div className="mt-4">
+            <ProductGrid
+              products={docs.map((p) => {
+                const frontImage = p.gallery[0] ?? null
+                return {
+                  id: String(p.id),
+                  href: p.barcode ? `/urun/${p.barcode}` : null,
+                  name: p.name || 'İsimsiz ürün',
+                  brandName: p.brand?.name ?? null,
+                  categoryName: p.category?.name ?? null,
+                  barcode: p.barcode,
+                  imageUrl: frontImage?.url || null,
+                  imageAlt: frontImage?.alt || p.name,
+                }
+              })}
+            />
           </div>
         </>
       )}

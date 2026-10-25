@@ -9,7 +9,7 @@ import { Barcode } from '@/components/Barcode'
 import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
-import { ProductCard } from '@/components/ProductCard'
+import { ProductGrid } from '@/components/ProductGrid'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -118,22 +118,22 @@ export default async function HomePage() {
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {(latestProducts.docs as any[]).map((p: any) => {
-              const frontImage = typeof p.frontImage === 'object' ? p.frontImage : null
-              return (
-                <ProductCard
-                  key={p.id}
-                  href={p.barcode ? `/urun/${p.barcode}` : null}
-                  name={p.name || 'İsimsiz ürün'}
-                  brandName={typeof p.brand === 'object' ? p.brand?.name : null}
-                  categoryName={typeof p.category === 'object' ? p.category?.name : null}
-                  barcode={p.barcode}
-                  imageUrl={frontImage?.url || null}
-                  imageAlt={frontImage?.alt || p.name}
-                />
-              )
-            })}
+          <div className="mt-6">
+            <ProductGrid
+              products={(latestProducts.docs as any[]).map((p: any) => {
+                const frontImage = typeof p.frontImage === 'object' ? p.frontImage : null
+                return {
+                  id: String(p.id),
+                  href: p.barcode ? `/urun/${p.barcode}` : null,
+                  name: p.name || 'İsimsiz ürün',
+                  brandName: typeof p.brand === 'object' ? (p.brand?.name ?? null) : null,
+                  categoryName: typeof p.category === 'object' ? (p.category?.name ?? null) : null,
+                  barcode: p.barcode ?? null,
+                  imageUrl: frontImage?.url || null,
+                  imageAlt: frontImage?.alt || p.name,
+                }
+              })}
+            />
           </div>
         </section>
       )}

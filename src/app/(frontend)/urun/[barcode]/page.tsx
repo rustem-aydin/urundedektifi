@@ -10,7 +10,8 @@ import config from '@/payload.config'
 import { getProductCase } from '@/lib/productCase'
 import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { ExpertVerdicts, type ExpertAvatar } from '@/components/ExpertVerdicts'
+import { type ExpertAvatar } from '@/components/ExpertVerdicts'
+import { MatchedStamp, ProductVerdictProvider, VerdictSection } from '@/components/ProductVerdicts'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
@@ -99,7 +100,8 @@ export default async function ProductDetailPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
+    <ProductVerdictProvider barcode={String(product.barcode ?? barcode)}>
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
       <Link
         href="/urunler"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
@@ -116,9 +118,7 @@ export default async function ProductDetailPage({
           <div className="flex flex-wrap items-center gap-2">
             <EvidenceTag variant="evidence">ÜRÜN DOSYASI</EvidenceTag>
             {product.brand?.isBoycotted && <VerdictStamp variant="danger">Boykotlu marka</VerdictStamp>}
-            {verdict.totalMatched > 0 && (
-              <VerdictStamp variant="warn">{verdict.totalMatched} delil eşleşti</VerdictStamp>
-            )}
+            <MatchedStamp />
           </div>
 
           <div>
@@ -175,24 +175,8 @@ export default async function ProductDetailPage({
       </header>
 
       <div className="mt-10 flex flex-col gap-10">
-        {/* HÜKÜMLER */}
-        <CaseSection
-          id="hukumler"
-          eyebrow="Dosya 01"
-          title={<>Uzman hükümleri <span className="font-mono text-base text-faded">({verdict.totalMatched})</span></>}
-          hasData={verdict.totalMatched > 0}
-          emptyMessage="Bu ürün için henüz uzman hükmü yok. Kuralları görmek için uzmanları takip edin."
-          emptyAction={
-            <Link
-              href="/uzmanlar"
-              className="inline-flex min-h-9 items-center rounded-sm border border-foreground/25 bg-card px-3 text-sm font-medium transition-colors hover:border-foreground/60 hover:bg-muted"
-            >
-              Uzmanlara git
-            </Link>
-          }
-        >
-          <ExpertVerdicts verdicts={verdict.byExpert} avatars={expertAvatars} />
-        </CaseSection>
+        {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
+        <VerdictSection avatars={expertAvatars} />
 
         {/* UYARILAR */}
         <CaseSection
@@ -439,6 +423,7 @@ export default async function ProductDetailPage({
           </ul>
         </CaseSection>
       </div>
-    </div>
+      </div>
+    </ProductVerdictProvider>
   )
 }

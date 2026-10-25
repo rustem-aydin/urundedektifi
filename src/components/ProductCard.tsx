@@ -56,7 +56,7 @@ export function ProductCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-2">
         {typeof verdictCount === 'number' && verdictCount > 0 && (
-          <VerdictStamp variant="warn">{verdictCount} delil eşleşti</VerdictStamp>
+          <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
         )}
         <p className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
           {barcode ? <span>KANIT NO: {barcode}</span> : <span />}

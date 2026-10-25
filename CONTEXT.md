@@ -62,8 +62,12 @@ Bir markanın `isBoycotted` flag'tir işaretli olması. Ürün Dosyasında üst 
 _Avoid_: üye, abone, müşteri
 
 **Takip**:
-Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir erişim kapısı değildir; yalnız Hikâye Rayını ve uzman profilindeki durumu belirler.
+Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Hükümleri görünür, ürün kartlarındaki "N kural eşleşti" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
 _Avoid_: abonelik, favori
+
+**Kişisel Hüküm**:
+Oturum sahibinin takip listesine göre süzülmüş hüküm (`GET /api/products/verdict/:barcode`). Misafir ya da hiç takip etmeyen kullanıcı boş liste alır; `totalMatched` kalan uzmanların eşleşen kurallarından yeniden hesaplanır.
+_Avoid_: herkese açık hüküm, genel hüküm
 
 **Takipçi**:
 Bir Uzmanı takip eden Tüketici Hesabı sayısı. Anonim istemci `users` okuyamadığı için `GET /api/experts/:id/stats` ucundan servis edilir.

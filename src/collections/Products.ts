@@ -3,6 +3,11 @@ import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
 import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
 import { getProductCase, invalidateProductCaseCache } from '@/lib/productCase'
+import {
+  followingExpertIds,
+  matchedRuleCountsByBarcode,
+  verdictForExperts,
+} from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 export const Products: CollectionConfig = {
@@ -39,6 +44,55 @@ export const Products: CollectionConfig = {
           return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
         }
         return Response.json(productCase)
+      },
+    },
+    {
+      // Kişiselleştirilmiş hüküm: yalnız oturum sahibinin takip ettiği uzmanlar.
+      // Misafir ya da hiç takip etmeyen kullanıcı boş liste alır (hükümler takibe bağlı).
+      path: '/verdict/:barcode',
+      method: 'get',
+      handler: async (req) => {
+        const barcode = req.routeParams?.barcode as string | undefined
+        if (!barcode) {
+          return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+        }
+        const productCase = await getProductCase(req.payload, barcode)
+        if (!productCase) {
+          return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+        }
+        const following = await followingExpertIds(
+          req.payload,
+          (req.user as User | null)?.id ?? null,
+        )
+        const verdict = verdictForExperts(productCase.verdict, following)
+        // Gizli eşleşme var mı: boş durumun nedenini ayırt etmek için (takip etmediklerin
+        // mi eşleşti, yoksa üründe hiç eşleşme mi yok). Sayı verilmez, yalnız boolean.
+        return Response.json({
+          ...verdict,
+          hasOtherMatches: productCase.verdict.totalMatched > verdict.totalMatched,
+        })
+      },
+    },
+    {
+      // Liste kartları: takip edilen uzmanların bu ürünlerde eşleşen kural sayısı.
+      // `barcodes=a,b,c` (en fazla 60). Misafir → boş nesne.
+      path: '/match-counts',
+      method: 'get',
+      handler: async (req) => {
+        const raw = (req.query as Record<string, unknown> | undefined)?.barcodes
+        const value = Array.isArray(raw) ? raw.join(',') : typeof raw === 'string' ? raw : ''
+        const barcodes = value
+          .split(',')
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+        if (barcodes.length === 0) return Response.json({ counts: {} })
+
+        const following = await followingExpertIds(
+          req.payload,
+          (req.user as User | null)?.id ?? null,
+        )
+        const counts = await matchedRuleCountsByBarcode(req.payload, barcodes, following)
+        return Response.json({ counts })
       },
     },
   ],

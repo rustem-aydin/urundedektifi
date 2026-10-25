@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { FollowButton } from '@/components/FollowButton'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import {
   Dialog,
@@ -75,12 +74,6 @@ export function ExpertVerdicts({
                   ›
                 </span>
               </button>
-              <FollowButton
-                expertId={verdict.expert.id}
-                expertName={verdict.expert.name}
-                variant="chip"
-                className="shrink-0"
-              />
             </li>
           )
         })}

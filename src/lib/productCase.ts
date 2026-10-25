@@ -367,6 +367,80 @@ export async function listProductCases(
   return { docs, totalDocs: products.totalDocs }
 }
 
+/** Oturumdaki kullanıcının takip ettiği uzman kimlikleri (misafir → boş dizi). */
+export async function followingExpertIds(
+  payload: Payload,
+  userId: string | number | null | undefined,
+): Promise<string[]> {
+  if (userId == null) return []
+  const user = await payload
+    .findByID({ collection: 'users', id: userId, depth: 0, overrideAccess: true })
+    .catch(() => null)
+  const following = (user as { following?: unknown } | null)?.following
+  if (!Array.isArray(following)) return []
+  return following
+    .map((ref: unknown) =>
+      ref && typeof ref === 'object' && 'id' in ref ? (ref as { id: unknown }).id : ref,
+    )
+    .filter((id) => id != null)
+    .map((id) => String(id))
+}
+
+/**
+ * Hükmü yalnız verilen uzmanlara daraltır (hükümler takibe bağlıdır).
+ * `totalMatched` kalan uzmanların eşleşen kurallarından yeniden hesaplanır;
+ * `byTopic` döndürülmez (konu hükmü kullanılmıyor ve takip süzgecini aşardı).
+ */
+export function verdictForExperts(verdict: VerdictResult, expertIds: string[]): VerdictResult {
+  const set = new Set(expertIds.map(String))
+  const byExpert = verdict.byExpert.filter((entry) => set.has(String(entry.expert.id)))
+  const totalMatched = byExpert.reduce((sum, entry) => sum + entry.matchedRules.length, 0)
+  return { byTopic: [], byExpert, totalMatched }
+}
+
+/**
+ * Barkod → takip edilen uzmanların eşleşen kural sayısı (liste kartı rozetleri).
+ * Kural seti önbellekten gelir; yalnız istenen ürünler ve takip edilen uzmanların
+ * kuralları değerlendirilir.
+ */
+export async function matchedRuleCountsByBarcode(
+  payload: Payload,
+  barcodes: (string | number)[],
+  expertIds: string[],
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = {}
+  const values = Array.from(new Set(barcodes.map((value) => String(value)).filter(Boolean))).slice(
+    0,
+    60,
+  )
+  if (values.length === 0 || expertIds.length === 0) return counts
+
+  const scope = new Set(expertIds.map(String))
+  const rules = (await getCachedRuleSet(payload)).filter((rule: Rule) => {
+    const expert = rule?.expert
+    const id = expert && typeof expert === 'object' ? expert.id : expert
+    return id != null && scope.has(String(id))
+  })
+  if (rules.length === 0) return counts
+
+  const products = await payload.find({
+    collection: 'products',
+    where: { and: [{ status: { equals: 'published' } }, { barcode: { in: values } }] },
+    limit: values.length,
+    depth: 2,
+    select: PRODUCT_SELECT,
+  })
+
+  for (const product of products.docs as any[]) {
+    const matched = rules.reduce(
+      (sum: number, rule: Rule) => (evaluateRule(rule, product).matched ? sum + 1 : sum),
+      0,
+    )
+    if (product.barcode) counts[String(product.barcode)] = matched
+  }
+  return counts
+}
+
 /**
  * Bir uzmanın kurallarına takılan yayınlanmış ürünler.
  *
