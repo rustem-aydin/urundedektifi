@@ -24,13 +24,13 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative flex aspect-square items-center justify-center rounded-md border border-border bg-card p-6 shadow-sm">
+      <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-card shadow-sm">
         <span
-          className="absolute -top-2 left-1/2 h-4 w-20 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs"
+          className="absolute -top-2 left-1/2 z-10 h-4 w-20 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs"
           aria-hidden="true"
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={current.url} alt={current.alt} className="max-h-full w-auto object-contain" />
+        <img src={current.url} alt={current.alt} className="absolute inset-0 size-full p-6 object-contain" />
 
         <span className="absolute bottom-2 left-2 rounded-sm bg-foreground/80 px-2 py-0.5 font-mono text-[0.65rem] tracking-[0.14em] text-background uppercase">
           {safeActive + 1}/{images.length} · {current.label}
@@ -73,14 +73,14 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
               aria-label={`Görsel ${i + 1}: ${g.label}`}
               onClick={() => setActive(i)}
               className={cn(
-                'flex aspect-square w-16 shrink-0 items-center justify-center overflow-hidden rounded-sm border bg-card p-1 transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:w-20',
+                'relative aspect-square w-16 shrink-0 overflow-hidden rounded-sm border bg-card transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:w-20',
                 i === safeActive
                   ? 'border-2 border-stamp'
                   : 'border-border hover:border-foreground/50',
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.url} alt="" className="max-h-full w-auto object-contain" />
+              <img src={g.url} alt="" className="absolute inset-0 size-full p-1 object-contain" />
             </button>
           ))}
         </div>

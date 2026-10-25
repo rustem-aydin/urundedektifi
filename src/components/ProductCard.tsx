@@ -36,16 +36,16 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="flex aspect-[4/3] items-center justify-center border-b border-border bg-muted/50 p-4">
+      <div className="relative aspect-[4/3] overflow-hidden border-b border-border bg-muted/50">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={imageUrl}
             alt={imageAlt || name}
-            className="max-h-full w-auto object-contain"
+            className="absolute inset-0 size-full p-4 object-contain"
           />
         ) : (
-          <span className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
+          <span className="absolute inset-0 flex items-center justify-center font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
             Görsel yok
           </span>
         )}
