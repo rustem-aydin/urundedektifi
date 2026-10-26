@@ -32,6 +32,8 @@ export type PriceSummary = {
 export type ProductCase = {
   id: string
   barcode: string | null
+  /** Ürün dosyasının kaç kez açıldığı (yalnız sayaç ucundan artar). */
+  goruntulenme: number
   name: string
   slug: string | null
   description: string | null
@@ -212,6 +214,9 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
   return {
     id: String(product.id),
     barcode: product.barcode != null ? String(product.barcode) : null,
+    // `numeric` sürücüden metin gelebilir. Buradaki değer Dosya önbelleğinin anlık
+    // görüntüsüdür; detay yüzeyleri `viewCountFor` ile taze sayıyı okur.
+    goruntulenme: Math.max(0, Math.trunc(Number(product.goruntulenme ?? 0)) || 0),
     name: product.name ?? '',
     slug: product.slug ?? null,
     description: product.description ?? null,
@@ -246,6 +251,7 @@ const PRODUCT_SELECT = {
   name: true,
   slug: true,
   barcode: true,
+  goruntulenme: true,
   description: true,
   usage: true,
   frontImage: true,
@@ -276,6 +282,9 @@ const PRODUCT_SELECT = {
 
 // --- Process-içi cache (tek container; Redis ileride tek noktadan eklenebilir) ---
 
+// Görüntülenme artışı bu önbelleği düşürmez: her açılışta kural motorunu yeniden çalıştırmak
+// pahalı. İstemci sayaç ucunun yanıtındaki taze değeri gösterir; diğer ziyaretçiler en fazla
+// 10 dk eski sayıyı görür (sayaç için kabul edilebilir).
 const caseCache = new LRUCache<string, ProductCase>({
   max: 500,
   ttl: 1000 * 60 * 10, // 10 dk
@@ -329,6 +338,29 @@ export async function getProductCase(
   const productCase = toProductCase(product, rules)
   caseCache.set(key, productCase)
   return productCase
+}
+
+/**
+ * Görüntülenme sayısını canlı okur (tek indeksli PK sorgusu).
+ *
+ * Dosya 10 dk önbellekte yaşadığı için sayaç önbellekten sunulmaz: aksi hâlde sayfa
+ * yenilendiğinde sayı geriye düşerdi. Detay ekranları bu taze değeri kullanır.
+ */
+export async function viewCountFor(
+  payload: Payload,
+  id: string | number,
+): Promise<number> {
+  const doc = (await payload
+    .findByID({
+      collection: 'products',
+      id,
+      depth: 0,
+      overrideAccess: true,
+      select: { goruntulenme: true },
+    })
+    .catch(() => null)) as { goruntulenme?: unknown } | null
+  const value = Math.trunc(Number(doc?.goruntulenme ?? 0))
+  return Number.isFinite(value) && value > 0 ? value : 0
 }
 
 export type ProductCaseFilter = {
@@ -442,6 +474,65 @@ export async function matchedRuleCountsByBarcode(
 }
 
 /**
+ * Yayındaki TÜM ürünleri sayfa sayfa tarar ve verilen kurallara takılanların
+ * kimliklerini döndürür.
+ *
+ * Ürün sayısı on binlerce olduğu için tek istekte `limit: 500` ile kesmek
+ * eşleşmeleri sessizce kaybettirir; tarama sayfalanır, eşleşen kayıtlar
+ * ikinci aşamada (görsel ilişkileriyle) çekilir.
+ */
+async function scanPublishedProductIds(
+  payload: Payload,
+  rules: Rule[],
+): Promise<Array<string | number>> {
+  const pageSize = 500
+  const matched: Array<string | number> = []
+  for (let page = 1; ; page++) {
+    const result = await payload.find({
+      collection: 'products',
+      where: { status: { equals: 'published' } },
+      limit: pageSize,
+      page,
+      depth: 1,
+      select: PRODUCT_SELECT,
+    })
+    for (const product of result.docs as any[]) {
+      if (rules.some((rule) => evaluateRule(rule, product as never).matched)) {
+        matched.push(product.id)
+      }
+    }
+    if (result.docs.length < pageSize || page * pageSize >= result.totalDocs) break
+  }
+  return matched
+}
+
+/** Eşleşen ürünleri görsel ilişkileriyle (depth 2) çekip tarama sırasını korur. */
+async function casesForProductIds(
+  payload: Payload,
+  rules: Rule[],
+  ids: Array<string | number>,
+): Promise<ProductCase[]> {
+  const cases = new Map<string, ProductCase>()
+  const chunkSize = 100
+  for (let index = 0; index < ids.length; index += chunkSize) {
+    const chunk = ids.slice(index, index + chunkSize)
+    const found = await payload.find({
+      collection: 'products',
+      where: { and: [{ status: { equals: 'published' } }, { id: { in: chunk } }] },
+      limit: chunk.length,
+      depth: 2,
+      select: PRODUCT_SELECT,
+    })
+    for (const product of found.docs as any[]) {
+      cases.set(String(product.id), toProductCase(product, rules))
+    }
+  }
+  return ids
+    .map((id) => cases.get(String(id)))
+    .filter((productCase): productCase is ProductCase => Boolean(productCase))
+}
+
+/**
  * Bir uzmanın kurallarına takılan yayınlanmış ürünler.
  *
  * `listProductsMatchingRule` kural başına ayrı tarama yapar; uzman profili tek istekte
@@ -452,18 +543,7 @@ export async function listProductsForRules(
   rules: Rule[],
 ): Promise<ProductCase[]> {
   if (rules.length === 0) return []
-
-  const products = await payload.find({
-    collection: 'products',
-    where: { status: { equals: 'published' } },
-    limit: 500,
-    depth: 2,
-    select: PRODUCT_SELECT,
-  })
-
-  return products.docs
-    .filter((product) => rules.some((rule) => evaluateRule(rule, product as never).matched))
-    .map((product) => toProductCase(product, rules))
+  return casesForProductIds(payload, rules, await scanPublishedProductIds(payload, rules))
 }
 
 /**
@@ -475,15 +555,5 @@ export async function listProductsMatchingRule(
   payload: Payload,
   rule: Rule,
 ): Promise<ProductCase[]> {
-  const products = await payload.find({
-    collection: 'products',
-    where: { status: { equals: 'published' } },
-    limit: 500,
-    depth: 2,
-    select: PRODUCT_SELECT,
-  })
-
-  return products.docs
-    .filter((product) => evaluateRule(rule, product).matched)
-    .map((product) => toProductCase(product, [rule]))
+  return casesForProductIds(payload, [rule], await scanPublishedProductIds(payload, [rule]))
 }
