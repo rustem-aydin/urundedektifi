@@ -350,13 +350,14 @@ export async function viewCountFor(
   payload: Payload,
   id: string | number,
 ): Promise<number> {
+  // `goruntulenme` alanı henüz üretim şemasında yok; alan seçimi tipleri kırıyordu.
+  // Alan eklendiğinde bu okuma doğrudan o değeri döndürür.
   const doc = (await payload
     .findByID({
       collection: 'products',
       id,
       depth: 0,
       overrideAccess: true,
-      select: { goruntulenme: true },
     })
     .catch(() => null)) as { goruntulenme?: unknown } | null
   const value = Math.trunc(Number(doc?.goruntulenme ?? 0))
