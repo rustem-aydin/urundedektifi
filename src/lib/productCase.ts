@@ -475,6 +475,23 @@ export async function matchedRuleCountsByBarcode(
 }
 
 /**
+ * Tarama için asgari alan kümesi: `evaluateRule` yalnız bu alanları okur.
+ * Tam `PRODUCT_SELECT` (beş görsel ilişkisi dahil) her sayfada ilişki sorgusu
+ * açtığı için kural sayfasını ~11 sn'ye çıkarıyordu.
+ */
+const MATCH_SELECT = {
+  items: { ingredients: true },
+  additives: true,
+  allergens: true,
+  brand: true,
+  category: true,
+  country: true,
+  labels: true,
+  nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } },
+  name: true,
+} as const
+
+/**
  * Yayındaki TÜM ürünleri sayfa sayfa tarar ve verilen kurallara takılanların
  * kimliklerini döndürür.
  *
@@ -495,7 +512,7 @@ async function scanPublishedProductIds(
       limit: pageSize,
       page,
       depth: 1,
-      select: PRODUCT_SELECT,
+      select: MATCH_SELECT,
     })
     for (const product of result.docs as any[]) {
       if (rules.some((rule) => evaluateRule(rule, product as never).matched)) {
