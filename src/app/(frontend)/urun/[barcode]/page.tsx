@@ -7,7 +7,7 @@ import { ArrowLeft, AlertTriangle, Info, OctagonAlert } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { getProductCase } from '@/lib/productCase'
+import { getProductCase, viewCountFor } from '@/lib/productCase'
 import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { type ExpertAvatar } from '@/components/ExpertVerdicts'
@@ -22,6 +22,7 @@ import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
 import { ProductGallery } from '@/components/ProductGallery'
 import { ProductAdminActions } from '@/components/ProductAdminActions'
+import { ProductViewCounter } from '@/components/ProductViewCounter'
 import { CardContent } from '@/components/ui/card'
 
 export async function generateMetadata({
@@ -68,6 +69,9 @@ export default async function ProductDetailPage({
 
   const product = await getProductCase(payload, barcode)
   if (!product) notFound()
+
+  // Dosya önbellekte yaşar; sayaç her istekte canlı okunur.
+  const goruntulenme = await viewCountFor(payload, product.id)
 
   const { verdict } = product
   const priceSummary = product.priceSummary
@@ -165,18 +169,21 @@ export default async function ProductDetailPage({
             </p>
           )}
 
-          {product.barcode && (
-            <div className="mt-auto border-t border-dashed border-border pt-4">
-              <Barcode
-                value={product.barcode}
-                height={56}
-                className="w-full max-w-[240px] text-foreground"
-              />
-              <p className="mt-2 font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-                KANIT NO: {product.barcode}
-              </p>
-            </div>
-          )}
+          <div className="mt-auto flex flex-col gap-3 border-t border-dashed border-border pt-4">
+            {product.barcode && (
+              <div>
+                <Barcode
+                  value={product.barcode}
+                  height={56}
+                  className="w-full max-w-[240px] text-foreground"
+                />
+                <p className="mt-2 font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
+                  KANIT NO: {product.barcode}
+                </p>
+              </div>
+            )}
+            <ProductViewCounter id={product.id} initial={goruntulenme} />
+          </div>
         </CaseCard>
       </header>
 
@@ -191,7 +198,7 @@ export default async function ProductDetailPage({
           title="Uyarılar"
           aside={<FeedbackAside target="uyarilar" />}
           hasData={product.warnings.length > 0}
-          emptyMessage="Bu ürün için kayıtlı uyarı yok."
+          emptyMessage="Bu ürüne işlenmiş uyarı yok."
         >
           <ul className="mt-4 flex flex-col gap-2">
             {product.warnings.map((w, i) => {
@@ -223,7 +230,7 @@ export default async function ProductDetailPage({
           title="İçindekiler"
           aside={<FeedbackAside target="icindekiler" />}
           hasData={hasIngredients}
-          emptyMessage="İçindekiler bilgisi henüz girilmemiş. Paketin arka yüzündeki listeyi ekleyerek dosyayı tamamlayın."
+          emptyMessage="İçindekiler henüz girilmemiş. Paketin arka yüzündeki listeyle dosya tamamlanır."
         >
           <CaseCard className="mt-4">
             <CardContent className="flex flex-col gap-4">
@@ -303,7 +310,7 @@ export default async function ProductDetailPage({
             </div>
           }
           hasData={Boolean(product.nutrition)}
-          emptyMessage="Besin değerleri henüz kaydedilmemiş."
+          emptyMessage="Besin değerleri henüz eklenmemiş."
         >
           <CaseCard className="mt-4">
             <CardContent>
@@ -330,7 +337,7 @@ export default async function ProductDetailPage({
           title="Genel bilgiler"
           aside={<FeedbackAside target="genel-bilgiler" />}
           hasData={filledInfo.length > 0}
-          emptyMessage="Genel bilgi alanları henüz doldurulmamış."
+          emptyMessage="Genel bilgiler henüz eklenmemiş."
         >
           <CaseCard className="mt-4">
             <CardContent>
@@ -358,7 +365,7 @@ export default async function ProductDetailPage({
           title="Teknik özellikler"
           aside={<FeedbackAside target="teknik-ozellikler" />}
           hasData={product.specifications.length > 0}
-          emptyMessage="Teknik özellik kaydı yok."
+          emptyMessage="Teknik özellik henüz eklenmemiş."
         >
           <CaseCard className="mt-4">
             <CardContent>
@@ -389,7 +396,7 @@ export default async function ProductDetailPage({
           title="Açıklama"
           aside={<FeedbackAside target="aciklama" />}
           hasData={Boolean(product.description || product.usage)}
-          emptyMessage="Açıklama eklenmemiş."
+          emptyMessage="Açıklama henüz eklenmemiş."
         >
           <CaseCard className="mt-4">
             <CardContent className="flex flex-col gap-4">
@@ -418,7 +425,7 @@ export default async function ProductDetailPage({
           eyebrow="Dosya 08"
           title="Fiyat kayıtları"
           hasData={product.prices.length > 0}
-          emptyMessage="Henüz fiyat kaydı girilmemiş."
+          emptyMessage="Fiyat kaydı henüz girilmemiş."
         >
           <ul className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {product.prices.map((p, i) => (

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Eye } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { CaseCard } from '@/components/CaseCard'
@@ -14,8 +15,12 @@ type ProductCardProps = {
   imageUrl?: string | null
   imageAlt?: string | null
   verdictCount?: number
+  /** Sunucudaki dosya açılma sayısı; liste sıralaması da bu değere göre (çoktan aza). */
+  viewCount?: number
   className?: string
 }
+
+const viewFormat = new Intl.NumberFormat('tr-TR')
 
 export function ProductCard({
   href,
@@ -26,6 +31,7 @@ export function ProductCard({
   imageUrl,
   imageAlt,
   verdictCount,
+  viewCount,
   className,
 }: ProductCardProps) {
   const card = (
@@ -57,6 +63,12 @@ export function ProductCard({
       <CardContent className="flex flex-col gap-2">
         {typeof verdictCount === 'number' && verdictCount > 0 && (
           <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
+        )}
+        {typeof viewCount === 'number' && (
+          <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+            <Eye className="size-3" aria-hidden="true" />
+            {viewFormat.format(Math.max(0, Math.trunc(viewCount)))} görüntülenme
+          </p>
         )}
         <p className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
           {barcode ? <span>KANIT NO: {barcode}</span> : <span />}

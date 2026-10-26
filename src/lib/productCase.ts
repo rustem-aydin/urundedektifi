@@ -393,7 +393,8 @@ export async function listProductCases(
   const products = await payload.find({
     collection: 'products',
     where,
-    sort: '-createdAt',
+    // En çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre bozulur.
+    sort: ['-goruntulenme', '-createdAt'],
     limit: filter.limit ?? 48,
     depth: 2,
     select: PRODUCT_SELECT,

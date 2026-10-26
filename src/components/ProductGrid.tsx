@@ -23,6 +23,7 @@ export type ProductCardData = {
   barcode?: string | null
   imageUrl?: string | null
   imageAlt?: string | null
+  viewCount?: number
 }
 
 export function ProductGrid({
@@ -75,6 +76,7 @@ export function ProductGrid({
           imageUrl={product.imageUrl ?? null}
           imageAlt={product.imageAlt ?? null}
           verdictCount={product.barcode ? (counts[product.barcode] ?? 0) : 0}
+          viewCount={product.viewCount}
         />
       ))}
     </div>

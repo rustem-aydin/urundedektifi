@@ -5,7 +5,7 @@ import { SaglayiciForm } from '@/components/SaglayiciForm'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Yapay Zekâ Sağlayıcısı' }
+export const metadata: Metadata = { title: 'Yapay zekâ sağlayıcısı' }
 
 export default function SaglayiciPage() {
   return (

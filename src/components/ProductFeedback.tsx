@@ -1,5 +1,6 @@
 'use client'
 
+import { UserRound } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -132,7 +133,7 @@ export function ProductFeedbackProvider({
         setError(null)
       })
       .catch((caught) => {
-        if (active) setError(errorMessage(caught, 'Yorumlar yüklenemedi.'))
+        if (active) setError(errorMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -162,40 +163,40 @@ export function ProductFeedbackProvider({
     error,
     refresh,
     async vote(input) {
-      if (!token) throw new Error('Giriş gerekli.')
+      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
         await apply(await submitFeedbackVote(barcode, input, token))
         setOpenTarget(null)
       } catch (caught) {
-        setError(errorMessage(caught, 'Doğrulama gönderilemedi.'))
+        setError(errorMessage(caught, 'Doğrulama gönderilemedi. Tekrar dene.'))
         throw caught
       } finally {
         setPending(false)
       }
     },
     async comment(text) {
-      if (!token) throw new Error('Giriş gerekli.')
+      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
         await apply(await submitFeedbackComment(barcode, text, token))
       } catch (caught) {
-        setError(errorMessage(caught, 'Yorum eklenemedi.'))
+        setError(errorMessage(caught, 'Yorum eklenemedi. Tekrar dene.'))
         throw caught
       } finally {
         setPending(false)
       }
     },
     async remove(id) {
-      if (!token) throw new Error('Giriş gerekli.')
+      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
         await apply(await deleteFeedbackComment(barcode, id, token))
       } catch (caught) {
-        setError(errorMessage(caught, 'Yorum silinemedi.'))
+        setError(errorMessage(caught, 'Yorum silinemedi. Tekrar dene.'))
         throw caught
       } finally {
         setPending(false)
@@ -205,7 +206,7 @@ export function ProductFeedbackProvider({
       const nextLimit = limit + 20
       setLimit(nextLimit)
       await load(nextLimit).catch((caught) => {
-        setError(errorMessage(caught, 'Yorumlar yüklenemedi.'))
+        setError(errorMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
       })
     },
     openVerify(target) {
@@ -233,52 +234,66 @@ export function ProductFeedbackProvider({
   )
 }
 
-/** Bölüm başlığı hizası: yüzde + doğrulama sayısı + "Doğrula". */
+/**
+ * Bölüm başlığının karşısı: oy yoksa yalnız "Doğrula", oy varsa `%86 · 12`
+ * rozeti (12'nin yanında kişi ikonu). Sayaç metni ("Henüz doğrulanmadı",
+ * "12 doğrulama", "Oyunu değiştir") basılmaz; rozetin kendisi tıklanır ve
+ * doğrulama diyaloğunu açar.
+ */
 export function FeedbackAside({ target }: { target: FeedbackTargetKey }) {
-  const { data, loading, openVerify } = useFeedback()
+  const { data, openVerify } = useFeedback()
   const { user } = useSession()
   const pathname = usePathname()
   const summary = data?.targets[target]
   const myVote = data?.myVotes[target]
+  const total = summary?.total ?? 0
+  const loginHref = pathname ? `/giris?next=${encodeURIComponent(pathname)}` : '/giris'
 
-  const badge = summary?.total
-    ? `%${summary.percent ?? 0} · ${summary.confirm} doğrulama`
-    : loading
-      ? 'Doğrulamalar yükleniyor…'
-      : 'Henüz doğrulanmadı'
-
-  const buttonClass =
+  const triggerClass =
     'inline-flex min-h-7 items-center rounded-sm border border-stamp/60 bg-stamp/5 px-2 font-mono text-[0.65rem] tracking-[0.14em] uppercase text-stamp transition-colors hover:bg-stamp/10'
+  const scoreClass =
+    'inline-flex min-h-7 items-center gap-2 rounded-sm border border-border px-2 font-mono text-[0.7rem] tracking-[0.08em] text-foreground transition-colors hover:border-foreground/60'
+  const ariaLabel = `${TARGET_LABELS[target]} doğrulaması: %${summary?.percent ?? 0}, ${summary?.confirm ?? 0} doğrulama. ${myVote ? 'Doğrulamanı güncelle.' : 'Doğrula.'}`
+
+  const score = (
+    <>
+      <span>%{summary?.percent ?? 0}</span>
+      <span className="inline-flex items-center gap-1 text-faded">
+        <UserRound aria-hidden="true" className="size-3" />
+        {summary?.confirm ?? 0}
+      </span>
+    </>
+  )
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <span className="font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-        {badge}
-      </span>
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
       {summary?.refute ? (
         <span className="font-mono text-[0.65rem] tracking-[0.14em] text-stamp uppercase">
           {summary.refute} itiraz
         </span>
       ) : null}
-      {myVote ? (
-        <span
-          className={cn(
-            'font-mono text-[0.65rem] tracking-[0.14em] uppercase',
-            myVote === 'confirm' ? 'text-evidence-green' : 'text-stamp',
-          )}
-        >
-          {myVote === 'confirm' ? 'Oyun: doğru' : 'Oyun: doğru değil'}
-        </span>
-      ) : null}
-      {user ? (
-        <button type="button" className={buttonClass} onClick={() => openVerify(target)}>
-          {myVote ? 'Oyunu değiştir' : 'Doğrula'}
+      {total > 0 ? (
+        user ? (
+          <button
+            type="button"
+            className={scoreClass}
+            aria-label={ariaLabel}
+            title={myVote ? 'Doğrulamanı güncelle' : 'Bu bölümü doğrula'}
+            onClick={() => openVerify(target)}
+          >
+            {score}
+          </button>
+        ) : (
+          <Link href={loginHref} className={scoreClass} aria-label={ariaLabel}>
+            {score}
+          </Link>
+        )
+      ) : user ? (
+        <button type="button" className={triggerClass} onClick={() => openVerify(target)}>
+          Doğrula
         </button>
       ) : (
-        <Link
-          href={pathname ? `/giris?next=${encodeURIComponent(pathname)}` : '/giris'}
-          className={buttonClass}
-        >
+        <Link href={loginHref} className={triggerClass}>
           Doğrula
         </Link>
       )}
@@ -338,11 +353,11 @@ function VerifyDialog({
       role="dialog"
       aria-modal="true"
       aria-label={`${TARGET_LABELS[target]} doğrulaması`}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/40 p-4 supports-backdrop-filter:backdrop-blur-md"
       onClick={onClose}
     >
       <div className="w-full max-w-lg" onClick={(event) => event.stopPropagation()}>
-        <CaseCard className="bg-card">
+        <CaseCard className="bg-card/85 shadow-lg supports-backdrop-filter:backdrop-blur-xl">
           <div className="flex flex-col gap-4 p-5">
             <div className="flex flex-col gap-1">
               <span className="font-mono text-[0.65rem] tracking-[0.2em] text-stamp uppercase">
@@ -350,7 +365,7 @@ function VerifyDialog({
               </span>
               <h2 className="font-display text-xl">{TARGET_LABELS[target]}</h2>
               <p className="text-sm text-muted-foreground">
-                Verilerin doğru olduğunu teyit edebilir ya da neden doğru olmadığını yazabilirsin.
+                Verilerin doğru olduğunu onaylayabilir ya da neden doğru olmadığını yazabilirsin.
                 Yorumun ürün sayfasında görünür.
               </p>
             </div>
@@ -401,8 +416,8 @@ function VerifyDialog({
             </label>
             <p className="text-xs text-muted-foreground">
               {verdict === 'confirm'
-                ? 'Boş bırakırsan varsayılan metin eklenir.'
-                : `Yorumun "${REFUTE_PREFIX.trim()} …" diye başlar; nedeni sen yazarsın.`}
+                ? 'Boş bırakırsan varsayılan metin yazılır.'
+                : `Yorumun "${REFUTE_PREFIX.trim()} …" diye başlar; nedenini sen yaz.`}
             </p>
 
             {error ? (
@@ -542,7 +557,11 @@ export function FeedbackCommentsSection() {
                   type="button"
                   className="self-end font-mono text-[0.65rem] tracking-[0.14em] text-stamp uppercase hover:underline"
                   onClick={() => {
-                    if (window.confirm('Bu yorum kalıcı olarak silinecek. Devam edilsin mi?')) {
+                    if (
+                      window.confirm(
+                        'Bu yorum kalıcı olarak silinecek; bu işlem geri alınamaz. Silinsin mi?',
+                      )
+                    ) {
                       void remove(entry.id).catch(() => {
                         /* hata context üzerinden gösterilir */
                       })

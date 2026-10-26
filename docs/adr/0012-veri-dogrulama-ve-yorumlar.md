@@ -32,9 +32,13 @@ aynı ucu kullanır.
 - **Kullanıcı + ürün + bölüm başına tek oy.** Tekrar oy ikinci satır açmaz; aynı dokümanın
   `verdict`/`text` alanı güncellenir. Yarış koşuluna karşı veritabanında kısmi tekil indeks
   vardır: `(product_id, target, author_id) WHERE kind = 'vote'`.
-- **Yüzde** = `round(confirm * 100 / (confirm + refute))`; hiç oy yoksa `null` ("Henüz
-  doğrulanmadı"). Yanında doğrulama sayısı ve varsa itiraz sayısı basılır; yüzdenin neden
-  düştüğü böylece görünür.
+- **Yüzde** = `round(confirm * 100 / (confirm + refute))`; hiç oy yoksa `percent: null`
+  döner. Bölüm başlığının karşısında (sağa yaslı) hiç oy yokken yalnız **Doğrula** düğmesi
+  durur; oy varsa `%86 · 12` rozeti (yüzde + kişi ikonu + onay sayısı) ve varsa `N itiraz`
+  basılır. "Henüz doğrulanmadı", "12 doğrulama" ve "Oyunu değiştir" metinleri yoktur: rozetin
+  kendisi tıklanır ve doğrulama diyaloğunu (kullanıcının oyu varsa o oyla) açar. Aynı yüzey
+  yorum ekleme/düzenleme diyaloğudur ve paneli düz beyaz değil, arkasındaki sayfayı
+  bulanıklaştıran yarı saydam karttır (`bg-card/85` + `backdrop-blur`).
 - **Metinler sunucuda yazılır.** Onayda boş metin → `Verilerin doğruluğunu teyit ediyorum.`;
   itirazda neden zorunludur ve metin `Doğru olmadığını bildiriyorum çünkü ` ile başlar. Kural
   istemciye bırakılmaz: aynı işi yapan iki istemci iki farklı metin üretmesin.

@@ -224,23 +224,22 @@ async function postChat(
       signal: controller.signal,
     })
   } catch {
-    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı. Bağlantıyı kontrol et.')
+    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
   } finally {
     clearTimeout(timer)
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw new AiError('auth', response.status, 'API anahtarı reddedildi.')
+    throw new AiError('auth', response.status, 'API anahtarı reddedildi. Sağlayıcı ayarlarını kontrol et.')
   }
   if (response.status === 400 && responseFormat.type === 'json_schema') {
     return { payload: { choices: [] }, degraded: true }
   }
   if (!response.ok) {
-    const detail = await response.text().catch(() => '')
     throw new AiError(
       'request',
       response.status,
-      `Sağlayıcı hatası (${response.status}). ${detail.slice(0, 180)}`,
+      `Sağlayıcı hata verdi (kod ${response.status}). Model adını ve API anahtarını kontrol edip tekrar dene.`,
     )
   }
 
@@ -250,7 +249,7 @@ async function postChat(
 function contentOf(payload: ChatResponse): string {
   const content = payload.choices?.[0]?.message?.content
   if (typeof content !== 'string' || !content.trim()) {
-    throw new AiError('format', 200, 'Sağlayıcı boş yanıt döndü.')
+    throw new AiError('format', 200, 'Sağlayıcı boş yanıt döndü. Tekrar dene.')
   }
   return content
 }
@@ -292,15 +291,15 @@ export async function listModels(settings: ProviderSettings, apiKey: string): Pr
       signal: controller.signal,
     })
   } catch {
-    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı.')
+    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
   } finally {
     clearTimeout(timer)
   }
   if (response.status === 401 || response.status === 403) {
-    throw new AiError('auth', response.status, 'API anahtarı reddedildi.')
+    throw new AiError('auth', response.status, 'API anahtarı reddedildi. Sağlayıcı ayarlarını kontrol et.')
   }
   if (!response.ok) {
-    throw new AiError('request', response.status, `Model listesi alınamadı (${response.status}).`)
+    throw new AiError('request', response.status, `Model listesi alınamadı (kod ${response.status}).`)
   }
   const payload = (await response.json()) as { data?: { id?: unknown }[] }
   const ids = (payload.data ?? [])
@@ -384,7 +383,7 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
       ANALYSIS_TIMEOUT_MS,
     )
     if (repairPayload.degraded) {
-      throw new AiError('format', 200, 'Sağlayıcı şemalı yanıtı desteklemedi.')
+      throw new AiError('format', 200, 'Sağlayıcı şemalı yanıtı desteklemiyor. Tekrar dene.')
     }
     payload = repairPayload.payload
     raw = contentOf(payload)
@@ -392,7 +391,7 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
   }
 
   if (!parsed.success) {
-    throw new AiError('format', 200, 'Yapay zekâ yanıtı beklenen şemaya uymadı.')
+    throw new AiError('format', 200, 'Yapay zekâ yanıtı beklenen biçimde gelmedi. Tekrar dene.')
   }
 
   return {

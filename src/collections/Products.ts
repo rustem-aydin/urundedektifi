@@ -1,8 +1,9 @@
 import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
+import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
 import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
-import { getProductCase, invalidateProductCaseCache } from '@/lib/productCase'
+import { getProductCase, invalidateProductCaseCache, viewCountFor } from '@/lib/productCase'
 import {
   followingExpertIds,
   matchedRuleCountsByBarcode,
@@ -72,7 +73,11 @@ export const Products: CollectionConfig = {
         if (!productCase) {
           return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
         }
-        return Response.json(productCase)
+        // Dosya önbellekte yaşar; sayaç canlı okunur (yenilemede sayı geriye düşmesin).
+        return Response.json({
+          ...productCase,
+          goruntulenme: await viewCountFor(req.payload, productCase.id),
+        })
       },
     },
     {
@@ -234,6 +239,43 @@ export const Products: CollectionConfig = {
           if (response) return response
           throw error
         }
+      },
+    },
+    {
+      // Görüntülenme sayacı: ürün dosyası açıldığında web/mobil istemci oturum başına bir kez çağırır.
+      // Tek atomik UPDATE — okuyup yazmak eşzamanlı görüntülemelerde sayı kaybettirir.
+      // Alan düzeyi erişimi kapalı olduğu için sayaç bu uç dışında artırılamaz.
+      path: '/:id/goruntulenme',
+      method: 'post',
+      handler: async (req) => {
+        const id = String(req.routeParams?.id ?? '')
+        if (!/^\d+$/.test(id)) {
+          return Response.json({ error: 'Geçersiz ürün kimliği.' }, { status: 400 })
+        }
+
+        // Okuma herkese açık olduğu için yayın durumu elle süzülür: taslak/arşiv sayılmaz.
+        const product = await req.payload
+          .findByID({
+            collection: 'products',
+            id,
+            depth: 0,
+            overrideAccess: false,
+            req,
+            select: { status: true },
+          })
+          .catch(() => null)
+        if (!product || product.status !== 'published') {
+          return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+        }
+
+        const db = req.payload.db as unknown as PostgresAdapter
+        const result = (await db.execute({
+          drizzle: db.drizzle,
+          sql: sql`UPDATE "products" SET "goruntulenme" = COALESCE("goruntulenme", 0) + 1 WHERE "id" = ${Number(id)} RETURNING "goruntulenme"`,
+        })) as { rows?: { goruntulenme?: string | number | null }[] }
+        // Postgres `numeric` sürücüden metin döner.
+        const value = Number(result.rows?.[0]?.goruntulenme ?? 0)
+        return Response.json({ goruntulenme: Number.isFinite(value) ? value : 0 })
       },
     },
   ],
@@ -807,6 +849,22 @@ export const Products: CollectionConfig = {
       admin: {
         position: 'sidebar',
         description: 'Editör tarafından incelendi olarak işaretle.',
+      },
+    },
+    {
+      // Sayaç yalnız POST /api/products/:id/goruntulenme ucundan artar; alan düzeyi erişim
+      // kapalı olduğundan panelden veya REST PUT ile elle değiştirilemez.
+      name: 'goruntulenme',
+      label: 'Görüntülenme',
+      type: 'number',
+      min: 0,
+      defaultValue: 0,
+      access: { create: () => false, update: () => false },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description:
+          'Ürün dosyasının kaç kez açıldığı. Web ve mobil detay sayfaları otomatik artırır; elle düzenlenemez.',
       },
     },
   ],

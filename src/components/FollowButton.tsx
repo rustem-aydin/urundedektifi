@@ -58,7 +58,7 @@ export function FollowButton({
     return (
       <Link
         href={`/giris${next}`}
-        aria-label={`${accessibleLabel} — giriş gerekir`}
+        aria-label={`${accessibleLabel} — giriş yapman gerekir`}
         onClick={() => requestFollow(expertId)}
         className={cn(base, tone, className)}
       >
@@ -82,7 +82,7 @@ export function FollowButton({
             // Sunucu-render edilen takipçi sayısı/profil verisi de tazelensin.
             router.refresh()
           } catch {
-            setFailure('Takip güncellenemedi.')
+            setFailure('Takip güncellenemedi. Tekrar dene.')
           } finally {
             setPending(false)
           }

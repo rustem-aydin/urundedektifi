@@ -32,8 +32,8 @@ export function LoginForm() {
     } catch (error) {
       setFailure(
         error instanceof ApiError && error.kind === 'unauthorized'
-          ? 'E-posta veya şifre hatalı.'
-          : 'Giriş yapılamadı. Bağlantını kontrol et.',
+          ? 'E-posta ya da şifre hatalı.'
+          : 'Giriş yapılamadı. Bağlantını kontrol edip tekrar dene.',
       )
     }
   }
@@ -81,7 +81,7 @@ export function LoginForm() {
     <form className="flex flex-col gap-4" onSubmit={submit}>
       <WizardIntro eyebrow="HESAP" title="Giriş">
         Hesabınla giriş yap. Uzmanları takip etmek ve yazılarını anasayfada görmek için ücretsiz
-        hesap yeterlidir; ürün ekleme yalnız admin ve editör rollerine açıktır.
+        hesap yeterli; ürün ekleme yalnız admin ve editör rollerine açık.
       </WizardIntro>
       <TextField
         label="E-posta"
@@ -106,7 +106,7 @@ export function LoginForm() {
           href={`/kayit${next && next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}
           className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          Hesabın yok mu? Kayıt ol
+          Hesabın yok mu? Hesap oluştur
         </Link>
       </div>
     </form>

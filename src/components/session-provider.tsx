@@ -133,7 +133,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const toggleFollow = useCallback(
     async (expertId: string | number) => {
       if (!user || !token) {
-        throw new ApiError('unauthorized', 401, 'Takip etmek için giriş yapın.')
+        throw new ApiError('unauthorized', 401, 'Takip etmek için giriş yapman gerekiyor.')
       }
       // API'den gelen ilişki kimlikleri sayı, listede tutulanlar dizedir: tek biçime indir.
       const id = String(expertId)

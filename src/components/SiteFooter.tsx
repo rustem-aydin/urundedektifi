@@ -24,7 +24,7 @@ export function SiteFooter() {
               <span className="font-display text-base tracking-wide">Ürün Dedektifi</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Barkodu gösterin; boykot, sağlık ve helal kuralları uzmanların kaleminden ürüne
+              Barkodu göster; boykot, sağlık ve helal kuralları uzmanların kaleminden ürüne
               uygulanır.
             </p>
           </div>

@@ -5,13 +5,16 @@ import type { ProductWriteData, RawProduct } from './types'
  * Saf gövde kurma katmanı (ADR 0008): ağ ve medya yok, yalnız form → Payload gövdesi.
  */
 
-const TR_MAP: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', İ: 'i', ö: 'o', ş: 's', ü: 'u' }
+const TR_MAP: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' }
 
 /** Backend `slugify` ile aynı sözleşme: küçük harf, Türkçe karakterler ASCII, boşluklar tire. */
 export function slugify(input: string): string {
+  // 'İ'.toLowerCase() "i" + birleşik nokta verir → "İz miktarda" slug'ı "i-z-miktarda" oluyordu.
   return input
     .trim()
+    .replace(/[İI]/g, 'i')
     .toLowerCase()
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[çğıöşü]/g, (char) => TR_MAP[char] ?? char)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

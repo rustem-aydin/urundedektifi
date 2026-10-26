@@ -31,11 +31,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ürün Dedektifi — Barkodla Tara, Kararı Gör',
+    default: 'Ürün Dedektifi — Barkodu tara, kararı gör',
     template: '%s · Ürün Dedektifi',
   },
   description:
-    'Barkodu tarayın, uzman kurallarına göre ürünün boykot, sağlık ve helal kararını anında görün.',
+    'Barkodu tara; uzman kurallarına göre ürünün boykot, sağlık ve helal hükmünü anında gör.',
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {

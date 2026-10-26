@@ -31,6 +31,13 @@ Mobildeki yazma akışı web'e taşındı; iki yüzey aynı sözleşmeyi paylaş
   `localStorage`'da tutulur. Tarayıcı `createImageBitmap` + canvas ile 1568 px / JPEG 0.8'e indirir.
 - **Kayıt semantiği mobil ile aynı:** Ekle yalnız boş alanları doldurur; Düzenle formun
   tamamını yazar, fotoğraf eklenmediyse mevcut görseller ve fiyat geçmişi gövdede yer almaz.
+- **Eşleşme "Yeni"den sonra da görünür, kayıt öncesi sunucuya sorulur:** Öneri çipi yalnız
+  `pending` satırda görünseydi "Yeni" seçilen satırda aynı ad master'da dururken hiçbir uyarı
+  kalmıyordu ve toplu "Hepsini yeni oluştur" eşleşen satırları kopya kayda çeviriyordu
+  (üretimde `Su` ×3, `Şeker` ×3, `Aroma Vericiler` ×2). Kural: (a) öneri her durumda çip olarak
+  durur, (b) toplu "yeni" **önce eşleştirir** (`resolveSelection`), (c) kayıt anında
+  `findMasterByName` normalize ad karşılaştırması yapar ve eşit ad varsa **mevcut (en eski)
+  kayda bağlanır** — istemci listesi oturum boyunca önbellekte olduğu için sunucu otoritedir.
 - **Ürün dosyası eylemleri:** `/urun/[barcode]` sayfası admin/editöre Düzenle ve Sil gösterir.
 
 ## Sonuç

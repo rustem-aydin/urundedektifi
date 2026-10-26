@@ -14,9 +14,9 @@ import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const STEPS = [
-  { no: '01', title: 'Tara', desc: 'Barkodu kameraya gösterin ya da numarayı yazın.' },
+  { no: '01', title: 'Tara', desc: 'Barkodu kameraya göster ya da numarasını yaz.' },
   { no: '02', title: 'Kurallar eşleşir', desc: 'Uzman kuralları ürünle otomatik karşılaştırılır.' },
-  { no: '03', title: 'Kararı gör', desc: 'Boykot, sağlık ve helal hükmü tek bakışta okunur.' },
+  { no: '03', title: 'Kararı gör', desc: 'Boykot, sağlık ve helal hükmü tek bakışta oku.' },
 ]
 
 export default async function HomePage() {
@@ -59,8 +59,8 @@ export default async function HomePage() {
             Barkodu göster, delilleri topla, kararı gör.
           </h1>
           <p className="max-w-md text-muted-foreground">
-            Ürün Dedektifi; boykot, sağlık ve helal kurallarını uzmanların kaleminden ürüne
-            uygular. Sonuç: tek bakışta okunan bir hüküm.
+            Ürün Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
+            Geriye tek bakışta okunan bir hüküm kalır.
           </p>
           <BarcodeLookupForm />
         </div>
@@ -131,6 +131,7 @@ export default async function HomePage() {
                   barcode: p.barcode ?? null,
                   imageUrl: frontImage?.url || null,
                   imageAlt: frontImage?.alt || p.name,
+                  viewCount: Number(p.goruntulenme ?? 0),
                 }
               })}
             />
@@ -141,7 +142,7 @@ export default async function HomePage() {
       <section aria-labelledby="topics-heading" className="py-12">
         <div className="flex items-baseline justify-between gap-4">
           <h2 id="topics-heading" className="font-display text-xl sm:text-2xl">
-            Son vakalar
+            Son konular
           </h2>
           <Link
             href="/konular"
@@ -153,7 +154,7 @@ export default async function HomePage() {
         </div>
 
         {topics.docs.length === 0 ? (
-          <p className="mt-6 text-sm text-muted-foreground">Henüz konu tanımlanmamış.</p>
+          <p className="mt-6 text-sm text-muted-foreground">Henüz konu eklenmemiş.</p>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {topics.docs.map((t: any) => {

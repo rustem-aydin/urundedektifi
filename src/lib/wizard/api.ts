@@ -59,19 +59,17 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string |
         ...init.headers,
       },
     })
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : ''
-    throw new ApiError(
-      'offline',
-      0,
-      detail ? `Sunucuya ulaşılamadı: ${detail}` : 'Sunucuya ulaşılamadı.',
-    )
+  } catch {
+    throw new ApiError('offline', 0, 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
   } finally {
     clearTimeout(timer)
   }
 
-  if (response.status === 401 || response.status === 403) {
-    throw new ApiError('unauthorized', response.status, 'Bu işlem için yetkiniz yok.')
+  if (response.status === 401) {
+    throw new ApiError('unauthorized', 401, 'Oturumun sona ermiş. Yeniden giriş yap.')
+  }
+  if (response.status === 403) {
+    throw new ApiError('unauthorized', 403, 'Bu işlem için yetkin yok.')
   }
   if (response.status === 404) {
     throw new ApiError('notFound', 404, 'Kayıt bulunamadı.')
@@ -96,7 +94,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string |
     throw new ApiError(
       'server',
       response.status,
-      detail ? `Sunucu hatası (${response.status}): ${detail}` : `Sunucu hatası (${response.status}).`,
+      detail || `Sunucu yanıt veremedi (kod ${response.status}). Tekrar dene.`,
     )
   }
 
@@ -413,4 +411,17 @@ export async function deleteFeedbackComment(
     { method: 'DELETE' },
     token,
   )
+}
+
+/**
+ * Görüntülenme sayacı: ürün dosyası açıldığında oturum başına bir kez çağrılır.
+ * Giriş gerekmez; yanıt güncel sayıyı döndürür (`numeric` sunucuda sayıya çevrilir).
+ */
+export async function recordProductView(id: string): Promise<number | null> {
+  const result = await request<{ goruntulenme?: unknown }>(
+    `/products/${encodeURIComponent(id)}/goruntulenme`,
+    { method: 'POST' },
+  )
+  const value = Number(result?.goruntulenme)
+  return Number.isFinite(value) ? value : null
 }

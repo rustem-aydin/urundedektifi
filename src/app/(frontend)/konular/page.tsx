@@ -55,13 +55,13 @@ export default async function TopicsListPage() {
         <EvidenceTag>DOSYA DOLAPLARI</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Konular</h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Uzmanların çalıştığı tüm alanlar. Bir konuya tıklayarak o alanda kural yazan uzmanları ve
-          aktif kuralları görebilirsiniz.
+          Uzmanların çalıştığı alanlar. Bir konuya girip o alanda kural yazan uzmanları ve aktif
+          kuralları görebilirsin.
         </p>
       </div>
 
       {topics.docs.length === 0 ? (
-        <p className="mt-8 text-sm text-muted-foreground">Henüz konu tanımlanmamış.</p>
+        <p className="mt-8 text-sm text-muted-foreground">Henüz konu eklenmemiş.</p>
       ) : (
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {topics.docs.map((t: any) => {

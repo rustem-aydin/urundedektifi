@@ -96,9 +96,15 @@ Bir Hesabın Ürün Dosyasındaki tek bir veri bölümünü (`uyarilar`, `icinde
 _Avoid_: puan, rating, anket
 
 **Doğrulama Oranı**:
-Bölüm başına `round(confirm × 100 / (confirm + refute))`. Hiç oy yoksa gösterilmez; yanında doğrulama ve itiraz sayısı basılır.
+Bölüm başına `round(confirm × 100 / (confirm + refute))`. Hiç oy yoksa yalnız **Doğrula** düğmesi basılır; oy varsa rozet `%86 · 12` biçiminde yüzdeyi ve onay sayısını (kişi ikonuyla) verir, varsa itiraz sayısı yanında durur. Rozet tıklanınca doğrulama diyaloğu açılır.
 _Avoid_: güven skoru, doğruluk puanı
 
 **Yorum**:
 `kind: 'comment'` olan Ürün Geri Bildirimi: ürün geneli serbest metin (≤500 karakter, düz metin). Doğrulama oyları da yorum listesinde görünür; ayrı liste yoktur, thread yoktur.
 _Avoid_: değerlendirme, inceleme, review
+
+### Görüntülenme
+
+**Görüntülenme Sayacı**:
+Bir Ürün Dosyasının kaç kez açıldığı (`products.goruntulenme`). Yalnız `POST /api/products/:id/goruntulenme` ucundan artar; alan düzeyi erişim kapalı olduğu için panelden veya REST yazmasıyla değiştirilemez, taslak/arşiv ürün sayılmaz. Detay ekranında göz ikonu + `1.234 görüntülenme` olarak görünür; liste kartları saymaz.
+_Avoid_: tıklanma, hit, ziyaret, popülerlik, izlenme

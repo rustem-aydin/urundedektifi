@@ -35,11 +35,11 @@ export function RegisterForm() {
     } catch (error) {
       if (error instanceof ApiError && error.kind === 'server') {
         const conflict = /already|mevcut|unique/i.test(error.message)
-        setFailure(conflict ? 'Bu e-posta ile bir hesap zaten var.' : error.message)
+        setFailure(conflict ? 'Bu e-posta ile bir hesap var.' : error.message)
       } else if (error instanceof ApiError && error.kind === 'unauthorized') {
-        setFailure('Kayıt tamamlandı ama giriş yapılamadı. Giriş sayfasından deneyin.')
+        setFailure('Hesap açıldı ama giriş yapılamadı. Giriş sayfasından tekrar dene.')
       } else {
-        setFailure('Kayıt yapılamadı. Bağlantını kontrol et.')
+        setFailure('Hesap açılamadı. Bağlantını kontrol edip tekrar dene.')
       }
     }
   }
@@ -69,12 +69,12 @@ export function RegisterForm() {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={submit}>
-      <WizardIntro eyebrow="HESAP" title="Kayıt ol">
-        Uzmanları takip et, yazılarını anasayfada hikâye rayında gör. Kayıt ücretsizdir; ürün
-        ekleme yetkisi vermez.
+      <WizardIntro eyebrow="HESAP" title="Hesap oluştur">
+        Uzmanları takip et, yazılarını anasayfada hikâye rayında gör. Kayıt ücretsiz; ürün ekleme
+        yetkisi vermez.
       </WizardIntro>
       <TextField
-        label="Ad Soyad"
+        label="Ad soyad"
         value={name}
         autoComplete="name"
         onChange={(value) => setName(value)}
@@ -107,7 +107,7 @@ export function RegisterForm() {
           href={`/giris${next !== '/' ? `?next=${encodeURIComponent(next)}` : ''}`}
           className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          Hesabım var
+          Hesabın var mı? Giriş yap
         </Link>
       </div>
     </form>

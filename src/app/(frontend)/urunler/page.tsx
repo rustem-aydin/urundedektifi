@@ -150,7 +150,7 @@ export default async function ProductsPage({
       ) : (
         <>
           <p className="mt-6 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase" aria-live="polite">
-            {products.totalDocs} ürün listeleniyor
+            {products.totalDocs} ürün listeleniyor · en çok görüntülenen önce
           </p>
           <div className="mt-4">
             <ProductGrid
@@ -165,6 +165,7 @@ export default async function ProductsPage({
                   barcode: p.barcode,
                   imageUrl: frontImage?.url || null,
                   imageAlt: frontImage?.alt || p.name,
+                  viewCount: p.goruntulenme,
                 }
               })}
             />

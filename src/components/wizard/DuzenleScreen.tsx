@@ -57,7 +57,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       .then((doc) => {
         if (!active) return
         if (!doc) {
-          setLoadError('Bu ürün bulunamadı; silinmiş olabilir.')
+          setLoadError('Bu ürün bulunamadı. Silinmiş olabilir.')
           return
         }
         setDraft(draftFromProduct(doc))
@@ -106,7 +106,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     try {
       const resolved = await resolveCreatedMasters(draft, token)
       if (resolved.errors.length) {
-        setFailure(`Bazı kayıtlar açılamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
+        setFailure(`Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
         setDraft(resolved.draft)
         return
       }
@@ -114,7 +114,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       const photos: UploadablePhoto[] = []
       for (const photo of resolved.draft.photos.filter((item) => item.role !== 'unknown')) {
         const blob = await getPhotoBlob(photo.id)
-        if (!blob) throw new Error('Bir fotoğraf okunamadı; kaldırıp yeniden ekle.')
+        if (!blob) throw new Error('Bir fotoğraf okunamadı. Kaldırıp yeniden ekle.')
         photos.push({
           id: photo.id,
           blob,
@@ -149,10 +149,10 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
-        <WizardIntro eyebrow="DÜZENLEME" title="Bu ekran senin rolüne kapalı">
+        <WizardIntro eyebrow="DÜZENLEME" title="Bu ekran rolüne kapalı">
           {user
-            ? `${user.role} rolüyle ürün düzenlenemez. Admin veya editör hesabıyla giriş yap.`
-            : 'Admin veya editör hesabıyla giriş yapman gerekiyor.'}
+            ? `${user.role} rolüyle ürün düzenlenemez. Admin ya da editör hesabıyla giriş yap.`
+            : 'Admin ya da editör hesabıyla giriş yapman gerekiyor.'}
         </WizardIntro>
         <Button asChild className="w-fit">
           <Link href={`/giris?next=${encodeURIComponent(`/duzenle/${productId}`)}`}>Giriş ekranına git</Link>
@@ -184,7 +184,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
           <p className="text-sm text-muted-foreground">
             {saved.published
               ? 'Değişiklikler kaydedildi; dosya yeniden okunur.'
-              : 'Değişiklikler kaydedildi ama ürün taslak: dosya yalnız yayındayken açılır.'}
+              : 'Değişiklikler kaydedildi ama ürün taslak. Dosya yalnız yayındayken açılır.'}
           </p>
         </CaseCard>
         {dropped.length ? (

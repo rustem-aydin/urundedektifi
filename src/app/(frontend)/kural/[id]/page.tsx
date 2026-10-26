@@ -120,7 +120,7 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
 
         {products.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Şu an bu kurala takılan yayında ürün yok.
+            Bu kurala takılan yayında ürün yok.
           </p>
         ) : (
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

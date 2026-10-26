@@ -714,6 +714,10 @@ export interface Product {
    * Editör tarafından incelendi olarak işaretle.
    */
   is_submit?: boolean | null;
+  /**
+   * Ürün dosyasının kaç kez açıldığı. Web ve mobil detay sayfaları otomatik artırır; elle düzenlenemez.
+   */
+  goruntulenme?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1794,6 +1798,7 @@ export interface ProductsSelect<T extends boolean = true> {
   status?: T;
   submittedBy?: T;
   is_submit?: T;
+  goruntulenme?: T;
   updatedAt?: T;
   createdAt?: T;
 }

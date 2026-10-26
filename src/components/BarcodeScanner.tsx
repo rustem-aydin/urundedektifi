@@ -14,7 +14,7 @@ export default function BarcodeScanner() {
   const scannerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
-  const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor...')
+  const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor…')
   const [isChecking, setIsChecking] = useState(false)
 
   useEffect(() => {
@@ -22,24 +22,24 @@ export default function BarcodeScanner() {
 
     const initScanner = async () => {
       try {
-        setCameraStatus('Kamera izni isteniyor...')
+        setCameraStatus('Kamera izni isteniyor…')
         const stream = await navigator.mediaDevices.getUserMedia({ video: true })
         stream.getTracks().forEach((track) => track.stop())
 
-        setCameraStatus('Kütüphane yükleniyor...')
+        setCameraStatus('Tarayıcı hazırlanıyor…')
         const module = await import('html5-qrcode')
         Html5QrcodeModule = module.Html5Qrcode
         scannerRef.current = new Html5QrcodeModule('reader')
         setIsReady(true)
-        setCameraStatus('Hazır, barkod okumaya hazır...')
+        setCameraStatus('Hazır — barkodu kameraya göster.')
       } catch (err: any) {
         console.error('Başlangıç hatası:', err)
         if (err.name === 'NotAllowedError') {
-          setError('Kamera izni reddedildi. Lütfen tarayıcı ayarlarından kamera izni verin.')
+          setError('Kamera izni verilmedi. Tarayıcı ayarlarından bu siteye kamera izni ver.')
         } else if (err.name === 'NotFoundError') {
-          setError('Kamera bulunamadı. Bilgisayarınıza bir kamera bağlı olduğundan emin olun.')
+          setError('Kamera bulunamadı. Cihaza bir kamera bağlı olduğundan emin ol.')
         } else {
-          setError(`Kamera hatası: ${err.message}`)
+          setError('Kamera açılamadı. Sayfayı yenileyip tekrar dene.')
         }
       }
     }
@@ -56,12 +56,12 @@ export default function BarcodeScanner() {
   const handleBarcodeScanned = async (barcodeText: string) => {
     try {
       setIsChecking(true)
-      setCameraStatus('Barkod sorgulanıyor...')
+      setCameraStatus('Barkod sorgulanıyor…')
 
       const barcodeNumber = parseInt(barcodeText, 10)
 
       if (isNaN(barcodeNumber)) {
-        setError('Geçersiz barkod formatı!')
+        setError('Geçersiz barkod biçimi.')
         setIsChecking(false)
         return
       }
@@ -73,19 +73,19 @@ export default function BarcodeScanner() {
       }
 
       if (result && result.docs && result.docs.length > 0) {
-        setCameraStatus('Ürün bulundu!')
-        toast.success('Ürün bulundu, dosyası açılıyor.')
+        setCameraStatus('Ürün bulundu.')
+        toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${barcodeText}`)
       } else {
         setCameraStatus('Ürün bulunamadı — yeni dosya sihirbazı açılıyor.')
-        toast.message('Ürün bulunamadı — ilk ekleyen siz olun.')
+        toast.message('Ürün bulunamadı — dosyasını sen aç.')
         router.push(`/ekle?barcode=${encodeURIComponent(barcodeText)}`)
       }
     } catch (error) {
       console.error('Sorgulama hatası:', error)
-      setError('Ürün sorgulanırken bir hata oluştu!')
-      setCameraStatus('Hata oluştu, tekrar deneniyor...')
-      toast.error('Ürün sorgulanırken bir hata oluştu!')
+      setError('Ürün sorgulanamadı. Tekrar dene.')
+      setCameraStatus('Sorgu başarısız; tarayıcı yeniden başlatılıyor…')
+      toast.error('Ürün sorgulanamadı. Tekrar dene.')
 
       setTimeout(() => {
         if (scannerRef.current && isReady) {
@@ -113,7 +113,7 @@ export default function BarcodeScanner() {
           }
         },
       )
-      setCameraStatus('Hazır, barkod okumaya hazır...')
+      setCameraStatus('Hazır — barkodu kameraya göster.')
       setError('')
     } catch (err) {
       console.error('Yeniden başlatma hatası:', err)
@@ -139,7 +139,7 @@ export default function BarcodeScanner() {
         )
       } catch (err: any) {
         console.error('Kamera başlatma hatası:', err)
-        setError('Kamera başlatılamadı. Lütfen kamera izinlerini kontrol edin.')
+        setError('Kamera başlatılamadı. Kamera iznini kontrol edip tekrar dene.')
       }
     }
 
@@ -160,7 +160,7 @@ export default function BarcodeScanner() {
         <VerdictStamp variant="danger">Hata</VerdictStamp>
         <p className="text-sm text-muted-foreground">{error}</p>
         <Button variant="outline" onClick={() => window.location.reload()}>
-          Tekrar Dene
+          Tekrar dene
         </Button>
       </div>
     )
@@ -188,7 +188,7 @@ export default function BarcodeScanner() {
           className="animate-scanline pointer-events-none absolute inset-x-3 top-0 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100%]"
         />
       </div>
-      <EvidenceTag>Barkodu kameraya gösterin</EvidenceTag>
+      <EvidenceTag>Barkodu kameraya göster</EvidenceTag>
     </div>
   )
 }

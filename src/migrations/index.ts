@@ -5,6 +5,7 @@ import * as migration_20260622_165913_fix_allergens_schema2 from './20260622_165
 import * as migration_20261022_174805_percent_estimate_nullable from './20261022_174805_percent_estimate_nullable';
 import * as migration_20261025_040936_add_expert_posts_and_following from './20261025_040936_add_expert_posts_and_following';
 import * as migration_20261025_061858 from './20261025_061858';
+import * as migration_20261025_173424_add_goruntulenme from './20261025_173424_add_goruntulenme';
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20261025_061858.up,
     down: migration_20261025_061858.down,
     name: '20261025_061858'
+  },
+  {
+    up: migration_20261025_173424_add_goruntulenme.up,
+    down: migration_20261025_173424_add_goruntulenme.down,
+    name: '20261025_173424_add_goruntulenme',
   },
 ];

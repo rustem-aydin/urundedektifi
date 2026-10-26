@@ -37,7 +37,7 @@ import {
   type UploadablePhoto,
 } from '@/lib/wizard/productWrite'
 
-const STEP_TITLES = ['Fotoğraf & barkod', 'Onay', 'Eşleme', 'Kayıt'] as const
+const STEP_TITLES = ['Fotoğraf ve barkod', 'Onay', 'Eşleme', 'Kayıt'] as const
 
 function describe(error: unknown): string {
   if (error instanceof AiError || error instanceof ApiError) return error.message
@@ -70,9 +70,9 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
         if (!active) return
         setProviderReady(Boolean(readReadyProvider()))
         if (stored) {
-          const badges: string[] = [`Yarım kalan taslak geri yüklendi (${STEP_TITLES[stored.draft.step - 1]}).`]
+          const badges: string[] = [`Yarım kalan taslak geri yüklendi: ${STEP_TITLES[stored.draft.step - 1]}.`]
           if (stored.missingPhotos) {
-            badges.push(`${stored.missingPhotos} fotoğraf bulunamadı; yeniden ekle.`)
+            badges.push(`${stored.missingPhotos} fotoğraf bulunamadı. Yeniden ekle.`)
           }
           setNotice(badges.join(' '))
           const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
@@ -174,10 +174,10 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
             name: draft.form.name || existing.name || '',
           },
         })
-        setNotice('Bu barkod kayıtlı: yalnız boş alanlar doldurulacak, dolu alanlar korunacak.')
+        setNotice('Bu barkod kayıtlı. Yalnız boş alanlar doldurulur; dolu alanlar korunur.')
       } else {
         await update({ ...draft, mode: 'create', productId: null })
-        setNotice('Bu barkod yeni: kayıt oluşturulacak.')
+        setNotice('Bu barkod yeni. Kayıt oluşturulacak.')
       }
     } catch (error) {
       setFailure(describe(error))
@@ -197,7 +197,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       return
     }
     if (!draft.photos.length) {
-      setFailure('Analiz için en az bir fotoğraf gerekli.')
+      setFailure('Analiz için en az bir fotoğraf gerekiyor.')
       return
     }
 
@@ -247,7 +247,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       const tokenNote = result.usage?.totalTokens ? ` · ${result.usage.totalTokens} token` : ''
       setNotice(
         result.data.requests.length
-          ? `${result.data.requests.length} eksik alan için fotoğraf talebi var.${tokenNote}`
+          ? `${result.data.requests.length} eksik alan için yeni fotoğraf isteniyor.${tokenNote}`
           : `Analiz tamamlandı.${tokenNote}`,
       )
     } catch (error) {
@@ -264,7 +264,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
     try {
       const resolved = await resolveCreatedMasters(draft, token)
       if (resolved.errors.length) {
-        setFailure(`Bazı kayıtlar açılamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
+        setFailure(`Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
         await update(resolved.draft)
         return
       }
@@ -272,7 +272,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       const photos: UploadablePhoto[] = []
       for (const photo of resolved.draft.photos.filter((item) => item.role !== 'unknown')) {
         const blob = await getPhotoBlob(photo.id)
-        if (!blob) throw new Error('Bir fotoğraf okunamadı; kaldırıp yeniden ekle.')
+        if (!blob) throw new Error('Bir fotoğraf okunamadı. Kaldırıp yeniden ekle.')
         photos.push({
           id: photo.id,
           blob,
@@ -316,10 +316,10 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
-        <WizardIntro eyebrow="ADIM 0" title="Bu ekran senin rolüne kapalı">
+        <WizardIntro eyebrow="ADIM 0" title="Bu ekran rolüne kapalı">
           {user
-            ? `${user.role} rolüyle ürün eklenemez. Admin veya editör hesabıyla giriş yap.`
-            : 'Admin veya editör hesabıyla giriş yapman gerekiyor.'}
+            ? `${user.role} rolüyle ürün eklenemez. Admin ya da editör hesabıyla giriş yap.`
+            : 'Admin ya da editör hesabıyla giriş yapman gerekiyor.'}
         </WizardIntro>
         <Button asChild className="w-fit">
           <Link href={`/giris?next=${encodeURIComponent('/ekle')}`}>Giriş ekranına git</Link>
@@ -337,7 +337,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
           <p className="text-sm text-muted-foreground">
             {saved.published
               ? 'Ürün yayında; dosyası açılabilir.'
-              : 'Ürün taslak olarak kaydedildi. Payload panelinden yayınlayabilirsin.'}
+              : 'Ürün taslak olarak kaydedildi. Yönetim panelinden yayınlayabilirsin.'}
           </p>
         </CaseCard>
         {dropped.length ? (
@@ -405,7 +405,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
           <CaseCard className="flex flex-col gap-3 p-4">
             <EvidenceTag variant="stamp">BARKOD</EvidenceTag>
             <p className="text-sm text-muted-foreground">
-              Barkod kayıtlıysa güncelleme moduna geçilir; yeni ise dosya oluşturulur. Barkodu kamerayla
+              Barkod kayıtlıysa ürün güncellenir; yeni ise dosya oluşturulur. Barkodu kamerayla
               okutabilir ya da elle yazabilirsin.
             </p>
             <TextField
@@ -435,7 +435,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
             <CaseCard className="flex flex-col gap-2 p-4">
               <EvidenceTag variant="stamp">SAĞLAYICI</EvidenceTag>
               <WizardIntro eyebrow="YAPAY ZEKÂ" title="Sağlayıcı ayarlanmadı">
-                Fotoğrafı analiz etmek için base URL, API anahtarı ve model gerekiyor.
+                Fotoğrafı analiz etmek için servis adresi, API anahtarı ve model gerekiyor.
               </WizardIntro>
               <Button asChild className="w-fit">
                 <Link href="/saglayici">Sağlayıcıyı ayarla</Link>

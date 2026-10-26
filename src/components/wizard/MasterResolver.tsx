@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { bestMatch, searchOptions } from '@/lib/wizard/match'
+import { bestMatch, resolveSelection, searchOptions } from '@/lib/wizard/match'
 import type { ProductForm, Resolution } from '@/lib/wizard/productDraft'
 import type { MasterOption } from '@/lib/wizard/types'
 import { useMasterOptions } from '@/lib/wizard/useMasterOptions'
@@ -77,7 +77,9 @@ function ResolverRow({
         </div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
-          {suggestion && resolution.kind === 'pending' ? (
+          {/* Eşleşme "Yeni" seçildikten sonra da görünür kalır: aksi hâlde aynı ad master'da
+              dururken satır sessizce kopya kayıt açıyordu (üretimde "Su" ×3, "Şeker" ×3). */}
+          {suggestion ? (
             <Chip
               label={`Eşleştir: ${suggestion.name}`}
               onClick={() => onChange({ ...resolution, kind: 'existing', id: suggestion.id, suggestion })}
@@ -96,6 +98,13 @@ function ResolverRow({
           <Chip label="Ara" onClick={() => setSearching((value) => !value)} />
         </div>
       )}
+
+      {resolution.kind === 'create' && suggestion ? (
+        <p className="text-sm text-muted-foreground">
+          Aynı ad master listede var. Kayıt sırasında yeni satır açılmaz; satır «{suggestion.name}»
+          kaydına bağlanır.
+        </p>
+      ) : null}
 
       {searching && resolution.kind !== 'existing' ? (
         <div className="flex flex-col gap-2">
@@ -158,10 +167,12 @@ export function MasterResolver({ form, onEdit }: Props) {
   const allergens = useMasterOptions('allergens')
   const nutrients = useMasterOptions('nutrients')
 
-  const bulk = <T extends { resolution: Resolution }>(rows: T[], kind: 'create' | 'skip'): T[] =>
-    rows.map((row) =>
-      row.resolution.kind === 'pending' ? { ...row, resolution: { ...row.resolution, kind } } : row,
-    )
+  /** Toplu karar: "yeni oluştur" önce eşleştirir (bkz. `resolveSelection`). */
+  const bulk = <T extends { resolution: Resolution }>(
+    rows: T[],
+    kind: 'create' | 'skip',
+    options: MasterOption[],
+  ): T[] => rows.map((row) => ({ ...row, resolution: resolveSelection(row.resolution, kind, options) }))
 
   return (
     <div className="flex flex-col gap-4">
@@ -169,7 +180,7 @@ export function MasterResolver({ form, onEdit }: Props) {
         <EvidenceTag variant="evidence">EŞLEME</EvidenceTag>
         <WizardIntro eyebrow="ADIM 3" title="Serbest metni master kayda bağla">
           Kural motoru yalnız master kayıtlar üzerinden eşleşir. “Yeni oluştur” dediğin satırlar kayıt
-          sırasında açılır; “Atla” ürüne bağlanmaz ve hükümlerde görünmez.
+          sırasında açılır; atlanan satır ürüne bağlanmaz ve hükümlerde görünmez.
         </WizardIntro>
       </CaseCard>
 
@@ -193,7 +204,9 @@ export function MasterResolver({ form, onEdit }: Props) {
 
       <GroupHeader
         title={`İÇİNDEKİLER (${form.ingredients.length})`}
-        onBulk={(kind) => onEdit({ ...form, ingredients: bulk(form.ingredients, kind) }, 'ingredients')}
+        onBulk={(kind) =>
+          onEdit({ ...form, ingredients: bulk(form.ingredients, kind, ingredients.data) }, 'ingredients')
+        }
       />
       {form.ingredients.length === 0 ? (
         <p className="text-sm text-muted-foreground">Fotoğrafta içindekiler bulunamadı.</p>
@@ -241,10 +254,12 @@ export function MasterResolver({ form, onEdit }: Props) {
 
       <GroupHeader
         title={`KATKI MADDELERİ (${form.additives.length})`}
-        onBulk={(kind) => onEdit({ ...form, additives: bulk(form.additives, kind) }, 'additives')}
+        onBulk={(kind) =>
+          onEdit({ ...form, additives: bulk(form.additives, kind, additives.data) }, 'additives')
+        }
       />
       {form.additives.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Katkı maddesi okunmadı.</p>
+        <p className="text-sm text-muted-foreground">Katkı maddesi okunamadı.</p>
       ) : null}
       {form.additives.map((row, index) => (
         <ResolverRow
@@ -274,14 +289,14 @@ export function MasterResolver({ form, onEdit }: Props) {
           onEdit(
             {
               ...form,
-              allergens: form.allergens.map((row) => (row.kind === 'pending' ? { ...row, kind } : row)),
+              allergens: form.allergens.map((row) => resolveSelection(row, kind, allergens.data)),
             },
             'allergens',
           )
         }
       />
       <p className="text-sm text-muted-foreground">
-        Şema tek alerjen ilişkisi tutuyor: ilk eşleşen kaydedilir.
+        Ürüne tek alerjen bağlanabiliyor: ilk eşleşen kaydedilir.
       </p>
       {form.allergens.map((row, index) => (
         <ResolverRow
@@ -303,7 +318,10 @@ export function MasterResolver({ form, onEdit }: Props) {
         title={`BESİN DEĞERLERİ (${form.nutrition.items.length})`}
         onBulk={(kind) =>
           onEdit(
-            { ...form, nutrition: { ...form.nutrition, items: bulk(form.nutrition.items, kind) } },
+            {
+              ...form,
+              nutrition: { ...form.nutrition, items: bulk(form.nutrition.items, kind, nutrients.data) },
+            },
             'nutrition',
           )
         }
@@ -328,7 +346,7 @@ export function MasterResolver({ form, onEdit }: Props) {
         ))}
       </div>
       {form.nutrition.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Besin tablosu okunmadı.</p>
+        <p className="text-sm text-muted-foreground">Besin tablosu okunamadı.</p>
       ) : null}
       {form.nutrition.items.map((row, index) => (
         <ResolverRow

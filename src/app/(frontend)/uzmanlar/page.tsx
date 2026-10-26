@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Uzmanlar',
-  description: 'Doğrulanmış uzmanlar ve ürünlere uygulanan kuralları.',
+  description: 'Ürünlere kural yazan, doğrulanmış uzmanlar.',
 }
 
 export default async function ExpertsPage({
@@ -111,7 +111,7 @@ export default async function ExpertsPage({
         <EvidenceTag>İMZALAR</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Uzmanlar</h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Alanlarında uzman kişiler. Bir uzmana tıklayarak kurallarını inceleyebilirsiniz.
+          Alanlarında uzman kişiler. Bir uzmana girip kurallarını inceleyebilirsin.
         </p>
       </div>
 

@@ -68,14 +68,14 @@ export function SaglayiciForm() {
       setModels(found)
       setManualModel(false)
       if (!found.length) {
-        setNotice('Sağlayıcı model listesi döndürmedi; modeli elle yaz.')
+        setNotice('Sağlayıcı model listesi döndürmedi. Model adını elle yaz.')
       } else if (!found.includes(model)) {
         setModel(found[0])
       }
     } catch (error) {
       setModels(null)
       setManualModel(true)
-      setFailure(`${describe(error)} Model listesi alınamadıysa modeli elle yazabilirsin.`)
+      setFailure('Model listesi alınamadı. Model adını elle yazabilirsin.')
     } finally {
       setBusy(false)
     }
@@ -91,7 +91,7 @@ export function SaglayiciForm() {
         setApiKey('')
       }
       writeProviderSettings({ baseUrl, model })
-      setNotice('Sağlayıcı kaydedildi. Ekle ekranında analiz artık bu sağlayıcıyı kullanır.')
+      setNotice('Sağlayıcı kaydedildi. Ekle ekranındaki analiz artık bu sağlayıcıyı kullanıyor.')
     } catch (error) {
       setFailure(describe(error))
     }
@@ -105,8 +105,9 @@ export function SaglayiciForm() {
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
-        <WizardIntro eyebrow="SAĞLAYICI" title="Bu ekran senin rolüne kapalı">
-          Admin veya editör hesabıyla giriş yap; sağlayıcı ayarı yalnız ürün ekleyen roller için gerekir.
+        <WizardIntro eyebrow="SAĞLAYICI" title="Bu ekran rolüne kapalı">
+          Admin ya da editör hesabıyla giriş yap; sağlayıcı ayarı yalnız ürün ekleyen roller için
+          gerekir.
         </WizardIntro>
         <Button asChild className="w-fit">
           <Link href={`/giris?next=${encodeURIComponent('/saglayici')}`}>Giriş ekranına git</Link>
@@ -123,14 +124,14 @@ export function SaglayiciForm() {
     <div className="flex flex-col gap-5">
       <CaseCard className="flex flex-col gap-2 p-4">
         <EvidenceTag variant="evidence">YAPAY ZEKÂ</EvidenceTag>
-        <WizardIntro eyebrow="SAĞLAYICI" title="OpenAI uyumlu sağlayıcı">
-          Ürün fotoğrafları bu adrese gönderilir. Base URL&apos;i tam yaz (örn. https://api.openai.com/v1).
-          Anahtar yalnız bu sekmede saklanır ve sunucumuza gitmez.
+        <WizardIntro eyebrow="SAĞLAYICI" title="OpenAI uyumlu servis">
+          Ürün fotoğrafları bu adrese gönderilir. Adresi tam yaz (örn.
+          https://api.openai.com/v1). Anahtar yalnız bu sekmede saklanır; sunucuya gitmez.
         </WizardIntro>
       </CaseCard>
 
       <TextField
-        label="Base URL"
+        label="Servis adresi"
         value={baseUrl}
         placeholder="https://api.openai.com/v1"
         onChange={setBaseUrl}
@@ -139,7 +140,7 @@ export function SaglayiciForm() {
         label={maskedKey ? `API anahtarı (kayıtlı: ${maskedKey})` : 'API anahtarı'}
         type="password"
         value={apiKey}
-        placeholder={maskedKey ? 'Değiştirmek için yeni anahtar yaz' : 'sk-…'}
+        placeholder={maskedKey ? 'Yeni anahtar yazarsan eskisinin yerine geçer' : 'sk-…'}
         onChange={(value) => setApiKey(value.trim())}
       />
 

@@ -1,3 +1,4 @@
+import type { Resolution } from './productDraft'
 import type { MasterOption } from './types'
 
 /**
@@ -7,8 +8,12 @@ import type { MasterOption } from './types'
 const TR: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', İ: 'i', ö: 'o', ş: 's', ü: 'u' }
 
 export function normalizeText(value: string): string {
+  // 'İ'.toLowerCase() JS'te "i" + birleşik nokta (U+0307) üretir; naif sıra ("İnülin" →
+  // "i nulin") master adıyla eşleşmeyi bozar. Büyük I'lar önce "i"ye iner.
   return value
+    .replace(/[İI]/g, 'i')
     .toLowerCase()
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[çğıöşü]/g, (char) => TR[char] ?? char)
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
@@ -40,6 +45,25 @@ export function bestMatch(options: MasterOption[], query: string): MasterOption 
     )
   })
   return contains ?? null
+}
+
+/**
+ * Toplu kararın tek satırı: "yeni oluştur" isteği ÖNCE eşleştirir.
+ * Adı master listede duran satır yeni kayıt açmaz (aksi hâlde tek dokunuş tüm listeyi kopya
+ * master kaydına çeviriyordu: üretimde "Su" ×3, "Şeker" ×3); yalnız gerçekten yeni satır `create`
+ * olur. Karar verilmiş satır (`existing`/`skip`) ve `skip` isteği olduğu gibi uygulanır.
+ */
+export function resolveSelection(
+  resolution: Resolution,
+  kind: 'create' | 'skip',
+  options: MasterOption[],
+): Resolution {
+  if (resolution.kind !== 'pending') return resolution
+  if (kind === 'create') {
+    const match = resolution.suggestion ?? bestMatch(options, resolution.name)
+    if (match) return { ...resolution, kind: 'existing', id: match.id, suggestion: match }
+  }
+  return { ...resolution, kind }
 }
 
 /** Eşleme ekranındaki serbest arama: ad veya alternatif ad içinde geçen ilk 8 satır. */

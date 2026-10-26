@@ -308,7 +308,7 @@ export async function buildFeedbackSummary({
 }
 
 function requireUser(user: User | null): User {
-  if (!user) throw new APIError('Giriş gerekli.', 401)
+  if (!user) throw new APIError('Bunun için giriş yapman gerekiyor.', 401)
   return user
 }
 

@@ -34,11 +34,11 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
   }
 
   const warnings: string[] = []
-  if (!counts.total) warnings.push('Hiçbir master kayıt eşlenmedi; hüküm değerlendirmesi boş kalır.')
-  if (counts.pending) warnings.push(`${counts.pending} satır karar bekliyor (kayıtta bağlanmaz).`)
-  if (counts.skipped) warnings.push(`${counts.skipped} satır atlandı; bu içindekiler hükümlerde görünmez.`)
+  if (!counts.total) warnings.push('Hiçbir satır master kayda bağlanmadı; hüküm değerlendirmesi boş kalır.')
+  if (counts.pending) warnings.push(`${counts.pending} satır karar bekliyor; kayıtta bağlanmaz.`)
+  if (counts.skipped) warnings.push(`${counts.skipped} satır atlandı; bu satırlar hükümlerde görünmez.`)
   if (!attached.some((photo) => photo.role === 'front')) {
-    warnings.push('Ön yüz fotoğrafı yok: taslak kaydedilir, yayınlama kapalı kalır.')
+    warnings.push('Ön yüz fotoğrafı yok. Taslak kaydedilir; yayınlama kapalı kalır.')
   }
   if (form.nutrition.items.length === 0) warnings.push('Besin tablosu boş; besin kuralları eşleşmez.')
 
@@ -51,10 +51,10 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
       <CaseCard className="flex flex-col gap-1 p-4" tape>
         <EvidenceTag variant="stamp">KAYIT</EvidenceTag>
         <p className="font-display text-lg">{form.name || 'İsimsiz ürün'}</p>
-        <p className="font-mono text-sm">{form.barcode || 'barkod yok'}</p>
+        <p className="font-mono text-sm">{form.barcode || 'BARKOD YOK'}</p>
         <p className="text-sm text-muted-foreground">
           {draft.mode === 'update'
-            ? 'Bu barkod kayıtlı: yalnız boş alanlar doldurulacak, dolu alanlar korunacak.'
+            ? 'Bu barkod kayıtlı. Yalnız boş alanlar doldurulur; dolu alanlar korunur.'
             : 'Yeni ürün dosyası oluşturulacak.'}
         </p>
       </CaseCard>
@@ -118,7 +118,7 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
         </div>
         {!canPublish ? (
           <p className="text-sm text-muted-foreground">
-            Yayında için ön yüz fotoğrafı ve en az 8 haneli barkod gerekir.
+            Yayınlamak için ön yüz fotoğrafı ve en az 8 haneli barkod gerekir.
           </p>
         ) : null}
       </div>
@@ -184,7 +184,7 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
       </Button>
 
       <WizardIntro eyebrow="ADIM 4" title="Kayıt">
-        Kaydettiğinde ürün Payload koleksiyonuna yazılır; yayında işaretlediysen dosyası hemen açılır.
+        Kaydettiğinde ürün veritabanına yazılır; yayında işaretlediysen dosyası hemen açılır.
       </WizardIntro>
     </div>
   )

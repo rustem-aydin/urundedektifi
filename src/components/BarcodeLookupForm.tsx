@@ -19,21 +19,21 @@ export function BarcodeLookupForm() {
     e.preventDefault()
     const digits = code.replace(/\D/g, '')
     if (digits.length < 8) {
-      toast.error('Geçersiz barkod — en az 8 hane girin.')
+      toast.error('Geçersiz barkod — en az 8 hane gir.')
       return
     }
     setIsChecking(true)
     try {
       const result = await getProduct(Number(digits))
       if (result && result.docs && result.docs.length > 0) {
-        toast.success('Ürün bulundu, dosyası açılıyor.')
+        toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${digits}`)
       } else {
-        toast.error('Ürün bulunamadı — ilk ekleyen siz olun.')
+        toast.error('Ürün bulunamadı — dosyasını sen aç.')
         router.push(`/ekle/${digits}`)
       }
     } catch {
-      toast.error('Sorgu sırasında bir hata oluştu. Tekrar deneyin.')
+      toast.error('Sorgu tamamlanamadı. Tekrar dene.')
     } finally {
       setIsChecking(false)
     }
@@ -63,13 +63,13 @@ export function BarcodeLookupForm() {
           className="h-11 px-5 font-medium"
         >
           <Search aria-hidden="true" />
-          {isChecking ? 'Sorgulanıyor…' : 'Ürünü Sorgula'}
+          {isChecking ? 'Sorgulanıyor…' : 'Ürünü sorgula'}
         </Button>
       </div>
       <Button asChild variant="outline" size="lg" className="h-11 w-full border-2 sm:w-auto">
         <Link href="/tara">
           <ScanBarcode aria-hidden="true" />
-          Kamerayla Tara
+          Kamerayla tara
         </Link>
       </Button>
     </form>

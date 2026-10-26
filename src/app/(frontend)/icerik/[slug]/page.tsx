@@ -76,12 +76,12 @@ export default async function IngredientDetailPage({
       <section className="mt-10">
         <h2 className="font-display text-xl">Bu içeriğe ait kurallar ({rules.totalDocs})</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          İçeriği kullanan uzman kuralları. Kurala tıklayınca eşleştiği ürünleri görürsünüz.
+          İçeriği kullanan uzman kuralları. Kurala girince eşleştiği ürünleri görürsün.
         </p>
 
         {rules.docs.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Bu içerik için tanımlı bir uzman kuralı yok.
+            Bu içerik için tanımlı uzman kuralı yok.
           </p>
         ) : (
           <ol className="mt-4 flex flex-col gap-3">

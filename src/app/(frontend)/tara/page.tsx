@@ -21,10 +21,10 @@ export default function TaraPage() {
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
       <div className="flex flex-col items-start gap-2">
         <EvidenceTag variant="stamp">CANLI İNCELEME</EvidenceTag>
-        <h1 className="font-display text-2xl sm:text-3xl">Barkodu tarat</h1>
+        <h1 className="font-display text-2xl sm:text-3xl">Barkodu tara</h1>
         <p className="text-sm text-muted-foreground">
-          Barkodu kameraya gösterin; ürün kayıtlıysa dosyası açılır, kayıtlı değilse ilk ekleyen
-          siz olursunuz.
+          Barkodu kameraya göster. Ürün kayıtlıysa dosyası açılır; kayıtlı değilse ilk dosyayı sen
+          açarsın.
         </p>
       </div>
 

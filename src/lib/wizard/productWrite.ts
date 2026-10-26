@@ -1,6 +1,7 @@
 import {
   createMasterDoc,
   createProduct,
+  findMasterByName,
   findMasterDoc,
   findProductByBarcode,
   updateProduct,
@@ -89,6 +90,14 @@ async function resolveOne(
     id,
     suggestion: { id, name },
   })
+
+  // Aynı ad master listede varsa YENİ kayıt açılmaz: kural motoru kimlik üzerinden eşleştiği
+  // için kopya satır ("Su" ×3, "Şeker" ×3) ürünü mevcut kurallardan koparır. Sunucuya sormak
+  // şart: istemci listesi bayat olabilir (web'de oturum boyunca önbellekte).
+  const existing = data.name
+    ? await findMasterByName(collection, data.name).catch(() => null)
+    : null
+  if (existing) return link(existing.id, existing.name)
 
   try {
     const doc = await createMasterDoc(collection, data, token)
@@ -253,7 +262,7 @@ export async function saveProduct(
 
   if (draft.mode === 'update' && draft.productId) {
     const existing = await findProductByBarcode(data.barcode ?? '')
-    if (!existing) throw new Error('Güncellenecek ürün bulunamadı.')
+    if (!existing) throw new Error('Güncellenecek ürün bulunamadı. Dosyayı yenileyip tekrar dene.')
     const patch = onlyEmptyFields(data, existing)
     const doc = await updateProduct(existing.id, patch, token)
     return { productId: doc.id, created: false, dropped }
