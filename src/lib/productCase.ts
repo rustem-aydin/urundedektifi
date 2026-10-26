@@ -297,10 +297,14 @@ const RULESET_KEY = 'active-rules'
 export function invalidateProductCaseCache(barcode?: string | number | null) {
   if (barcode != null) caseCache.delete(String(barcode))
   else caseCache.clear()
+  // Kural eşleşmesi ürün verisine bağlı: tarama önbelleği de tazelenir.
+  matchScanCache.clear()
 }
 
 export function invalidateRuleSetCache() {
   ruleSetCache.delete(RULESET_KEY)
+  // Kural tanımı değişince eşleşme kümesi de değişir.
+  matchScanCache.clear()
 }
 
 async function getCachedRuleSet(payload: Payload): Promise<any[]> {
@@ -475,53 +479,85 @@ export async function matchedRuleCountsByBarcode(
 }
 
 /**
- * Tarama için asgari alan kümesi: `evaluateRule` yalnız bu alanları okur.
- * Tam `PRODUCT_SELECT` (beş görsel ilişkisi dahil) her sayfada ilişki sorgusu
- * açtığı için kural sayfasını ~11 sn'ye çıkarıyordu.
+ * Tarama için alan kümesi kural tipine göre daraltılır: `evaluateRule` yalnız
+ * ilgili alanı okur. Tam `PRODUCT_SELECT` (beş görsel ilişkisi) her sayfada
+ * fazladan ilişki sorgusu açıp kural sayfasını ~11 sn'ye çıkarıyordu.
  */
-const MATCH_SELECT = {
-  items: { ingredients: true },
-  additives: true,
-  allergens: true,
-  brand: true,
-  category: true,
-  country: true,
-  labels: true,
-  nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } },
-  name: true,
-} as const
+const SCAN_FIELDS_BY_RULE_TYPE: Record<string, Record<string, unknown>> = {
+  ingredient_text: { items: { ingredients: true } },
+  ingredient_excludes: { items: { ingredients: true } },
+  additive_code: { additives: true },
+  allergen: { allergens: true },
+  country: { country: true },
+  brand: { brand: true },
+  brand_boycotted: { brand: true },
+  category: { category: true },
+  nutrition_max: { nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } } },
+  nutrition_min: { nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } } },
+  label_has: { labels: true },
+  label_missing: { labels: true },
+}
 
-/**
- * Yayındaki TÜM ürünleri sayfa sayfa tarar ve verilen kurallara takılanların
- * kimliklerini döndürür.
- *
- * Ürün sayısı on binlerce olduğu için tek istekte `limit: 500` ile kesmek
- * eşleşmeleri sessizce kaybettirir; tarama sayfalanır, eşleşen kayıtlar
- * ikinci aşamada (görsel ilişkileriyle) çekilir.
- */
+function scanSelectFor(rules: Rule[]): Record<string, unknown> {
+  const select: Record<string, unknown> = { name: true }
+  for (const rule of rules) {
+    const fields = SCAN_FIELDS_BY_RULE_TYPE[(rule as { ruleType?: string }).ruleType ?? '']
+    if (fields) Object.assign(select, fields)
+  }
+  return select
+}
+
+/** Tarama sonucu kısa süreli önbellekte: kural sayfası her açılışta 10 bin kaydı gezmesin. */
+const matchScanCache = new LRUCache<string, Array<string | number>>({
+  max: 200,
+  ttl: 1000 * 60,
+})
+
+function scanCacheKey(rules: Rule[], from: number): string {
+  const ids = rules
+    .map((rule) => String((rule as { id?: string | number }).id ?? '?'))
+    .sort()
+    .join(',')
+  return `${from}|${ids}`
+}
+
+/** Yayındaki tüm ürünleri sayfa sayfa tarar, kurallara takılanların kimliklerini döndürür. */
 async function scanPublishedProductIds(
   payload: Payload,
   rules: Rule[],
 ): Promise<Array<string | number>> {
-  const pageSize = 500
+  const pageSize = 1000
+  const select = scanSelectFor(rules)
   const matched: Array<string | number> = []
   for (let page = 1; ; page++) {
+    const cacheKey = scanCacheKey(rules, page)
+    const cached = matchScanCache.get(cacheKey)
+    if (cached) {
+      matched.push(...cached)
+      if (cached.length < pageSize) return matched
+      continue
+    }
+
     const result = await payload.find({
       collection: 'products',
       where: { status: { equals: 'published' } },
       limit: pageSize,
       page,
       depth: 1,
-      select: MATCH_SELECT,
+      select,
     })
+    const pageMatches: Array<string | number> = []
     for (const product of result.docs as any[]) {
       if (rules.some((rule) => evaluateRule(rule, product as never).matched)) {
-        matched.push(product.id)
+        pageMatches.push(product.id)
       }
     }
-    if (result.docs.length < pageSize || page * pageSize >= result.totalDocs) break
+    matchScanCache.set(cacheKey, pageMatches)
+    matched.push(...pageMatches)
+
+    // Önbellekten gelen sayfa tam değilse son sayfadayız.
+    if (result.docs.length < pageSize || page * pageSize >= result.totalDocs) return matched
   }
-  return matched
 }
 
 /** Eşleşen ürünleri görsel ilişkileriyle (depth 2) çekip tarama sırasını korur. */

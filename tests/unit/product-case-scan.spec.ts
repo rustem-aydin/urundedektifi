@@ -9,6 +9,8 @@ import { listProductsMatchingRule } from '@/lib/productCase'
  */
 
 const RULE = { id: 1, ruleType: 'label_has', label: 'vegan', isActive: true } as never
+// Tarama önbelleği kural kümesine göre anahtarlanır; her senaryo kendi kuralını kullanır.
+const RULE_SECOND = { id: 2, ruleType: 'label_has', label: 'vegan', isActive: true } as never
 
 type FakeDoc = {
   id: number
@@ -54,15 +56,15 @@ describe('kural eşleştirmesinde sayfalama', () => {
     const matched = await listProductsMatchingRule(payload, RULE)
 
     expect(matched.map((productCase) => productCase.barcode)).toEqual(['B902'])
-    // Tarama 500'lük sayfalarla ilerledi: 1, 2, 3 (son sayfa) + kimlik sorgusu.
+    // Tarama birden fazla sayfaya bölündü: 1. sayfa yetmedi, 2. sayfa da istendi.
+    expect(pages).toContain(1)
     expect(pages).toContain(2)
-    expect(pages).toContain(3)
   })
 
   it('ilk sayfadaki eşleşmeyi ve tarama sırasını korur', async () => {
     const { payload } = fakePayload(1200, 42)
 
-    const matched = await listProductsMatchingRule(payload, RULE)
+    const matched = await listProductsMatchingRule(payload, RULE_SECOND)
 
     expect(matched).toHaveLength(1)
     expect(matched[0].barcode).toBe('B42')
