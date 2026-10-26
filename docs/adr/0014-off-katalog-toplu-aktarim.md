@@ -72,6 +72,8 @@ Kısıtlar:
   görseller sonraki turda tamamlanır.
 - OFF kesintisi/döküm tazeliği aktarımı durdurmaz; aynı komut yeniden çalıştırılabilir
   (var olan barkod atlanır).
-- `/urunler` gibi liste sayfaları sayfalandığı için katalog büyümesi sayfa yükünü artırmaz;
-  marka filtresi `limit: 100` ile sınırlı olduğundan marka sayısı arttıkça filtre eksik kalır.
-  Bu, aktarımın kapsamı dışında bırakılan ayrı bir iyileştirmedir.
+- `/urunler` gibi liste sayfaları sayfalandığı için katalog büyümesi sayfa yükünü artırmaz.
+  Marka filtresi `limit: 100` ile sınırlıydı; 1.976 markada seçeneklerin %95'i görünmüyordu,
+  bu yüzden filtre tüm markaları (yalnız `name` alanı seçilerek) çeker.
+- Medya hacmi: 9.432 ürün için ilk turda ~1,2 GB kaynak dosya (S3'te ek boyutlar dahil daha
+  fazlası) oluştu; görsel onarımı sürdükçe büyümeye devam eder.
