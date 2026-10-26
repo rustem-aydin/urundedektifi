@@ -48,3 +48,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Open Food Facts toplu aktarım önbelleği ve ilerleme durumu
+scripts/.off-cache/
