@@ -41,6 +41,8 @@ const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 /** OFF arama ucu anonim kullanıcıya kapalı; hesap bilgileri verilirse oturum açılır. */
 const OFF_USER = process.env.SEED_OFF_USER ?? ''
+/** Hazır JWT (paralel işler tek jetonu paylaşsın diye). */
+const SEED_TOKEN = process.env.SEED_TOKEN ?? ''
 const OFF_PASSWORD = process.env.SEED_OFF_PASSWORD ?? ''
 
 if (!EMAIL || !PASSWORD) {
@@ -68,6 +70,11 @@ const BACKFILL_IMAGES = flag('backfill-images')
 /** `dump`: resmî jsonl dökümünden aktar (arama ucu kapalıyken tek yol). */
 const SOURCE = arg('source', 'search') ?? 'search'
 const DUMP_FILE = arg('dump', '')
+/** Döküm satır aralığı: paralel onarım için (1 tabanlı, dahil). */
+const LINES_FROM = Number(arg('lines-from', '1'))
+const LINES_TO = Number(arg('lines-to', '0')) || Number.MAX_SAFE_INTEGER
+/** Ayrı ilerleme dosyası (paralel çalışan işler birbirinin durumunu ezmesin). */
+const STATE_FILE_ARG = arg('state-file', '')
 const UNTIL_DONE = flag('until-done')
 /** Sayfa alınamadığında (OFF hız sınırı) beklenecek süre. */
 const OUTAGE_WAIT_MS = Number(arg('outage-wait', '600000'))
@@ -84,7 +91,9 @@ if (!['all', 'front', 'none'].includes(IMAGES)) {
 
 const CACHE_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '.off-cache')
 const PAGES_DIR = path.join(CACHE_DIR, 'pages')
-const STATE_FILE = path.join(CACHE_DIR, 'state.json')
+const STATE_FILE = STATE_FILE_ARG
+  ? path.resolve(STATE_FILE_ARG)
+  : path.join(CACHE_DIR, 'state.json')
 
 const PageState = z.object({
   done: z.boolean().default(false),
@@ -329,11 +338,13 @@ async function dumpBackfillPass(
   let missing = 0
   let index = 0
   const startedAt = Date.now()
-  const resumeFrom = state.dumpBackfill.lines
+  // Satır aralığı verildiyse ilerleme dosyası yerine aralık geçerlidir.
+  const resumeFrom = LINES_FROM > 1 ? LINES_FROM - 1 : state.dumpBackfill.lines
 
   for await (const line of lines) {
     index++
     if (index <= resumeFrom) continue
+    if (index > LINES_TO) break
     if (!line.trim()) continue
     let product: OffProduct
     try {
@@ -352,7 +363,7 @@ async function dumpBackfillPass(
       const perProduct = (Date.now() - startedAt) / processed
       console.log(
         `[görsel ${index}] ${filled} eklendi · ${missing} başarısız · ` +
-          `${(perProduct / 1000).toFixed(2)} sn/ürün · kalan ~${duration(perProduct * Math.max(0, 11528 - index))}`,
+          `${(perProduct / 1000).toFixed(2)} sn/ürün · kalan ~${duration(perProduct * Math.max(0, Math.min(11528, LINES_TO) - index))}`,
       )
     }
   }
@@ -443,7 +454,12 @@ async function retryFailedPass(
 }
 
 async function main(): Promise<void> {
-  const client = createPayloadClient({ api: API, email: EMAIL, password: PASSWORD })
+  const client = createPayloadClient({
+    api: API,
+    email: EMAIL,
+    password: PASSWORD,
+    token: SEED_TOKEN || undefined,
+  })
   console.log(`Hedef: ${client.api}`)
   console.log(
     `Aralık: sayfa ${FROM}–${TO} · görseller: ${IMAGES} · eşzamanlılık: ${CONCURRENCY} · ` +

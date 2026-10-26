@@ -43,9 +43,14 @@ export function createPayloadClient(options: {
   api: string
   email: string
   password: string
+  /**
+   * Hazır JWT. Payload'da yeni giriş eski oturumları düşürebildiği için paralel
+   * çalışan betikler tek jetonu paylaşır; verilirse `login()` yeniden giriş yapmaz.
+   */
+  token?: string
 }): PayloadClient {
   const api = options.api.replace(/\/$/, '')
-  let token = ''
+  let token = options.token ?? ''
 
   function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
     return { Authorization: `JWT ${token}`, ...extra }
@@ -57,6 +62,7 @@ export function createPayloadClient(options: {
   }
 
   async function login(): Promise<void> {
+    if (options.token) return
     const res = await fetch(`${api}/users/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
