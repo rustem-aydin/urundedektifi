@@ -55,7 +55,15 @@ export default async function ProductsPage({
 
   const [categories, brands, products] = await Promise.all([
     payload.find({ collection: 'categories', limit: 100, sort: 'name', depth: 0 }),
-    payload.find({ collection: 'brands', limit: 100, sort: 'name', depth: 0 }),
+    // Katalog binlerce markaya çıktı: filtre tüm markaları görmeli (limit 0 = tümü).
+    // Yalnız ad taşınır; tam dokümanlar sayfa yükünü şişiriyordu.
+    payload.find({
+      collection: 'brands',
+      limit: 0,
+      sort: 'name',
+      depth: 0,
+      select: { name: true },
+    }),
     listProductCases(payload, { q, category, brand, labels, limit: 48 }),
   ])
 
@@ -69,7 +77,7 @@ export default async function ProductsPage({
         <EvidenceTag>DOSYALAR</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Ürünler</h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Yayındaki ürün kayıtları. Bir ürünü taratmak için barkodunu okutun ya da listeden seçin.
+          Yayındaki ürün dosyaları. Barkodu okut ya da listeden seç.
         </p>
       </div>
 
@@ -119,21 +127,21 @@ export default async function ProductsPage({
           {hasFilters ? (
             <>
               <p className="text-sm text-muted-foreground">
-                Bu filtrelerle eşleşen ürün bulunamadı — filtreleri kaldırıp tekrar deneyin.
+                Bu filtrelerle eşleşen ürün yok. Filtreleri kaldırıp tekrar dene.
               </p>
               <Button asChild variant="outline">
-                <Link href="/urunler">Filtreleri Temizle</Link>
+                <Link href="/urunler">Filtreleri temizle</Link>
               </Button>
             </>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Henüz yayında ürün yok. Barkod taratarak ilk ürünü siz ekleyin.
+                Henüz yayında ürün yok. Barkodu okutup ilk dosyayı sen aç.
               </p>
               <Button asChild>
                 <Link href="/tara">
                   <Plus aria-hidden="true" />
-                  İlk Ürünü Siz Ekleyin
+                  Barkod okut
                 </Link>
               </Button>
             </>
@@ -142,7 +150,7 @@ export default async function ProductsPage({
       ) : (
         <>
           <p className="mt-6 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase" aria-live="polite">
-            {products.totalDocs} ürün bulundu
+            {products.totalDocs} ürün listeleniyor
           </p>
           <div className="mt-4">
             <ProductGrid
