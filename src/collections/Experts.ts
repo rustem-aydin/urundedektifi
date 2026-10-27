@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
 import { invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
+import { findAllDocs } from '@/lib/findAllDocs'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -75,14 +76,14 @@ export const Experts: CollectionConfig = {
           return Response.json({ error: 'Uzman bulunamadı' }, { status: 404 })
         }
 
-        const rules = await req.payload.find({
-          collection: 'expert-rules',
+        // Kural seti binlerce marka kuralına çıktı: sabit limit kullanılırsa ürünler
+        // sessizce eksik eşleşir. Tüm kurallar sayfalanarak okunur.
+        const rules = await findAllDocs<{ id: number }>(req.payload, 'expert-rules', {
           where: { and: [{ expert: { equals: id } }, { isActive: { equals: true } }] },
-          limit: 200,
           depth: 1,
         })
 
-        const products = await listProductsForRules(req.payload, rules.docs as never)
+        const products = await listProductsForRules(req.payload, rules as never)
         return Response.json({ products: products.slice(0, 6) })
       },
     },

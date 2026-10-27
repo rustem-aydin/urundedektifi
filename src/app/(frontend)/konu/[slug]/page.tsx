@@ -10,13 +10,24 @@ import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { topicExperts } from '@/lib/topicExperts'
 
 export const metadata: Metadata = {
   title: 'Konu',
 }
 
-export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
+const RULE_PAGE_SIZE = 20
+
+export default async function TopicPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ kuralSayfa?: string }>
+}) {
   const { slug } = await params
+  const { kuralSayfa } = await searchParams
+  const rulePage = Math.max(1, Number(kuralSayfa) || 1)
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
@@ -30,20 +41,22 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
   const topic = t.docs[0]
   if (!topic) notFound()
 
-  const rules = await payload.find({
-    collection: 'expert-rules',
-    where: {
-      and: [{ topic: { equals: topic.id } }, { isActive: { equals: true } }],
-    },
-    sort: '-createdAt',
-    limit: 100,
-    depth: 1,
-  })
+  const [rules, topicExpertRows] = await Promise.all([
+    payload.find({
+      collection: 'expert-rules',
+      where: {
+        and: [{ topic: { equals: topic.id } }, { isActive: { equals: true } }],
+      },
+      sort: '-createdAt',
+      limit: RULE_PAGE_SIZE,
+      page: rulePage,
+      depth: 1,
+    }),
+    // Uzman şeridi kural satırlarından türetilmez: 3.900+ kuralda ilk sayfa yanıltırdı.
+    topicExperts(payload, topic.id),
+  ])
 
-  // Bu konuda kural yazan uzmanların ID'lerini topla
-  const expertIds = Array.from(
-    new Set(rules.docs.map((r: any) => (typeof r.expert === 'object' ? r.expert.id : r.expert))),
-  )
+  const expertIds = topicExpertRows.map((row) => row.id)
 
   const experts =
     expertIds.length > 0
@@ -173,6 +186,37 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
               )
             })}
           </div>
+
+          {rules.totalPages > 1 && (
+            <nav
+              aria-label="Kural sayfaları"
+              className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
+            >
+              {rulePage > 1 ? (
+                <Link
+                  href={`/konu/${topic.slug}?kuralSayfa=${rulePage - 1}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  ← Önceki
+                </Link>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+              <span className="text-faded">
+                {rulePage} / {rules.totalPages}
+              </span>
+              {rulePage < rules.totalPages ? (
+                <Link
+                  href={`/konu/${topic.slug}?kuralSayfa=${rulePage + 1}`}
+                  className="underline-offset-4 hover:underline"
+                >
+                  Sonraki →
+                </Link>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+            </nav>
+          )}
         </section>
       )}
     </div>

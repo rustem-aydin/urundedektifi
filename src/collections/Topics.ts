@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { invalidateProductCaseCache } from '@/lib/productCase'
 import { slugify } from '@/lib/slugify'
+import { topicExperts } from '@/lib/topicExperts'
 
 export const Topics: CollectionConfig = {
   slug: 'topics',
@@ -18,6 +19,21 @@ export const Topics: CollectionConfig = {
   access: {
     read: () => true,
   },
+  endpoints: [
+    {
+      // Konuda kural yazan uzmanlar: mobil "Kural yazanlar" şeridi bu uçtan okur.
+      // Kural satırları çekilmez, tek GROUP BY ile uzman başına kural sayısı döner.
+      path: '/:id/experts',
+      method: 'get',
+      handler: async (req) => {
+        const id = req.routeParams?.id as string | undefined
+        if (!id) return Response.json({ error: 'Konu kimliği gerekli' }, { status: 400 })
+
+        const experts = await topicExperts(req.payload, id)
+        return Response.json({ experts })
+      },
+    },
+  ],
   fields: [
     {
       name: 'name',

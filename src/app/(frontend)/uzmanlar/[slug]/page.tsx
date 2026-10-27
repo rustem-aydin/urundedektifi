@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { findAllDocs } from '@/lib/findAllDocs'
 import { listProductsForRules } from '@/lib/productCase'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
@@ -32,8 +33,18 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
 }
 
-export default async function ExpertDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+const RULE_PAGE_SIZE = 20
+
+export default async function ExpertDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ kuralSayfa?: string }>
+}) {
   const { slug } = await params
+  const { kuralSayfa } = await searchParams
+  const rulePage = Math.max(1, Number(kuralSayfa) || 1)
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
@@ -49,12 +60,20 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
   const expert = result.docs[0]
   if (!expert) notFound()
 
-  const [rules, ratings, posts, followers] = await Promise.all([
+  const [rules, allRules, ratings, posts, followers] = await Promise.all([
     payload.find({
       collection: 'expert-rules',
       where: {
         and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }],
       },
+      sort: '-createdAt',
+      limit: RULE_PAGE_SIZE,
+      page: rulePage,
+      depth: 1,
+    }),
+    // Ürün eşleşmesi TÜM kurallarla hesaplanır; listede yalnız o sayfa gösterilir.
+    findAllDocs<never>(payload, 'expert-rules', {
+      where: { and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }] },
       sort: '-createdAt',
       depth: 1,
     }),
@@ -78,7 +97,7 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
     }),
   ])
 
-  const matchedProducts = await listProductsForRules(payload, rules.docs as never)
+  const matchedProducts = await listProductsForRules(payload, allRules)
 
   const cover = typeof expert.cover === 'object' ? expert.cover : null
   const socials = Object.entries(expert.socialLinks ?? {}).filter(
@@ -296,7 +315,7 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
                 <CaseCard tape={i === 0} className="gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
                     <EvidenceTag variant="evidence">
-                      DELİL {String(i + 1).padStart(2, '0')}
+                      DELİL {String((rulePage - 1) * RULE_PAGE_SIZE + i + 1).padStart(2, '0')}
                     </EvidenceTag>
                     {r.rating && (
                       <span
@@ -339,6 +358,37 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
               </li>
             ))}
           </ol>
+        )}
+
+        {rules.totalPages > 1 && (
+          <nav
+            aria-label="Kural sayfaları"
+            className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
+          >
+            {rulePage > 1 ? (
+              <Link
+                href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage - 1}`}
+                className="underline-offset-4 hover:underline"
+              >
+                ← Önceki
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <span className="text-faded">
+              {rulePage} / {rules.totalPages}
+            </span>
+            {rulePage < rules.totalPages ? (
+              <Link
+                href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage + 1}`}
+                className="underline-offset-4 hover:underline"
+              >
+                Sonraki →
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+          </nav>
         )}
       </section>
     </div>
