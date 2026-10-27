@@ -79,5 +79,11 @@ ayrımını ve marka gerekçesini kaybederdi: sorgulanan marka için hüküm de�
   /uzmanlar 19 sn → 0,82 sn; /urunler 60 sn → 0,35 sn; ürün detayı 0,17 sn; uzman profili 0,4 sn.
 - Sayaç doğrulaması: /konular "1 uzman · 3951 aktif kural", ana sayfa "3951 aktif kural",
   /uzmanlar uzman kartında 3951 — GROUP BY sonucu gerçek kural sayısıyla aynı.
+- Üretim (urundedektifi.elharezmi.com) aynı veriyle yazıldı ve doğrulandı: 3.951 kural, 6 derece,
+  2.232 boykotlu marka, toplam 5.543 marka (3.950 site + ürünlerin mevcut markaları); 68 eski kural
+  ve 1 eski derece ("Boykotlu") silindi. Altı durumun tamamı gerçek ürünlerle okundu:
+  Ülker → Boykot, A101 → Şüpheli, Bim/Eti → Uygun, Tempo → İkincil Boykot, Metro → Ahlaken Boykot,
+  xroll → Araştırılıyor. Üretim sayfa süreleri: / 0,23 sn, /urunler 0,95 sn, /konular 0,15 sn,
+  /uzmanlar 0,17 sn, uzman profili 1,54 sn.
 - Veri tazeliği koddan bağımsızdır: site güncellendiğinde JSON yeniden üretilip seed tekrar koşulur;
   kural/derece temizliği eski kayıtları kendiliğinden kaldırır.
