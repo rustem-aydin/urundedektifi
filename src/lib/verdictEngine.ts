@@ -259,23 +259,94 @@ function normalizeRating(raw: any): RatingInfo | undefined {
 }
 
 /**
- * Aktif uzman kurallarını tek sorguda yükler.
+ * Aktif uzman kurallarını sayfalayarak yükler.
  * getProductCase / listProductCases bunu bir kez çağırır;
  * eşleştirme bellek içinde yapılır (N+1 yok).
+ *
+ * Not: kural seti 3.900+ kayda çıkabildiği için (Boykot Dedektifi marka kuralları)
+ * tek sayfalık limit kullanılmaz — aksi halde kuralar sessizce kesilirdi.
  */
 export async function loadRuleSet(payload: Payload): Promise<Rule[]> {
   try {
-    const allRules = await payload.find({
-      collection: 'expert-rules',
-      where: { isActive: { equals: true } },
-      limit: 2000,
-      depth: 1,
-    })
-    return allRules.docs as any as Rule[]
+    const rules: Rule[] = []
+    const pageSize = 500
+    for (let page = 1; ; page++) {
+      const result = await payload.find({
+        collection: 'expert-rules',
+        where: { isActive: { equals: true } },
+        limit: pageSize,
+        page,
+        depth: 1,
+      })
+      rules.push(...(result.docs as any as Rule[]))
+      if (!result.hasNextPage || result.docs.length === 0) return rules
+    }
   } catch (e) {
     console.error('Kurallar yüklenemedi', e)
     return []
   }
+}
+
+/**
+ * Kural setinin ürün başına daraltılmış görünümü.
+ *
+ * Kural seti 3.900'ü aşkın marka kuralı taşıyor; her ürün için tümünü gezmek liste
+ * sayfasını saniyelerce bekletiyordu. Marka ve ülke kuralları ilişki kimliğine göre
+ * gruplanır, geri kalan (içindekiler/katkı/kategori/besin…) kurallar genel kovaya girer.
+ * Ürünün markası/ülkesi yoksa yalnız genel kuralar değerlendirilir — bu, eşleşme
+ * sonucunu değiştirmez (marka kuralı markasız ürüne zaten uymaz).
+ */
+type RuleIndex = {
+  generic: Rule[]
+  byBrand: Map<string, Rule[]>
+  byCountry: Map<string, Rule[]>
+}
+
+const ruleIndexCache = new WeakMap<Rule[], RuleIndex>()
+
+function pushIndex(map: Map<string, Rule[]>, key: string, rule: Rule) {
+  const list = map.get(key)
+  if (list) list.push(rule)
+  else map.set(key, [rule])
+}
+
+function buildRuleIndex(rules: Rule[]): RuleIndex {
+  const index: RuleIndex = { generic: [], byBrand: new Map(), byCountry: new Map() }
+  for (const rule of rules) {
+    if (rule.ruleType === 'brand') {
+      const brandId = getId(rule.brand)
+      if (brandId != null) {
+        pushIndex(index.byBrand, String(brandId), rule)
+        continue
+      }
+    }
+    if (rule.ruleType === 'country') {
+      const countryId = getId(rule.country)
+      if (countryId != null) {
+        pushIndex(index.byCountry, String(countryId), rule)
+        continue
+      }
+    }
+    index.generic.push(rule)
+  }
+  return index
+}
+
+export function rulesForProduct(product: Product, rules: Rule[]): Rule[] {
+  let index = ruleIndexCache.get(rules)
+  if (!index) {
+    index = buildRuleIndex(rules)
+    ruleIndexCache.set(rules, index)
+  }
+
+  const candidates = index.generic
+  const brandId = getId(product.brand)
+  const brandRules = brandId != null ? index.byBrand.get(String(brandId)) : undefined
+  const countryId = getId(product.country)
+  const countryRules = countryId != null ? index.byCountry.get(String(countryId)) : undefined
+
+  if (!brandRules && !countryRules) return candidates
+  return [...candidates, ...(brandRules ?? []), ...(countryRules ?? [])]
 }
 
 /** Saf eşleştirme: ürün + önceden yüklenmiş kural seti → hüküm. DB erişimi yok. */
@@ -285,7 +356,7 @@ export function evaluateProduct(product: Product, rules: Rule[]): VerdictResult 
   const topicMap: Record<string, TopicVerdict> = {}
   const expertMap: Record<string, ExpertVerdict> = {}
 
-  for (const rule of rules) {
+  for (const rule of rulesForProduct(product, rules)) {
     const { matched, matchedValue } = evaluateRule(rule, product)
     if (!matched) continue
 

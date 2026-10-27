@@ -55,6 +55,10 @@ _Avoid_: besinler (bununla karıştırma)
 **Boykotlu**:
 Bir markanın `isBoycotted` flag'tir işaretli olması. Ürün Dosyasında üst seviye damga olarak gösterilir.
 
+**Boykot Durumu**:
+"Boykot Dedektifi" uzmanının altı seviyeli ölçeği: **Boykot** · **İkincil Boykot** · **Ahlaken Boykot** · **Şüpheli** · **Araştırılıyor** · **Uygun** (renk/sıra `rating-scales`). Her marka kendi durumuyla bir Uzman Kuralı olarak kayıtlıdır (ADR 0016); `isBoycotted` yalnız ilk üç durumda işaretlenir.
+_Avoid_: skor, puan, "İsrail malı" (ölçek adı değildir)
+
 ### Tüketici Hesabı, Takip ve Yazılar
 
 **Tüketici Hesabı**:

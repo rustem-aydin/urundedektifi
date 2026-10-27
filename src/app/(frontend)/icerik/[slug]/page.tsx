@@ -142,7 +142,6 @@ export default async function IngredientDetailPage({
                       ? product.category.name
                       : null
                   }
-                  barcode={product.barcode}
                   imageUrl={image?.url || null}
                   imageAlt={image?.alt || product.name}
                 />

@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 import { listProductCases } from '@/lib/productCase'
+import { PRODUCT_PAGE_SIZE, toProductCardData } from '@/lib/productCardData'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { ProductGrid } from '@/components/ProductGrid'
+import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
 import { Button } from '@/components/ui/button'
 
@@ -53,23 +54,28 @@ export default async function ProductsPage({
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const [categories, brands, products] = await Promise.all([
+  const [categories, products] = await Promise.all([
     payload.find({ collection: 'categories', limit: 100, sort: 'name', depth: 0 }),
-    // Katalog binlerce markaya çıktı: filtre tüm markaları görmeli (limit 0 = tümü).
-    // Yalnız ad taşınır; tam dokümanlar sayfa yükünü şişiriyordu.
-    payload.find({
-      collection: 'brands',
-      limit: 0,
-      sort: 'name',
-      depth: 0,
-      select: { name: true },
-    }),
-    listProductCases(payload, { q, category, brand, labels, limit: 48 }),
+    // Marka listesi sunucuda çekilmez: 3.950 marka tek istekte 10 sn'ye yaklaşıyordu.
+    // Süzgeç, yazdıkça `/api/brands` üzerinden ilk 20 eşleşmeyi arar (bkz. BrandCombobox).
+    listProductCases(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
   ])
+
+  // Seçili markanın adı: tek kayıt, süzgeç düğmesinde görünür.
+  const selectedBrand =
+    brand && (await payload.findByID({ collection: 'brands', id: brand, depth: 0 }).catch(() => null))
 
   const docs = products.docs
 
   const hasFilters = Boolean(q || category || brand || labels.length > 0)
+
+  // Sonsuz kaydırma ucu ile sayfa aynı filtre sözleşmesini paylaşır (`sayfa`yı istemci ekler).
+  const feedQuery = new URLSearchParams()
+  if (q) feedQuery.set('q', q)
+  if (category) feedQuery.set('kategori', category)
+  if (brand) feedQuery.set('marka', brand)
+  for (const label of labels) feedQuery.append('etiket', label)
+  const feedParams = feedQuery.toString()
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
@@ -87,8 +93,8 @@ export default async function ProductsPage({
           category={category}
           brand={brand}
           labels={labels}
-          categories={categories.docs.map((c: any) => ({ id: c.id, name: c.name }))}
-          brands={brands.docs.map((b: any) => ({ id: b.id, name: b.name }))}
+          categories={categories.docs.map((c: any) => ({ id: String(c.id), name: c.name }))}
+          brandName={(selectedBrand as { name?: string } | null)?.name ?? null}
         />
       </div>
 
@@ -153,21 +159,11 @@ export default async function ProductsPage({
             {products.totalDocs} ürün listeleniyor · en çok görüntülenen önce
           </p>
           <div className="mt-4">
-            <ProductGrid
-              products={docs.map((p) => {
-                const frontImage = p.gallery[0] ?? null
-                return {
-                  id: String(p.id),
-                  href: p.barcode ? `/urun/${p.barcode}` : null,
-                  name: p.name || 'İsimsiz ürün',
-                  brandName: p.brand?.name ?? null,
-                  categoryName: p.category?.name ?? null,
-                  barcode: p.barcode,
-                  imageUrl: frontImage?.url || null,
-                  imageAlt: frontImage?.alt || p.name,
-                  viewCount: p.goruntulenme,
-                }
-              })}
+            <InfiniteProductGrid
+              key={feedParams || 'tumu'}
+              initialProducts={docs.map(toProductCardData)}
+              totalDocs={products.totalDocs}
+              query={feedParams}
             />
           </div>
         </>

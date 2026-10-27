@@ -3,511 +3,125 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import type { CollectionSlug, Payload, Where } from 'payload'
 import type { ExpertRule } from '@/payload-types'
-import { slugify } from '@/lib/slugify'
 
 /**
- * "Boykot Dedektifi" uzmanını, konusunu, derecelendirme ölçeğini, marka kayıtlarını
- * ve uzman kurallarını kuran veri seti.
+ * "Boykot Dedektifi" uzmanının kendi veri seti: boykotdedektifi.com'da yayımlanan
+ * 3.950 marka ve her markanın güncel durumu. Site kendi kurallarını ve markalarını
+ * girer gibi, bu uzman da kendi derecelendirme ölçeği + marka başına bir kural yazar.
  *
- * Kanıt hiyerarşisi (kuralın hangi dereceyi aldığını bu belirler):
- *  1. BDS hareketinin yayımlanmış hedef listeleri / kampanyaları → "Boykotlu"
- *  2. İşgal altındaki topraklarda üretim (GS1 prefix 729) → "Boykotlu"
- *  3. Türkiye'deki tüketici boykot listeleri (BDS resmî listesinde değil) → "Şüpheli"
- *
- * Kaynaklar 2026-10-18 tarihinde doğrulandı.
+ * Kaynak: https://boykotdedektifi.com/site-haritasi (marka sayfaları, 2026-10-27).
+ * Dereceler sitedeki durum rozetleriyle birebir aynıdır:
+ *   Boykot · İkincil Boykot · Ahlaken Boykot · Şüpheli · Araştırılıyor · Uygun
  */
 
 export type SeedSource = { title: string; url: string }
 
-const BDS_GUIDE: SeedSource = {
-  title: 'BDS Hareketi — Boykot & Baskı Şirket Hedefleme Rehberi (30 Kasım 2024)',
-  url: 'https://www.bdsmovement.net/sites/default/files/2024-12/Guide%20to%20BDS%20Boycott%20&%20Pressure%20Corporate%20Priority%20Targeting-30%20Nov%202024-Submitted%20by%20BDS%20movement.pdf',
-}
-const BDS_CAMPAIGNS: SeedSource = {
-  title: 'BDS Hareketi — Güncel Kampanyalar',
-  url: 'https://bdsmovement.net/campaigns',
-}
-const TR_FOOD_LIST: SeedSource = {
-  title: "Boykot.co — Gıda Markaları Boykot Listesi (İsrail'i destekleyen markalar)",
-  url: 'https://www.boykot.co/c/yiyecek-11',
-}
-const TR_COFFEE_LIST: SeedSource = {
-  title: 'Boykot.co — Kahve Markaları Boykot Listesi',
-  url: 'https://www.boykot.co/c/kahve-3',
-}
-const TR_MARKET: SeedSource = {
-  title: 'Boykot Market — İşaretli marka veritabanı',
-  url: 'https://www.boykotmarket.com/en/',
-}
-const TR_NEWS_STARBUCKS: SeedSource = {
-  title: "Starbucks Türkiye: 'İsrail'le ilişkimiz yok' açıklaması (Ocak 2024)",
-  url: 'https://www.barandergisi.net/boykot-etkisi-starbucks-turkiyeden-satislar-dusunce-israille-iliskimiz-yok-aciklamasi',
+const SITE = 'https://boykotdedektifi.com'
+
+type SiteStatus =
+  | 'Boykot'
+  | 'İkincil Boykot'
+  | 'Ahlaken Boykot'
+  | 'Şüpheli'
+  | 'Araştırılıyor'
+  | 'Uygun'
+
+type SiteBrandRecord = {
+  name: string
+  siteSlug: string
+  status: SiteStatus
+  owner: string | null
+  country: string | null
+  categories: string[]
+  about: string | null
+  verdict: string | null
+  views: number | null
 }
 
-type CompanyTier = 'boykot' | 'supheli'
+const DATA_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'data',
+  'boykot-dedektifi-brands.json',
+)
 
-type Company = {
-  /** Ana şirket / grup adı (kural açıklamasında geçer) */
-  label: string
-  /** Marka merkezinin bulunduğu ülke */
-  country: string
-  tier: CompanyTier
-  /** Kullanıcıya gösterilecek, kaynağa dayalı gerekçe */
-  summary: string
-  sources: SeedSource[]
-  /** Bu şirkete bağlı, raflarda karşılaşılan markalar */
-  brands: string[]
+/** Site veri seti (3.950 marka) diskten okunur — tsc'yi milyonlarca literal tipiyle yormamak için. */
+const SITE_BRANDS: SiteBrandRecord[] = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+
+export const SITE_SOURCE: SeedSource = {
+  title: 'Boykot Dedektifi — Marka veritabanı (site haritası)',
+  url: `${SITE}/site-haritas`,
 }
 
-/**
- * BDS resmî hedefi olan şirketler (tüketici öncelikli + taban/organik + baskı hedefleri
- * ve sürmekte olan BDS kampanyaları). Markaları `isBoycotted` işaretlenir; kapsam
- * "Marka Boykot Listesinde" kuralıyla sağlanır.
- */
-const TARGET_COMPANIES: Company[] = [
-  {
-    label: 'Chevron (Caltex, Texaco)',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "ABD merkezli Chevron, Doğu Akdeniz'de işgal altındaki Filistin doğal gaz sahalarını çıkararak İsrail'in savaş kasasını ve apartheid sistemini güçlendiriyor; Filistinlilerin doğal kaynak egemenliğini engelliyor. BDS'nin tüketici boykotu öncelikli hedeflerinden biridir ve #BoycottChevron kampanyası sürüyor.",
-    sources: [BDS_GUIDE, { title: 'BDS — Chevron kampanyası', url: 'https://bdsmovement.net/chevron' }],
-    brands: ['Chevron', 'Caltex', 'Texaco'],
+/** Derece tanımları: sitedeki rozet rengi ve sırası korunur. */
+const RATING_DEFS: Record<SiteStatus, { color: string; order: number; boycotted: boolean; description: string }> = {
+  Boykot: {
+    color: '#ba191c',
+    order: 0,
+    boycotted: true,
+    description:
+      'Doğrudan boykot: marka işgal, apartheid veya Gazze saldırılarıyla belgelenmiş biçimde ilişkilendirilmiştir. Boykot Dedektifi bu markayı kesin boykot listesinde tutar.',
   },
-  {
-    label: 'Intel',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Intel on yıllardır İsrail'in en büyük yabancı yatırımcısıdır. Aralık 2023'te Gazze soykırımı sürerken 25 milyar dolarlık yatırım duyurdu; Haziran 2024'te BDS baskısı sonucu projeden vazgeçti. Kiryat Gat tesisi, etnik olarak temizlenip yıkılan Irak el-Manshiya köyünün arazisi üzerinde kuruludur.",
-    sources: [BDS_GUIDE],
-    brands: ['Intel'],
+  'İkincil Boykot': {
+    color: '#fc8405',
+    order: 1,
+    boycotted: true,
+    description:
+      'İkincil boykot: marka doğrudan hedef değildir; boykotlu bir ana şirkete, gruba veya tedarik zincirine bağlı olduğu için listelenir.',
   },
-  {
-    label: 'Dell Technologies',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Dell, 2023'te ABD dış yardımıyla finanse edilen 150 milyon dolarlık sözleşmeyle İsrail ordusuna sunucu, servis ve ilgili ekipman sağlıyor; Necef'te yasadışı yerleşimleri güçlendiren Ar-Ge faaliyeti yürütüyor. Kurucu ve CEO Michael Dell, Gazze soykırımının birinci ayında 350 milyon dolar değerinde hisseyi İsrail'e bağışladı.",
-    sources: [BDS_GUIDE],
-    brands: ['Dell'],
+  'Ahlaken Boykot': {
+    color: '#00008c',
+    order: 2,
+    boycotted: true,
+    description:
+      'Ahlaken boykot: belgelenmiş doğrudan suç ortaklığı yerine ahlaki gerekçelerle (siyasi destek, söylem, lobi faaliyeti) boykot önerilir.',
   },
-  {
-    label: 'Siemens',
-    country: 'Almanya',
-    tier: 'boykot',
-    summary:
-      "Siemens, işgal altındaki İsrail yerleşimlerini Avrupa'ya bağlayacak Euro-Asia Interconnector denizaltı elektrik kablosunun ana yüklenicisidir. Siemens markalı elektrikli ev aletleri dünya genelinde satılmaktadır.",
-    sources: [BDS_GUIDE],
-    brands: ['Siemens'],
+  'Şüpheli': {
+    color: '#fcd30c',
+    order: 3,
+    boycotted: false,
+    description:
+      "Şüpheli: markanın boykotlu yapılarla bağlantısına dair ciddi emare vardır ancak bağlantı kesinleşmemiştir; 'Boykot' ile eşitlenmez.",
   },
-  {
-    label: 'Hewlett Packard (HP / HPE)',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "HP Inc. ve Hewlett Packard Enterprise; İsrail hükümeti, ordusu, cezaevleri ve polisiyle kurduğu teknoloji ve lojistik destek üzerinden işgali, yasadışı yerleşim inşasını ve apartheid sistemini kolaylaştırıyor. HPE, İsrail Nüfus ve Göç İdaresi'nin veritabanı ve BT sistemlerini sağlıyor; HP Inc. ise Netanyahu ve Smotrich ofislerine servis veriyor. BDS'nin en uzun süreli boykot kampanyalarından birinin hedefidir.",
-    sources: [BDS_GUIDE, { title: 'BDS — Boycott HP', url: 'https://bdsmovement.net/boycott-hp' }],
-    brands: ['HP', 'Hewlett Packard Enterprise'],
+  'Araştırılıyor': {
+    color: '#465468',
+    order: 4,
+    boycotted: false,
+    description:
+      'Araştırılıyor: marka hakkında ihbar/iddia bulunur, inceleme sürer. Henüz bir hüküm verilmemiştir.',
   },
-  {
-    label: 'Carrefour',
-    country: 'Fransa',
-    tier: 'boykot',
-    summary:
-      "Carrefour, işgal altındaki yerleşimlerde faaliyet gösteren Electra Consumer Products ve Yenot Bitan ile franchise ortaklığı kurdu; Gazze'de savaşan İsrail askerlerine hediye paketleri dağıttı ve işgal altındaki topraklarda en az bir Carrefour markalı şube bulunuyor. BDS, Karrefour'a karşı küresel boykot kampanyası yürütüyor.",
-    sources: [BDS_GUIDE, { title: 'BDS — Boycott Carrefour', url: 'https://bdsmovement.net/boycott-carrefour' }],
-    brands: ['Carrefour'],
+  'Uygun': {
+    color: '#267f78',
+    order: 5,
+    boycotted: false,
+    description:
+      'Uygun: yapılan incelemede boykot gerekçesi oluşturacak bir bağlantı bulunmamıştır.',
   },
-  {
-    label: 'AXA',
-    country: 'Fransa',
-    tier: 'boykot',
-    summary:
-      "AXA, 30 Haziran 2024 itibarıyla İsrail'i silahlandıran on bir şirkette 150,43 milyon dolar tutarında varlık (78,87 milyon dolar hisse + 71,56 milyon dolar tahvil) bulunduruyor; bu şirketler arasında Boeing ve General Dynamics de var.",
-    sources: [BDS_GUIDE, { title: 'BDS — AXA Divest', url: 'https://bdsmovement.net/axa-divest' }],
-    brands: ['AXA'],
-  },
-  {
-    label: 'Disney / Marvel',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "BDS, Disney+ aboneliklerinin iptal edilmesi çağrısı yapıyor: Disney ve iştiraki Marvel, kendilerini açıkça İsrail'in kültür elçisi olarak tanımlayan oyuncularla İsrail propagandasına aracılık ediyor.",
-    sources: [BDS_GUIDE],
-    brands: ['Disney+', 'Marvel'],
-  },
-  {
-    label: 'SodaStream',
-    country: 'İsrail',
-    tier: 'boykot',
-    summary:
-      "İsrail merkezli SodaStream, Necef'te (Naqab) Bedevi-Filistinli vatandaşların yerinden edilmesi politikasında etkin rol oynuyor ve Filistinli işçilere karşı uzun süreli ayrımcılık geçmişi bulunuyor. İsrail menşeli bir şirket olduğu için zaten 'İsrail Menşeli Ürün' kuralı da kapsıyor.",
-    sources: [BDS_GUIDE],
-    brands: ['SodaStream'],
-  },
-  {
-    label: 'RE/MAX',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "RE/MAX, çalınmış Filistin toprakları üzerine kurulmuş yasadışı İsrail yerleşimlerinde mülk pazarlayarak Batı Şeria'nın kolonizasyonunu mümkün kılıyor.",
-    sources: [BDS_GUIDE],
-    brands: ['RE/MAX'],
-  },
-  {
-    label: "McDonald's",
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "BDS, İsrail'deki şube ve franchise sahiplerinin apartheid İsrail'e açık destek verdiği ve İsrail ordusuna bağışta bulunduğu gerekçesiyle McDonald's'a yönelik taban (organik) boykot kampanyalarını destekliyor.",
-    sources: [BDS_GUIDE],
-    brands: ["McDonald's"],
-  },
-  {
-    label: 'The Coca-Cola Company',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Coca-Cola, BDS'nin resmî olarak desteklediği taban (organik) boykot hedefleri arasındadır: İsrail'deki şube ve franchise yapıları apartheid İsrail'e açık destek vermiş ve orduya bağışta bulunmuştur. Coca-Cola'nın alt markaları da aynı şirkete bağlıdır.",
-    sources: [BDS_GUIDE],
-    brands: ['Coca-Cola', 'Fanta', 'Sprite', 'Fuse Tea', 'Cappy', 'Damla', 'Doğadan', 'Powerade'],
-  },
-  {
-    label: 'Burger King',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Burger King, BDS'nin desteklediği taban (organik) boykot hedefleri arasındadır; İsrail'deki şube yapısı apartheid İsrail'e açık destek vermiştir.",
-    sources: [BDS_GUIDE],
-    brands: ['Burger King'],
-  },
-  {
-    label: "Papa John's",
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Papa John's, BDS'nin desteklediği taban (organik) boykot hedefleri arasındadır; İsrail'deki şube yapısı apartheid İsrail'e açık destek vermiştir.",
-    sources: [BDS_GUIDE],
-    brands: ["Papa John's"],
-  },
-  {
-    label: 'Pizza Hut',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Pizza Hut, BDS'nin desteklediği taban (organik) boykot hedefleri arasındadır; İsrail'deki şube yapısı apartheid İsrail'e açık destek vermiştir.",
-    sources: [BDS_GUIDE],
-    brands: ['Pizza Hut'],
-  },
-  {
-    label: 'Wix',
-    country: 'İsrail',
-    tier: 'boykot',
-    summary:
-      "İsrail merkezli Wix, BDS'nin desteklediği taban (organik) boykot hedefleri arasındadır; şirketin İsrail'deki yapısı apartheid rejime açık destek vermiştir.",
-    sources: [BDS_GUIDE],
-    brands: ['Wix'],
-  },
-  {
-    label: 'Microsoft',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "BDS, Microsoft'u İsrail'in yasadışı apartheid rejiminin en suç ortaklığı yapan teknoloji şirketi olarak tanımlıyor ve Xbox'a yönelik boykot taahhüdü kampanyası yürütüyor.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: "BDS — Microsoft kampanyası", url: 'https://bdsmovement.net/microsoft' },
-    ],
-    brands: ['Microsoft', 'Xbox'],
-  },
-  {
-    label: 'Reebok',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Reebok, yasadışı İsrail yerleşimlerindeki takımları resmî liginde barındıran ve bu takımları korumak için İsrail hükümetiyle birlikte lobi yapan İsrail Futbol Federasyonu'nun (IFA) sponsorudur.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: 'BDS — Boycott Reebok', url: 'https://bdsmovement.net/boycott-reebok' },
-    ],
-    brands: ['Reebok'],
-  },
-  {
-    label: 'Cisco',
-    country: 'ABD',
-    tier: 'boykot',
-    summary:
-      "Cisco'nun işgal altındaki Filistin topraklarındaki yasadışı yerleşimlerdeki operasyonları, ayrımcı politikaları ve İsrail kurumlarıyla uzun süreli ortaklığı belgelenmiştir; BDS bu şirkete yönelik kampanya yürütüyor.",
-    sources: [BDS_CAMPAIGNS, { title: 'BDS — Cisco kampanyası', url: 'https://bdsmovement.net/cisco' }],
-    brands: ['Cisco'],
-  },
-  {
-    label: 'FANUC',
-    country: 'Japonya',
-    tier: 'boykot',
-    summary:
-      "Japon FANUC, İsrail'in en büyük silah üreticisi Elbit Systems'in kullandığı robotları üretiyor. Bu robotlar Gazze'ye karşı kullanılan 155 mm top mermilerinin üretiminde kritik role sahip; BDS 'Stop FANUC' kampanyası yürütüyor.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: 'BDS — Stop FANUC', url: 'https://bdsmovement.net/stop-fanuc' },
-    ],
-    brands: ['FANUC'],
-  },
-  {
-    label: 'Elbit Systems',
-    country: 'İsrail',
-    tier: 'boykot',
-    summary:
-      "İsrail merkezli Elbit Systems, ülkenin en büyük silah üreticisidir ve Gazze'ye karşı kullanılan mühimmatın üretiminde baş aktördür. İsrail menşeli olduğu için 'İsrail Menşeli Ürün' kuralı da kapsar.",
-    sources: [{ title: 'BDS — Stop FANUC', url: 'https://bdsmovement.net/stop-fanuc' }],
-    brands: ['Elbit Systems'],
-  },
-  {
-    label: 'Maersk',
-    country: 'Danimarka',
-    tier: 'boykot',
-    summary:
-      "Maersk, ABD'den İsrail'e askeri kargo taşıyor ve ABD'deki silah üreticilerine askeri yük taşıyarak soykırıma lojistik destek sağlıyor. BDS'in ortak yürüttüğü 'Mask off Maersk' kampanyasının hedefidir.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: 'BDS — Mask off Maersk', url: 'https://bdsmovement.net/MaskOfMaersk' },
-    ],
-    brands: ['Maersk'],
-  },
-  {
-    label: 'Barclays',
-    country: 'Birleşik Krallık',
-    tier: 'boykot',
-    summary:
-      "Araştırmalar Barclays'in, silahları ve askeri teknolojisi İsrail saldırılarında kullanılan dokuz şirkette 2 milyar sterlinden fazla hisse bulundurduğunu ve bu şirketlere 6,1 milyar sterlin kredi ve aracılık sağladığını ortaya koydu.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: 'BDS — Boycott Barclays', url: 'https://bdsmovement.net/boycott-barclays' },
-    ],
-    brands: ['Barclays'],
-  },
-  {
-    label: 'BNP Paribas',
-    country: 'Fransa',
-    tier: 'boykot',
-    summary:
-      "BNP Paribas, işgal altındaki Filistin topraklarını yasadışı biçimde işgal eden İsrail'in apartheid ve kolonizasyon rejimine verdiği finansal destek nedeniyle Attac ve AFPS'in yürüttüğü kampanyanın hedefidir.",
-    sources: [
-      BDS_CAMPAIGNS,
-      { title: 'BDS — BNP Paribas', url: 'https://bdsmovement.net/bnp-paribas' },
-    ],
-    brands: ['BNP Paribas'],
-  },
-  {
-    label: 'CAF',
-    country: 'İspanya',
-    tier: 'boykot',
-    summary:
-      "İspanyol vagon üreticisi CAF, yasadışı İsrail yerleşimlerini Batı Kudüs'e bağlayan JLR 'Kırmızı Hattı'nı işletiyor ve yeni 'Yeşil Hat'ı inşa ediyor.",
-    sources: [BDS_CAMPAIGNS, { title: "BDS — CAF Get Off Israel's Apartheid Train", url: 'https://bdsmovement.net/boycott-caf' }],
-    brands: ['CAF'],
-  },
-]
+}
 
-/**
- * BDS'in "baskı hedefleri": BDS bunlar için baskı kampanyası yürütüyor ve makul
- * alternatif varsa boykot çağrısı yapıyor. Bu yüzden "Şüpheli" derecesi verilir.
- */
-const PRESSURE_COMPANIES: Company[] = [
-  {
-    label: 'Google',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Google, Amazon ile birlikte 2021'de imzalanan 1,22 milyar dolarlık Project Nimbus sözleşmesiyle İsrail hükümetine ve ordusuna bulut altyapısı ile yapay zeka hizmeti sağlıyor; Nimbus, ordunun 'Lavender' ve 'Gospel' gibi ölümcül yapay zeka programlarını çalıştırdığı platformdur. Nisan 2024'te Google, İsrail ordusuyla yeni bir sözleşme daha imzaladı.",
-    sources: [BDS_GUIDE, { title: 'BDS — No Tech for Apartheid', url: 'https://bdsmovement.net/no-tech-apartheid' }],
-    brands: ['Google'],
-  },
-  {
-    label: 'Amazon',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Amazon, Project Nimbus kapsamında İsrail hükümetine ve ordusuna bulut altyapısı ve yapay zeka hizmeti sağlıyor; BDS mümkün olduğunda Amazon yerine doğrudan üreticiden alışveriş yapılmasını öneriyor. Ring kameraları da aynı şirketin iştirakidir.",
-    sources: [BDS_GUIDE, { title: 'BDS — No Tech for Apartheid', url: 'https://bdsmovement.net/no-tech-apartheid' }],
-    brands: ['Amazon', 'Ring'],
-  },
-  {
-    label: 'Booking Holdings',
-    country: 'Hollanda',
-    tier: 'supheli',
-    summary:
-      "Booking.com, çalınmış Filistin toprakları üzerindeki yasadışı İsrail yerleşimlerinde tatil evi ve otel hizmeti sunarak işgali doğrudan destekliyor ve bundan kâr ediyor. Şirket BM'nin yasadışı yerleşim girişimi veritabanında listelidir.",
-    sources: [
-      BDS_GUIDE,
-      { title: 'BDS — Booking.com: Stop Profiting from War Crimes', url: 'https://bdsmovement.net/bookingcom-stop-profiting-war-crimes' },
-    ],
-    brands: ['Booking.com'],
-  },
-  {
-    label: 'Airbnb',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Airbnb, yasadışı İsrail yerleşimlerinde kiralık konaklama ilanları sunuyor ve BM'nin yasadışı yerleşim girişimi veritabanında listelidir.",
-    sources: [BDS_GUIDE],
-    brands: ['Airbnb'],
-  },
-  {
-    label: 'Expedia Group',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Expedia, yasadışı İsrail yerleşimlerinde konaklama hizmeti sunuyor ve BM'nin yasadışı yerleşim girişimi veritabanında listelidir.",
-    sources: [BDS_GUIDE],
-    brands: ['Expedia'],
-  },
-  {
-    label: 'Teva Pharmaceutical Industries',
-    country: 'İsrail',
-    tier: 'supheli',
-    summary:
-      "İsrail merkezli Teva, Ekim 2023'ten bu yana İsrail'in Gazze'deki soykırımına destek veriyor ve on yıllardır işgal sayesinde Filistin pazarını sömürüyor. BDS, makul jenerik alternatifler bulunduğunu belirterek baskı kampanyası yürütüyor.",
-    sources: [BDS_GUIDE],
-    brands: ['Teva'],
-  },
-]
-
-/**
- * Türkiye'de yaygın tüketici boykot listelerinde (boykot.co, boykotmarket.com) yer alan,
- * ancak BDS'nin resmî hedef listelerinde doğrudan bulunmayan şirketler → "Şüpheli".
- * Bu katman doğrulama bekliyor; "Boykotlu" ile eşitlenmez.
- */
-const trListCompany = (label: string, brandName: string, country = 'ABD'): Company => ({
-  label,
-  country,
-  tier: 'supheli',
-  summary: `${label} şirketinin işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. "${brandName}" markası Türkiye'deki tüketici boykot listelerinde yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.`,
-  sources: [TR_FOOD_LIST, TR_MARKET],
-  brands: [brandName],
-})
-
-const TR_LIST_COMPANIES: Company[] = [
-  {
-    label: 'PepsiCo',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "PepsiCo'nun işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Pepsi', 'Yedigün', 'Fruko', '7Up', "Lay's", 'Doritos', 'Ruffles', 'Cheetos', 'Çerezza', 'Rocco'],
-  },
-  {
-    label: 'Nestlé',
-    country: 'İsviçre',
-    tier: 'supheli',
-    summary:
-      "Nestlé'nin işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Nescafé', 'KitKat', 'Damak', 'Crunch', 'Polo', 'Maggi', 'Nesquik', 'Purina'],
-  },
-  {
-    label: 'Unilever',
-    country: 'Birleşik Krallık',
-    tier: 'supheli',
-    summary:
-      "Unilever'in işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Algida', 'Cornetto', 'Magnum', "Carte d'Or", 'Viennetta', 'Lipton', 'Knorr', 'Calvé', 'Becel'],
-  },
-  {
-    label: 'Mars Inc.',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Mars'ın işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Snickers', 'Twix', "M&M's", 'Bounty', 'Milky Way', 'Mars', 'Skittles', 'Orbit', 'Eclipse'],
-  },
-  {
-    label: 'Mondelez International',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Mondelez'in işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Oreo', 'Milka', 'Cadbury', 'Toblerone'],
-  },
-  {
-    label: 'Danone',
-    country: 'Fransa',
-    tier: 'supheli',
-    summary:
-      "Danone'nin işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Activia', 'Danette', 'Danino', 'Tikveşli', 'Evian', 'Alpro'],
-  },
-  {
-    label: 'Ferrero',
-    country: 'İtalya',
-    tier: 'supheli',
-    summary:
-      "Ferrero'nun işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Nutella', 'Kinder', 'Ferrero Rocher', 'Tic Tac'],
-  },
-  {
-    label: 'Kraft Heinz',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Kraft Heinz'in işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yaygın olarak yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Heinz', 'ABC'],
-  },
-  {
-    label: 'Kellanova',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Kellanova'nın işgal veya apartheid ile doğrudan bağlantısını gösteren BDS kararı bulunamadı. Marka, Türkiye'deki tüketici boykot listelerinde yer aldığı için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_FOOD_LIST, TR_MARKET],
-    brands: ['Pringles'],
-  },
-  {
-    label: 'Starbucks Corporation',
-    country: 'ABD',
-    tier: 'supheli',
-    summary:
-      "Starbucks, BDS'nin resmî hedef listesinde yer almıyor; şirket Ocak 2024'te 'İsrail ile ilişkimiz yok' açıklaması yaptı. Buna karşılık Türkiye'de en yaygın boykot edilen markalardan biri olduğu için 'Şüpheli' işaretlendi; doğrulama bekliyor.",
-    sources: [TR_COFFEE_LIST, TR_MARKET, TR_NEWS_STARBUCKS],
-    brands: ['Starbucks'],
-  },
-  trListCompany("Domino's Pizza, Inc.", "Domino's Pizza"),
-  trListCompany('Yum! Brands', 'KFC'),
-  trListCompany('Subway (Roark Capital)', 'Subway'),
-  trListCompany('Restaurant Brands International', 'Popeyes'),
-  trListCompany('Sbarro LLC', 'Sbarro'),
-  trListCompany('Krispy Kreme, Inc.', 'Krispy Kreme'),
-]
-
-export const COMPANIES: Company[] = [...TARGET_COMPANIES, ...PRESSURE_COMPANIES, ...TR_LIST_COMPANIES]
+export const RATINGS = (Object.keys(RATING_DEFS) as SiteStatus[]).map((name) => ({
+  name,
+  ...RATING_DEFS[name],
+}))
 
 export const EXPERT = {
   name: 'Boykot Dedektifi',
   slug: 'boykot-dedektifi',
   title: 'Bağımsız Boykot Araştırma Platformu',
   bio: [
-    "Boykot Dedektifi, tüketicilerin bilinçli ve etik seçimler yapabilmesi için kapsamlı bir marka ve ürün veritabanı sunan bağımsız bir boykot değerlendirme platformudur. Markalar boykot gerekçeleriyle birlikte kayıtlıdır; mobil uygulamada barkod taramasıyla rafın önünde sorgulanabilir.",
-    "Boykot Dedektifi, bir ürünü üç katmanlı kanıt hiyerarşisiyle inceler: (1) BDS hareketinin yayımladığı resmî hedef listeleri ve sürmekte olan kampanyalar, (2) ürünün işgal altındaki topraklardan gelip gelmediği (GS1 barkod prefix 729), (3) Türkiye'deki tüketici boykot listeleri.",
-    "Birinci ve ikinci katman belgelenmiş suç ortaklığına dayanır ve 'Boykotlu' derecesini alır. Üçüncü katman doğrulanmamış tüketici listelerine dayanır; bu yüzden 'Şüpheli' olarak işaretlenir ve 'Boykotlu' ile eşitlenmez.",
-    "Her kuralın altında kaynak bağlantıları bulunur. Listeler yaşayan belgelerdir: BDS kampanyaları sona erdiğinde (örneğin Puma, İsrail Futbol Federasyonu sponsorluğunu bitirdi) ilgili kural pasife alınır.",
+    'Boykot Dedektifi, tüketicilerin bilinçli ve etik seçimler yapabilmesi için kapsamlı bir marka veritabanı sunan bağımsız bir boykot değerlendirme platformudur. Markalar boykot gerekçeleriyle birlikte kayıtlıdır; mobil uygulamada barkod taramasıyla rafın önünde sorgulanabilir.',
+    "Bu uzmanın veri seti boykotdedektifi.com'daki güncel marka veritabanıdır: 3.950 marka, altı dereceli tek ölçek. Her marka kendi durum rozetiyle (Boykot, İkincil Boykot, Ahlaken Boykot, Şüpheli, Araştırılıyor, Uygun) ve kendi gerekçe metniyle kayıtlıdır.",
+    'Dereceler birbirinin yerine geçmez: "Şüpheli" ve "Araştırılıyor" kayıtları kesin boykot değildir; "Uygun" kayıtları ise incelemede bağlantı bulunmadığını gösterir. Markanın durumu değiştiğinde marka kaydı ve kuralı birlikte güncellenir.',
+    'Her marka kuralının altında markanın Boykot Dedektifi sayfası kaynak olarak bağlanır.',
   ].join('\n\n'),
   socialLinks: {
-    website: 'https://boykotdedektifi.com',
+    website: SITE,
     twitter: 'https://x.com/B0YKOTDedektifi',
     instagram: 'https://www.instagram.com/boykotdedektifi',
     youtube: 'https://www.youtube.com/@boykotdedektifi',
   },
   credentials: [
     {
-      title: "Dünyanın en büyük boykot platformu — marka ve ürün veritabanı",
+      title: 'Dünyanın en büyük boykot platformu — marka ve ürün veritabanı',
       year: 2026,
       issuer: 'Boykot Dedektifi',
     },
@@ -528,28 +142,11 @@ export const TOPIC = {
   name: 'Boykot',
   slug: 'boykot',
   description:
-    "Bir ürünün veya markanın İsrail'in işgali, apartheid rejimi ya da Gazze soykırımıyla belgelenmiş bağlantısı. BDS hedef listeleri, menşe ülke (GS1 729) ve tüketici listeleri olmak üzere üç kanıt katmanıyla değerlendirilir.",
+    "Bir markanın İsrail'in işgali, apartheid rejimi ya da Filistin'e yönelik saldırılarla belgelenmiş bağlantısı. Boykot Dedektifi'nin marka veritabanı, altı dereceli tek ölçekle değerlendirilir.",
   icon: '🛑',
   color: '#dc2626',
   order: 1,
 }
-
-export const RATINGS = [
-  {
-    name: 'Boykotlu',
-    color: '#dc2626',
-    order: 0,
-    description:
-      "Belgelenmiş suç ortaklığı: BDS resmî hedef listesi/kampanyası ya da işgal altındaki topraklardan menşe (GS1 729). Ürün doğrudan boykot listesindedir.",
-  },
-  {
-    name: 'Şüpheli',
-    color: '#f59e0b',
-    order: 1,
-    description:
-      "Doğrulanmamış bağlantı: BDS'nin 'baskı hedefi' ilan ettiği şirketler veya Türkiye'deki tüketici boykot listelerinde yer alan markalar. Boykot kararı için ek doğrulama gerekir.",
-  },
-]
 
 const IL_COUNTRY = {
   name: 'İsrail',
@@ -558,19 +155,13 @@ const IL_COUNTRY = {
   iso: 'IL',
 }
 
-type SeedSummary = {
-  countries: number
-  brands: number
-  rules: number
-}
-
 export type BrandSeedData = {
   name: string
   slug: string
-  country: string
+  country?: string
   description: string
   isBoycotted: boolean
-  boycottReason?: string
+  boycottReason: string | null
 }
 
 export type SeedBrand = { name: string; data: BrandSeedData }
@@ -578,9 +169,8 @@ export type SeedBrand = { name: string; data: BrandSeedData }
 export type SeedRule = {
   name: string
   ruleType: ExpertRule['ruleType']
-  ratingName: 'Boykotlu' | 'Şüpheli'
-  brandName?: string
-  countrySlug?: string
+  ratingName: SiteStatus
+  brandName: string
   description: string
   sources: SeedSource[]
 }
@@ -594,65 +184,111 @@ export type SeedPlan = {
   rules: SeedRule[]
 }
 
-/**
- * Yerel (Local API) ve uzak (REST) yazıcıların paylaştığı tek veri planı.
- * Marka/kural metinleri yalnızca burada tanımlanır; adaptörler sadece yazar.
- */
+/** Yerel (Local API) ve uzak (REST) yazıcıların paylaştığı tek veri planı. */
 export function buildSeedPlan(): SeedPlan {
   const brands: SeedBrand[] = []
-  for (const company of COMPANIES) {
-    for (const brandName of company.brands) {
-      brands.push({ name: brandName, data: buildBrandData(company, brandName) })
+  const rules: SeedRule[] = []
+
+  for (const record of SITE_BRANDS) {
+    const source: SeedSource = { title: `Boykot Dedektifi — ${record.name}`, url: `${SITE}/b/${record.siteSlug}` }
+    const rating = RATING_DEFS[record.status]
+    if (!rating) continue
+
+    const data: BrandSeedData = {
+      name: record.name,
+      slug: record.siteSlug,
+      description: buildBrandDescription(record),
+      isBoycotted: rating.boycotted,
+      boycottReason: rating.boycotted
+        ? buildBrandReason(record)
+        : null,
     }
+    if (record.country) data.country = record.country
+    brands.push({ name: record.name, data })
+
+    rules.push({
+      name: `${record.name} — ${record.status}`,
+      ruleType: 'brand',
+      ratingName: record.status,
+      brandName: record.name,
+      description: buildRuleDescription(record),
+      sources: [source],
+    })
   }
 
-  const rules: SeedRule[] = [
-    {
-      name: 'Marka Boykot Listesinde',
-      ruleType: 'brand_boycotted',
-      ratingName: 'Boykotlu',
-      description: [
-        "Bu ürünün markası, işgal veya apartheid ile belgelenmiş bağlantısı nedeniyle 'Boykotlu' olarak işaretlenmiştir.",
-        "Kapsam: BDS hareketinin yayımladığı tüketici öncelikli hedefler, BDS'nin desteklediği taban (organik) boykotlar ve sürmekte olan BDS kampanyaları. Marka kaydındaki 'Boykot Gerekçesi' alanı o markaya özel delili içerir.",
-        'Marka yeni bir kanıtla listeye eklenirse bu kural otomatik olarak o markanın tüm ürünlerini kapsar.',
-      ].join('\n\n'),
-      sources: [BDS_GUIDE, BDS_CAMPAIGNS],
-    },
-    {
-      name: 'İsrail Menşeli Ürün (GS1 729)',
-      ruleType: 'country',
-      ratingName: 'Boykotlu',
-      countrySlug: IL_COUNTRY.slug,
-      description: [
-        "Ürünün menşe ülkesi İsrail olarak belirlendi. GS1 standartlarında 729 barkod prefix'i İsrail'e aittir ve bu prefix ile başlayan barkodlar İsrail kaynaklı ürünleri gösterir.",
-        "BDS hareketi, iki koşulu karşılamadığı sürece tüm İsrail şirketlerinin boykot edilmesi çağrısı yapmaktadır: (a) İsrail'in askeri işgali, apartheid veya yerleşimci sömürgeciliğine bulaşmamış olmak, (b) Filistinlilerin uluslararası hukuk kapsamındaki haklarını, öncelikle UN 194 uyarınca mültecilerin geri dönüş hakkını kamuya açık şekilde tanımak. BDS'nin bildirdiğine göre bu koşulları karşılayan bir İsrail şirketi bulunmamaktadır.",
-        "Uyarı: Yasadışı yerleşimlerde üretilen ürünler 'Product of Israel' etiketiyle satılabilir; etiket ile üretim yeri farklı olabilir. Bu nedenle menşe kaydı barkod prefix'i ile birlikte değerlendirilmelidir.",
-      ].join('\n\n'),
-      sources: [
-        BDS_GUIDE,
-        {
-          title: 'GS1 — Ülke/prefiks listesi (729 = İsrail)',
-          url: 'https://www.gs1.org/standards/barcodes/application-identifiers',
-        },
-      ],
-    },
-  ]
-
-  for (const company of COMPANIES) {
-    if (company.tier !== 'supheli') continue
-    for (const brandName of company.brands) {
-      rules.push({
-        name: `${brandName} — ${company.label} (doğrulanmamış bağlantı)`,
-        ruleType: 'brand',
-        ratingName: 'Şüpheli',
-        brandName,
-        description: buildRuleDescription(company, brandName),
-        sources: company.sources,
-      })
-    }
-  }
+  rules.push({
+    name: 'İsrail Menşeli Ürün (GS1 729)',
+    ruleType: 'country',
+    ratingName: 'Boykot',
+    brandName: '',
+    description: [
+      "Ürünün menşe ülkesi İsrail olarak belirlendi. GS1 standartlarında 729 barkod prefix'i İsrail'e aittir ve bu prefix ile başlayan barkodlar İsrail kaynaklı ürünleri gösterir.",
+      "BDS hareketi, iki koşulu karşılamadığı sürece tüm İsrail şirketlerinin boykot edilmesi çağrısı yapmaktadır: (a) İsrail'in askeri işgali, apartheid veya yerleşimci sömürgeciliğine bulaşmamış olmak, (b) Filistinlilerin uluslararası hukuk kapsamındaki haklarını, öncelikle UN 194 uyarınca mültecilerin geri dönüş hakkını kamuya açık şekilde tanımak.",
+      "Uyarı: Yasadışı yerleşimlerde üretilen ürünler 'Product of Israel' etiketiyle satılabilir; etiket ile üretim yeri farklı olabilir. Bu nedenle menşe kaydı barkod prefix'i ile birlikte değerlendirilmelidir.",
+    ].join('\n\n'),
+    sources: [
+      {
+        title: 'BDS Hareketi — Boykot & Baskı Şirket Hedefleme Rehberi',
+        url: 'https://www.bdsmovement.net/',
+      },
+      {
+        title: 'GS1 — Ülke/prefiks listesi (729 = İsrail)',
+        url: 'https://www.gs1.org/standards/barcodes/application-identifiers',
+      },
+    ],
+  })
 
   return { country: IL_COUNTRY, topic: TOPIC, expert: EXPERT, ratings: RATINGS, brands, rules }
+}
+
+function clean(value: string | null | undefined): string {
+  return (value ?? '').replace(/\s+/g, ' ').trim()
+}
+
+function buildBrandDescription(record: SiteBrandRecord): string {
+  const parts: string[] = []
+  const about = clean(record.about)
+  const categories = record.categories.map(clean).filter(Boolean)
+
+  parts.push(about || `${record.name} markası${categories.length ? ` (${categories.join(', ')})` : ''}.`)
+  if (record.owner) parts.push(`Ana şirket: ${record.owner}.`)
+  if (record.country) parts.push(`Menşei: ${record.country}.`)
+  if (categories.length) parts.push(`Kategori: ${categories.join(', ')}.`)
+  parts.push(`Kaynak: ${SITE}/b/${record.siteSlug}`)
+
+  return parts.join(' ')
+}
+
+function buildBrandReason(record: SiteBrandRecord): string {
+  return [
+    `Boykot Dedektifi değerlendirmesi: ${record.status}.`,
+    clean(record.verdict) || clean(record.about),
+    `Kaynak: ${SITE}/b/${record.siteSlug}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+function buildRuleDescription(record: SiteBrandRecord): string {
+  const rating = RATING_DEFS[record.status]
+  return [
+    `"${record.name}" markası Boykot Dedektifi veritabanında "${record.status}" durumunda kayıtlıdır.`,
+    rating.description,
+    clean(record.verdict) || clean(record.about),
+    `Kaynak: ${SITE}/b/${record.siteSlug}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+}
+
+type SeedSummary = {
+  countries: number
+  brands: number
+  updatedBrands: number
+  rules: number
+  updatedRules: number
+  removedRules: number
+  removedRatings: number
 }
 
 type RuleContext = {
@@ -668,7 +304,15 @@ export async function seedBoykotDedektifi(
   log: (msg: string) => void = () => {},
 ): Promise<SeedSummary> {
   const plan = buildSeedPlan()
-  const summary: SeedSummary = { countries: 0, brands: 0, rules: 0 }
+  const summary: SeedSummary = {
+    countries: 0,
+    brands: 0,
+    updatedBrands: 0,
+    rules: 0,
+    updatedRules: 0,
+    removedRules: 0,
+    removedRatings: 0,
+  }
 
   // 1) Ülke: İsrail (GS1 prefix 729)
   const countryId = await findId(payload, 'countries', { slug: { equals: plan.country.slug } })
@@ -699,13 +343,19 @@ export async function seedBoykotDedektifi(
     : await payload.create({ collection: 'experts', data: expertData })
   log(`Uzman hazır: ${plan.expert.name} (/uzmanlar/${plan.expert.slug})`)
 
-  // 4) Derecelendirme ölçeği
+  // 4) Derecelendirme ölçeği — sitedeki altı durum + kullanılmayan derecelerin temizliği
   const ratingIdByName: Record<string, number> = {}
   for (const rating of plan.ratings) {
     const existingId = await findId(payload, 'rating-scales', {
       and: [{ expert: { equals: expert.id } }, { name: { equals: rating.name } }],
     })
-    const data = { ...rating, expert: expert.id }
+    const data = {
+      name: rating.name,
+      color: rating.color,
+      order: rating.order,
+      description: rating.description,
+      expert: expert.id,
+    }
     const doc = existingId
       ? await payload.update({ collection: 'rating-scales', id: existingId, data })
       : await payload.create({ collection: 'rating-scales', data })
@@ -713,19 +363,60 @@ export async function seedBoykotDedektifi(
   }
   log(`Derecelendirmeler hazır: ${plan.ratings.map((r) => r.name).join(', ')}`)
 
-  // 5) Markalar
+  const keptRatingIds = new Set(Object.values(ratingIdByName))
+  const staleRatingIds = (await findAll(payload, 'rating-scales', {
+    expert: { equals: expert.id },
+  }))
+    .map((doc) => doc.id as number)
+    .filter((id) => !keptRatingIds.has(id))
+
+  // 5) Markalar — sitedeki slug korunur, isim anahtarıyla idempotent upsert.
+  // Önce aynı markanın eski yazımları birleştirilir (ör. "Intel" + "İntel", "McDonald's"
+  // + "Mc Donald's"): kural tek markaya bağlanmalı, marka listesi kopya göstermemeli.
+  await pruneLegacyBrands(payload, plan, log)
+  await mergeDuplicateBrands(payload, plan, log)
+
   const brandIdByName: Record<string, number> = {}
+  const brandIdBySlug: Record<string, number> = {}
+  const brandIdByKey: Record<string, number> = {}
+  const existingBrands = await findAll(payload, 'brands', {})
+  for (const doc of existingBrands as { id: number; name?: string; slug?: string }[]) {
+    if (doc.name) brandIdByName[doc.name] = doc.id
+    if (doc.slug) brandIdBySlug[doc.slug] = doc.id
+    if (doc.name) {
+      const key = nameKey(doc.name)
+      const seen = brandIdByKey[key]
+      // Aynı normalize anahtara düşen birden çok kayıt varsa eşleştirme belirsizdir: kullanma.
+      brandIdByKey[key] = seen === undefined ? doc.id : -1
+    }
+  }
+
+  // Planda aynı normalize ada düşen ayrı markalar varsa (ör. "KIWI" + "Kiwi") normalize
+  // eşleştirme kullanılmaz; yalnız tam ad veya slug eşleşmesi kabul edilir.
+  const planKeyCount = new Map<string, number>()
   for (const brand of plan.brands) {
-    const existingId = await findId(payload, 'brands', { name: { equals: brand.name } })
+    const key = nameKey(brand.name)
+    planKeyCount.set(key, (planKeyCount.get(key) ?? 0) + 1)
+  }
+
+  for (const [index, brand] of plan.brands.entries()) {
+    const keyedId = brandIdByKey[nameKey(brand.name)]
+    const ambiguous = (planKeyCount.get(nameKey(brand.name)) ?? 0) > 1
+    const existingId =
+      brandIdByName[brand.name] ??
+      (!ambiguous && keyedId > 0 ? keyedId : undefined) ??
+      brandIdBySlug[brand.data.slug]
     const doc = existingId
       ? await payload.update({ collection: 'brands', id: existingId, data: brand.data })
       : await payload.create({ collection: 'brands', data: brand.data })
-    brandIdByName[brand.name] = doc.id
-    if (!existingId) summary.brands++
+    brandIdByName[brand.name] = doc.id as number
+    if (existingId) summary.updatedBrands++
+    else summary.brands++
+    if ((index + 1) % 250 === 0) log(`Markalar: ${index + 1}/${plan.brands.length}`)
   }
-  log(`Markalar hazır: ${plan.brands.length} kayıt`)
+  log(`Markalar hazır: ${plan.brands.length} kayıt (${summary.brands} yeni, ${summary.updatedBrands} güncel)`)
 
-  // 6) Kurallar (2 genel + marka bazlı "Şüpheli")
+  // 6) Kurallar
   const context: RuleContext = {
     expertId: expert.id,
     topicId: topic.id,
@@ -733,38 +424,39 @@ export async function seedBoykotDedektifi(
     ratingIdByName,
     brandIdByName,
   }
-  for (const rule of plan.rules) {
-    await upsertRule(payload, summary, context, rule)
+  const keptRuleIds = new Set<number>()
+  const currentRules = await findAll(payload, 'expert-rules', {
+    and: [{ expert: { equals: expert.id } }, { topic: { equals: topic.id } }],
+  })
+  const ruleIdByName: Record<string, number> = {}
+  for (const doc of currentRules as { id: number; name?: string }[]) {
+    if (doc.name) ruleIdByName[doc.name] = doc.id
   }
-  log(`Kurallar hazır: ${plan.rules.length} adet (${summary.rules} yeni)`)
+
+  for (const [index, rule] of plan.rules.entries()) {
+    const id = await upsertRule(payload, summary, context, rule, ruleIdByName)
+    keptRuleIds.add(id)
+    if ((index + 1) % 250 === 0) log(`Kurallar: ${index + 1}/${plan.rules.length}`)
+  }
+  log(`Kurallar hazır: ${plan.rules.length} adet (${summary.rules} yeni, ${summary.updatedRules} güncel)`)
+
+  // 7) Bu uzmanın artık plana girmeyen kurallarını sil (eski iki katmanlı set)
+  for (const stale of currentRules) {
+    if (keptRuleIds.has(stale.id as number)) continue
+    await payload.delete({ collection: 'expert-rules', id: stale.id as number })
+    summary.removedRules++
+  }
+  if (summary.removedRules) log(`Eski kurallar silindi: ${summary.removedRules}`)
+
+  // 8) Derece temizliği kural silindikten SONRA yapılır: expert_rules.rating_id zorunlu,
+  //    dereceyi önce silmek FK'yi NULL'a düşürüp hata verir.
+  for (const id of staleRatingIds) {
+    await payload.delete({ collection: 'rating-scales', id })
+    summary.removedRatings++
+  }
+  if (summary.removedRatings) log(`Eski dereceler silindi: ${summary.removedRatings}`)
 
   return summary
-}
-
-function buildBrandData(company: Company, brandName: string): BrandSeedData {
-  const brand = {
-    name: brandName,
-    slug: slugify(brandName),
-    country: company.country,
-    description: `${brandName}, ${company.label} bünyesindeki markalardan biridir.`,
-    isBoycotted: company.tier === 'boykot',
-  }
-  if (company.tier !== 'boykot') return brand
-
-  return {
-    ...brand,
-    boycottReason: `${company.label} ile bağlantılıdır. ${company.summary}\n\nKaynaklar:\n${company.sources
-      .map((s) => `- ${s.title}: ${s.url}`)
-      .join('\n')}`,
-  }
-}
-
-function buildRuleDescription(company: Company, brandName: string) {
-  return [
-    `"${brandName}" markası ${company.label} ile bağlantılı olduğu için bu kural tetiklenir.`,
-    company.summary,
-    "Bu kayıt 'Şüpheli' derecesini alır: bağlantı henüz doğrulanmamıştır ve 'Boykotlu' ile eşitlenmez. Yeni bir kanıt (BDS kararı, BM veritabanı kaydı veya şirket açıklaması) doğrulanırsa kural 'Boykotlu' derecesine yükseltilir.",
-  ].join('\n\n')
 }
 
 const ASSET_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'assets')
@@ -777,10 +469,6 @@ export const SEED_AVATAR = {
   alt: AVATAR_ALT,
 }
 
-/**
- * Uzman avatarını gerçek marka ikonundan (seed/assets/boykot-dedektifi-icon.webp)
- * medya koleksiyonuna bir kez yükler; sonraki çalıştırmalarda aynı kaydı kullanır.
- */
 async function ensureAvatar(
   payload: Payload,
   log: (msg: string) => void,
@@ -803,6 +491,153 @@ async function ensureAvatar(
   return media.id as number
 }
 
+/**
+ * Eski elle derlenmiş veri setinden (ADR öncesi 104 markalık liste) kalan ve yeni planda
+ * YER ALMAYAN markalar. Ürünü, kuralı ya da bağlı markası yoksa silinir: aksi halde
+ * `isBoycotted` işaretli hayalet kayıt, marka kuralı olmadan "boykotlu" damgası üretirdi.
+ */
+export const LEGACY_BRANDS = new Set<string>([
+  'Chevron',
+  'Caltex',
+  'Texaco',
+  'Intel',
+  'Hewlett Packard Enterprise',
+  'Carrefour',
+  'AXA',
+  'RE/MAX',
+  "McDonald's",
+  'Coca-Cola',
+  'FANUC',
+  'Elbit Systems',
+  'Maersk',
+  'CAF',
+  'Ring',
+  'Teva',
+  "Lay's",
+  'Nescafé',
+  'KitKat',
+  "Carte d'Or",
+  'Calvé',
+  "M&M's",
+  'Tic Tac',
+  'ABC',
+])
+
+/** Sadece bu uzmanın planıyla çakışan eski kayıtlar; kullanıcı markalarına dokunulmaz. */
+async function pruneLegacyBrands(
+  payload: Payload,
+  plan: SeedPlan,
+  log: (msg: string) => void,
+): Promise<number> {
+  const planNames = new Set(plan.brands.map((b) => b.name))
+  let removed = 0
+  for (const doc of (await findAll(payload, 'brands', {})) as {
+    id: number
+    name?: string
+  }[]) {
+    if (!doc.name || !LEGACY_BRANDS.has(doc.name) || planNames.has(doc.name)) continue
+    const [products, rules] = await Promise.all([
+      payload.count({ collection: 'products', where: { brand: { equals: doc.id } } }),
+      payload.count({ collection: 'expert-rules', where: { brand: { equals: doc.id } } }),
+    ])
+    if (products.totalDocs > 0 || rules.totalDocs > 0) {
+      log(`Eski marka korundu (referans var): ${doc.name}`)
+      continue
+    }
+    await payload.delete({ collection: 'brands', id: doc.id })
+    removed++
+  }
+  if (removed) log(`Eski marka kayıtları silindi: ${removed}`)
+  return removed
+}
+
+/**
+ * Aynı normalize ada düşen marka kayıtlarını tek kayda indirir: plan markasının adı/slug'ı
+ * hedef seçilir, ürün referansları hedefe taşınır, diğer kayıt silinir. Ürünü taşınamayan
+ * (silinemeyen) kopya loglanır ve bırakılır — veri kaybı yerine kopya tercih edilir.
+ */
+async function mergeDuplicateBrands(
+  payload: Payload,
+  plan: SeedPlan,
+  log: (msg: string) => void,
+): Promise<number> {
+  const planByName = new Map(plan.brands.map((b) => [b.name, b]))
+  const planByKey = new Map(plan.brands.map((b) => [nameKey(b.name), b]))
+  // Site bazı markaları ayrı kayıt olarak tutuyor (ör. "KIWI"/"Kiwi", "Disney"/"Disney+").
+  // Aynı anahtara düşen birden çok plan markası varsa bunlar BİRLEŞTİRİLMEZ.
+  const planKeyCount = new Map<string, number>()
+  for (const b of plan.brands) {
+    const key = nameKey(b.name)
+    planKeyCount.set(key, (planKeyCount.get(key) ?? 0) + 1)
+  }
+
+  const groups = new Map<string, { id: number; name: string; slug?: string }[]>()
+  for (const doc of (await findAll(payload, 'brands', {})) as { id: number; name?: string; slug?: string }[]) {
+    if (!doc.name) continue
+    const key = nameKey(doc.name)
+    const list = groups.get(key) ?? []
+    list.push({ id: doc.id, name: doc.name, slug: doc.slug })
+    groups.set(key, list)
+  }
+
+  let merged = 0
+  for (const [key, members] of groups) {
+    if (members.length < 2) continue
+    if ((planKeyCount.get(key) ?? 0) > 1) continue
+    const planned = planByKey.get(key)
+    // Bu uzmanın planıyla ilgisi olmayan gruplara dokunma.
+    if (!planned || !members.some((m) => planByName.has(m.name))) continue
+
+    const target =
+      members.find((m) => m.name === planned.name) ??
+      members.find((m) => m.slug === planned.data.slug) ??
+      members[0]
+    const extras = members.filter((m) => m.id !== target.id)
+
+    for (const extra of extras) {
+      try {
+        for (let page = 1; ; page++) {
+          const products = await payload.find({
+            collection: 'products',
+            where: { brand: { equals: extra.id } },
+            limit: 100,
+            page,
+            depth: 0,
+          })
+          for (const product of products.docs) {
+            await payload.update({
+              collection: 'products',
+              id: product.id,
+              data: { brand: target.id },
+            })
+          }
+          if (!products.hasNextPage || products.docs.length === 0) break
+        }
+        await payload.delete({ collection: 'brands', id: extra.id })
+        merged++
+      } catch (error) {
+        log(`Marka birleştirilemedi (${extra.name} → ${target.name}): ${(error as Error).message}`)
+      }
+    }
+  }
+  if (merged) log(`Kopya marka birleştirildi: ${merged}`)
+  return merged
+}
+
+/**
+ * Marka adı eşleştirme anahtarı: Türkçe küçük harf + aksan/boşluk/noktalama at.
+ * Site "Mc Donald's", repo "McDonald's" gibi yazım farklarında ikinci marka açılmasını önler.
+ */
+function nameKey(name: string): string {
+  return name
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'i')
+    .toLocaleLowerCase('tr')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+}
+
 async function findId<TSlug extends CollectionSlug>(
   payload: Payload,
   collection: TSlug,
@@ -812,19 +647,28 @@ async function findId<TSlug extends CollectionSlug>(
   return result.docs[0]?.id as number | undefined
 }
 
+async function findAll<TSlug extends CollectionSlug>(
+  payload: Payload,
+  collection: TSlug,
+  where: Where,
+): Promise<{ id: number | string }[]> {
+  const docs: { id: number | string }[] = []
+  for (let page = 1; ; page++) {
+    const result = await payload.find({ collection, where, limit: 200, page, depth: 0 })
+    docs.push(...(result.docs as { id: number | string }[]))
+    if (!result.hasNextPage || result.docs.length === 0) return docs
+  }
+}
+
+/** Kuralı yazar; eşleşen kaydın id'sini döner (temizlik adımı için). */
 async function upsertRule(
   payload: Payload,
   summary: SeedSummary,
   context: RuleContext,
   rule: SeedRule,
-) {
-  const existingId = await findId(payload, 'expert-rules', {
-    and: [
-      { expert: { equals: context.expertId } },
-      { topic: { equals: context.topicId } },
-      { name: { equals: rule.name } },
-    ],
-  })
+  ruleIdByName: Record<string, number>,
+): Promise<number> {
+  const existingId = ruleIdByName[rule.name]
   const ruleData = {
     name: rule.name,
     expert: context.expertId,
@@ -833,7 +677,7 @@ async function upsertRule(
     ruleType: rule.ruleType,
     description: rule.description,
     brand: rule.brandName ? context.brandIdByName[rule.brandName] : undefined,
-    country: rule.countrySlug ? context.countryId : undefined,
+    country: rule.ruleType === 'country' ? context.countryId : undefined,
     isActive: true,
     evidence: rule.sources.map((source) => ({
       type: 'link' as const,
@@ -844,8 +688,13 @@ async function upsertRule(
   }
   if (existingId) {
     await payload.update({ collection: 'expert-rules', id: existingId, data: ruleData })
-  } else {
-    await payload.create({ collection: 'expert-rules', data: ruleData })
-    summary.rules++
+    summary.updatedRules++
+    return existingId
   }
+  const created = await payload.create({ collection: 'expert-rules', data: ruleData })
+  summary.rules++
+  ruleIdByName[rule.name] = created.id as number
+  return created.id as number
 }
+
+export { SITE_BRANDS }

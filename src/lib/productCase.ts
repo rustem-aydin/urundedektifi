@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 import { LRUCache } from 'lru-cache'
 import {
   evaluateProduct,
+  rulesForProduct,
   evaluateRule,
   loadRuleSet,
   type Rule,
@@ -374,6 +375,8 @@ export type ProductCaseFilter = {
   brand?: string
   labels?: string[]
   limit?: number
+  /** 1 tabanlı sayfa; sonuç `limit` kadar ürün döner (sonsuz kaydırma için). */
+  page?: number
 }
 
 /**
@@ -396,6 +399,7 @@ export async function listProductCases(
     // En çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre bozulur.
     sort: ['-goruntulenme', '-createdAt'],
     limit: filter.limit ?? 48,
+    page: filter.page ?? 1,
     depth: 2,
     select: PRODUCT_SELECT,
   })
@@ -514,12 +518,16 @@ const matchScanCache = new LRUCache<string, Array<string | number>>({
   ttl: 1000 * 60,
 })
 
-function scanCacheKey(rules: Rule[], from: number): string {
-  const ids = rules
+/** Tarama anahtarı: kural kimlikleri bir kez hesaplanır, sayfa başına yeniden sıralanmaz. */
+function scanCacheKey(ruleSetKey: string, from: number): string {
+  return `${from}|${ruleSetKey}`
+}
+
+function ruleSetKeyFor(rules: Rule[]): string {
+  return rules
     .map((rule) => String((rule as { id?: string | number }).id ?? '?'))
     .sort()
     .join(',')
-  return `${from}|${ids}`
 }
 
 /** Yayındaki tüm ürünleri sayfa sayfa tarar, kurallara takılanların kimliklerini döndürür. */
@@ -529,9 +537,10 @@ async function scanPublishedProductIds(
 ): Promise<Array<string | number>> {
   const pageSize = 1000
   const select = scanSelectFor(rules)
+  const ruleSetKey = ruleSetKeyFor(rules)
   const matched: Array<string | number> = []
   for (let page = 1; ; page++) {
-    const cacheKey = scanCacheKey(rules, page)
+    const cacheKey = scanCacheKey(ruleSetKey, page)
     const cached = matchScanCache.get(cacheKey)
     if (cached) {
       matched.push(...cached)
@@ -549,7 +558,10 @@ async function scanPublishedProductIds(
     })
     const pageMatches: Array<string | number> = []
     for (const product of result.docs as any[]) {
-      if (rules.some((rule) => evaluateRule(rule, product as never).matched)) {
+      // Kural seti ürün başına marka/ülke ile daraltılır: 3.900 marka kuralını her ürün
+      // için gezmek 10 bin ürünlük taramayı dakikalara çıkarıyordu.
+      const candidates = rulesForProduct(product as never, rules)
+      if (candidates.some((rule) => evaluateRule(rule, product as never).matched)) {
         pageMatches.push(product.id)
       }
     }

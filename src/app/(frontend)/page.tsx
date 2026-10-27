@@ -12,6 +12,7 @@ import { CaseCard } from '@/components/CaseCard'
 import { ProductGrid } from '@/components/ProductGrid'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ruleStats } from '@/lib/ruleStats'
 
 const STEPS = [
   { no: '01', title: 'Tara', desc: 'Barkodu kameraya göster ya da numarasını yaz.' },
@@ -23,14 +24,10 @@ export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const [topics, allRules, latestProducts] = await Promise.all([
+  const [topics, stats, latestProducts] = await Promise.all([
     payload.find({ collection: 'topics', limit: 100, sort: 'order', depth: 0 }),
-    payload.find({
-      collection: 'expert-rules',
-      where: { isActive: { equals: true } },
-      limit: 0,
-      depth: 0,
-    }),
+    // Kural sayıları tek GROUP BY sorgusundan gelir; 3.900 kural satırı çekilmez.
+    ruleStats(payload),
     payload.find({
       collection: 'products',
       where: { status: { equals: 'published' } },
@@ -39,13 +36,6 @@ export default async function HomePage() {
       depth: 2,
     }),
   ])
-
-  const ruleCountByTopic = new Map<string, number>()
-  for (const r of allRules.docs as any[]) {
-    const topicId = typeof r.topic === 'object' ? r.topic.id : r.topic
-    if (!topicId) continue
-    ruleCountByTopic.set(topicId, (ruleCountByTopic.get(topicId) || 0) + 1)
-  }
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
@@ -158,7 +148,7 @@ export default async function HomePage() {
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {topics.docs.map((t: any) => {
-              const ruleCount = ruleCountByTopic.get(t.id) || 0
+              const ruleCount = stats.byTopic.get(String(t.id))?.rules ?? 0
               return (
                 <Link key={t.id} href={`/konu/${t.slug}`} className="group rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
                   <CaseCard

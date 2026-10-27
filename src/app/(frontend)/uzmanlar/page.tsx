@@ -8,6 +8,8 @@ import config from '@/payload.config'
 import { ExpertCards } from '@/components/ExpertCards'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { cn } from '@/lib/utils'
+import { findAllDocs } from '@/lib/findAllDocs'
+import { ruleStats } from '@/lib/ruleStats'
 
 export const metadata: Metadata = {
   title: 'Uzmanlar',
@@ -49,6 +51,10 @@ export default async function ExpertsPage({
     depth: 1,
   })
 
+  // Kural sayıları ve konuya göre uzman süzgeci tek GROUP BY sonucundan gelir
+  // (bkz. ruleStats): 3.900 kural satırı sayfa render'ında çekilmez.
+  const stats = await ruleStats(payload)
+
   // Eğer konu seçilmişse, sadece o konuda kural yazan uzmanları filtrele
   let filteredExperts = experts.docs
   if (selectedTopic) {
@@ -59,6 +65,7 @@ export default async function ExpertsPage({
       },
       limit: 1000,
       depth: 0,
+      select: { expert: true },
     })
     const expertIds = new Set(
       rulesInTopic.docs.map((r: any) => (typeof r.expert === 'object' ? r.expert.id : r.expert)),
@@ -66,43 +73,26 @@ export default async function ExpertsPage({
     filteredExperts = experts.docs.filter((e: any) => expertIds.has(e.id))
   }
 
-  // Her uzman için kural + derecelendirme sayısı — N+1 yerine 2 toplu sorgu
+  // Derecelendirme sayısı uzman başına küçük bir kümedir; tek sorguda okunur.
   const expertIds = filteredExperts.map((e: any) => e.id)
-  const [allExpertRules, allRatings] =
+  const allRatings =
     expertIds.length > 0
-      ? await Promise.all([
-          payload.find({
-            collection: 'expert-rules',
-            where: {
-              and: [{ expert: { in: expertIds } }, { isActive: { equals: true } }],
-            },
-            limit: 2000,
-            depth: 0,
-          }),
-          payload.find({
-            collection: 'rating-scales',
-            where: { expert: { in: expertIds } },
-            limit: 1000,
-            depth: 0,
-          }),
-        ])
-      : [{ docs: [] }, { docs: [] }]
+      ? await findAllDocs<{ expert?: unknown }>(payload, 'rating-scales', {
+          where: { expert: { in: expertIds } },
+          select: { expert: true },
+        })
+      : []
 
-  const ruleCountByExpert = new Map<string, number>()
-  for (const r of (allExpertRules as any).docs) {
-    const id = typeof r.expert === 'object' ? r.expert.id : r.expert
-    ruleCountByExpert.set(id, (ruleCountByExpert.get(id) || 0) + 1)
-  }
   const ratingCountByExpert = new Map<string, number>()
-  for (const r of (allRatings as any).docs) {
+  for (const r of allRatings as any[]) {
     const id = typeof r.expert === 'object' ? r.expert.id : r.expert
-    ratingCountByExpert.set(id, (ratingCountByExpert.get(id) || 0) + 1)
+    ratingCountByExpert.set(String(id), (ratingCountByExpert.get(String(id)) || 0) + 1)
   }
 
   const expertsWithStats = filteredExperts.map((e: any) => ({
     ...e,
-    ruleCount: ruleCountByExpert.get(e.id) || 0,
-    ratingCount: ratingCountByExpert.get(e.id) || 0,
+    ruleCount: stats.byExpert.get(String(e.id))?.rules ?? 0,
+    ratingCount: ratingCountByExpert.get(String(e.id)) || 0,
   }))
 
   return (

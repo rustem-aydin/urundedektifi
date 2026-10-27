@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Search, X } from 'lucide-react'
 
+import { BrandCombobox } from '@/components/BrandCombobox'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,7 +22,8 @@ type ProductsFilterBarProps = {
   brand: string
   labels: string[]
   categories: Option[]
-  brands: Option[]
+  /** Seçili markanın adı; liste sunucuda tutulmaz (bkz. BrandCombobox). */
+  brandName?: string | null
 }
 
 const ALL = '__all__'
@@ -51,7 +53,7 @@ export function ProductsFilterBar({
   brand,
   labels,
   categories,
-  brands,
+  brandName,
 }: ProductsFilterBarProps) {
   const router = useRouter()
 
@@ -119,23 +121,11 @@ export function ProductsFilterBar({
         </SelectContent>
       </Select>
 
-      <label className="sr-only">Markaya göre filtrele</label>
-      <Select value={brand || ALL} onValueChange={(v) => push({ brand: v === ALL ? '' : v })}>
-        <SelectTrigger
-          aria-label="Markaya göre filtrele"
-          className="h-10 w-full border-2 border-foreground bg-card font-mono text-xs tracking-[0.1em] uppercase shadow-xs sm:w-44"
-        >
-          <SelectValue placeholder="Marka" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>Tüm markalar</SelectItem>
-          {brands.map((b) => (
-            <SelectItem key={b.id} value={b.id}>
-              {b.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <BrandCombobox
+        brand={brand}
+        brandName={brandName}
+        baseParams={buildParams({ q, category, brand: '', labels }).toString()}
+      />
 
       <Button type="submit" className="h-10 w-full px-5 sm:w-auto">
         <Search aria-hidden="true" />

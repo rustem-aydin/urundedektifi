@@ -11,7 +11,6 @@ type ProductCardProps = {
   name: string
   brandName?: string | null
   categoryName?: string | null
-  barcode?: string | number | null
   imageUrl?: string | null
   imageAlt?: string | null
   verdictCount?: number
@@ -27,7 +26,6 @@ export function ProductCard({
   name,
   brandName,
   categoryName,
-  barcode,
   imageUrl,
   imageAlt,
   verdictCount,
@@ -70,10 +68,11 @@ export function ProductCard({
             {viewFormat.format(Math.max(0, Math.trunc(viewCount)))} görüntülenme
           </p>
         )}
-        <p className="mt-auto flex items-center justify-between gap-2 border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-          {barcode ? <span>KANIT NO: {barcode}</span> : <span />}
-          {categoryName && <span className="truncate">{categoryName}</span>}
-        </p>
+        {categoryName && (
+          <p className="mt-auto truncate border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+            {categoryName}
+          </p>
+        )}
       </CardContent>
     </CaseCard>
   )

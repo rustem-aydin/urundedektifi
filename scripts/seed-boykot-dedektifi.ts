@@ -1,25 +1,27 @@
 import 'dotenv/config'
 import { getPayload } from 'payload'
 import config from '../src/payload.config'
-import { COMPANIES, seedBoykotDedektifi } from '../src/lib/seed/boykotDedektifi'
+import { buildSeedPlan, seedBoykotDedektifi } from '../src/lib/seed/boykotDedektifi'
 
 /**
- * Boykot Dedektifi içeriğini (uzman, konu, derecelendirmeler, markalar, kurallar)
- * yerel veritabanına kurar. Idempotent: ikinci çalıştırmada kayıt çoğaltmaz.
+ * Boykot Dedektifi içeriğini (uzman, konu, derecelendirmeler, 3.950 marka, marka
+ * başına kural) yerel veritabanına kurar. Idempotent: ikinci çalıştırmada kayıt
+ * çoğaltmaz; plandan çıkan eski dereceleri/kuralları siler.
  *
  * Kullanım: pnpm seed:boykot
  */
 async function main() {
   const payload = await getPayload({ config })
+  const plan = buildSeedPlan()
 
   const summary = await seedBoykotDedektifi(payload, (msg) => console.log(`  ${msg}`))
 
   console.log('\nÖzet:')
-  console.log(`  Yeni ülke      : ${summary.countries}`)
-  console.log(`  Yeni marka     : ${summary.brands}`)
-  console.log(`  Yeni kural     : ${summary.rules}`)
-  console.log(`  Boykotlu marka : ${COMPANIES.filter((c) => c.tier === 'boykot').reduce((n, c) => n + c.brands.length, 0)}`)
-  console.log(`  Şüpheli kural  : ${COMPANIES.filter((c) => c.tier === 'supheli').reduce((n, c) => n + c.brands.length, 0)}`)
+  console.log(`  Marka kaydı     : ${plan.brands.length} (${summary.brands} yeni, ${summary.updatedBrands} güncel)`)
+  console.log(`  Kural           : ${plan.rules.length} (${summary.rules} yeni, ${summary.updatedRules} güncel)`)
+  console.log(`  Silinen kural   : ${summary.removedRules}`)
+  console.log(`  Silinen derece  : ${summary.removedRatings}`)
+  console.log(`  Dereceler       : ${plan.ratings.map((r) => r.name).join(' · ')}`)
 
   await payload.destroy()
 }

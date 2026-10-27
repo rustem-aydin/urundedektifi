@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { invalidateProductCaseCache, invalidateRuleSetCache, listProductsMatchingRule } from '@/lib/productCase'
+import { invalidateRuleStats } from '@/lib/ruleStats'
 import type { User } from '@/payload-types'
 
 const RULE_TYPES = [
@@ -350,12 +351,15 @@ export const ExpertRules: CollectionConfig = {
         // Kural değişti: hem kural seti hem kurala bağlı ürün dosyaları bayatlar.
         invalidateRuleSetCache()
         invalidateProductCaseCache()
+        // Konu/uzman sayaçları (GROUP BY sonucu) da tazelenir.
+        invalidateRuleStats()
       },
     ],
     afterDelete: [
       () => {
         invalidateRuleSetCache()
         invalidateProductCaseCache()
+        invalidateRuleStats()
       },
     ],
   },

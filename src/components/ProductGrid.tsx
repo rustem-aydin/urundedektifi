@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { ProductCard } from '@/components/ProductCard'
 import { useSession } from '@/components/session-provider'
 import { fetchMatchCounts } from '@/lib/wizard/api'
+import type { ProductCardData } from '@/lib/productCardData'
 
 /**
  * Ürün kartı ızgarası.
@@ -13,18 +14,6 @@ import { fetchMatchCounts } from '@/lib/wizard/api'
  * uzmanların bu üründeki eşleşen kurallarıdır (`/api/products/match-counts`). Misafir ya
  * da hiç takip etmeyen kullanıcıda rozet görünmez.
  */
-
-export type ProductCardData = {
-  id: string
-  href: string | null
-  name: string
-  brandName?: string | null
-  categoryName?: string | null
-  barcode?: string | null
-  imageUrl?: string | null
-  imageAlt?: string | null
-  viewCount?: number
-}
 
 export function ProductGrid({
   products,
@@ -72,7 +61,6 @@ export function ProductGrid({
           name={product.name}
           brandName={product.brandName ?? null}
           categoryName={product.categoryName ?? null}
-          barcode={product.barcode ?? null}
           imageUrl={product.imageUrl ?? null}
           imageAlt={product.imageAlt ?? null}
           verdictCount={product.barcode ? (counts[product.barcode] ?? 0) : 0}

@@ -271,7 +271,6 @@ export default async function ExpertDetailPage({ params }: { params: Promise<{ s
                 name={product.name}
                 brandName={product.brand?.name ?? null}
                 categoryName={product.category?.name ?? null}
-                barcode={product.barcode}
                 imageUrl={product.gallery[0]?.url ?? null}
                 imageAlt={product.gallery[0]?.alt ?? product.name}
               />

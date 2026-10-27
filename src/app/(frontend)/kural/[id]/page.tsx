@@ -133,7 +133,6 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
                   name={product.name || 'İsimsiz ürün'}
                   brandName={product.brand?.name ?? null}
                   categoryName={product.category?.name ?? null}
-                  barcode={product.barcode}
                   imageUrl={frontImage?.url || null}
                   imageAlt={frontImage?.alt || product.name}
                 />
