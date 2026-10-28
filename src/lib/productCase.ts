@@ -326,14 +326,16 @@ export function invalidateProductCaseCache(barcode?: string | number | null) {
   if (barcode != null) caseCache.delete(String(barcode))
   else caseCache.clear()
   // Kural eşleşmesi ürün verisine bağlı: tarama önbelleği de tazelenir.
-  matchScanCache.clear()
+  scanPageCache.clear()
+  prefilterCache.clear()
 }
 
 export function invalidateRuleSetCache() {
   ruleSetCache.delete(RULESET_KEY)
   expertRulesCache.clear()
   // Kural tanımı değişince eşleşme kümesi de değişir.
-  matchScanCache.clear()
+  scanPageCache.clear()
+  prefilterCache.clear()
 }
 
 async function getCachedRuleSet(payload: Payload): Promise<any[]> {
@@ -497,9 +499,19 @@ function scanSelectFor(rules: Rule[]): Record<string, unknown> {
   return select
 }
 
-/** Tarama sonucu kısa süreli önbellekte: kural sayfası her açılışta 10 bin kaydı gezmesin. */
-const matchScanCache = new LRUCache<string, Array<string | number>>({
+/**
+ * Tarama sayfası önbelleği: kural sayfası her açılışta 10 bin kaydı gezmesin.
+ * Sayfanın son olup olmadığı da saklanır — eşleşme sayısı sayfa boyutuyla
+ * karıştırıldığında tarama erken bitiyor ve eksik sayı dönüyordu.
+ */
+const scanPageCache = new LRUCache<string, { ids: Array<string | number>; hasNext: boolean }>({
   max: 200,
+  ttl: 1000 * 60 * 5,
+})
+
+/** SQL ön süzgecinin onaylanmış sonucu (tüm eşleşme kimlikleri). */
+const prefilterCache = new LRUCache<string, Array<string | number>>({
+  max: 50,
   ttl: 1000 * 60 * 5,
 })
 
@@ -615,22 +627,22 @@ async function scanPublishedProductIds(
 
   // Marka/ülke kuralları SQL'e çevrilebildiğinde katalog hiç gezilmez (10 bin üründe ~5 sn).
   const prefilterKey = prefilterCacheKey(ruleSetKey)
-  const prefiltered = matchScanCache.get(prefilterKey)
+  const prefiltered = prefilterCache.get(prefilterKey)
   if (prefiltered) return prefiltered
   const candidates = await prefilterProductIds(payload, rules)
   if (candidates) {
     const confirmed = await confirmProductIds(payload, rules, candidates)
-    matchScanCache.set(prefilterKey, confirmed)
+    prefilterCache.set(prefilterKey, confirmed)
     return confirmed
   }
 
   const matched: Array<string | number> = []
   for (let page = 1; ; page++) {
     const cacheKey = scanCacheKey(ruleSetKey, page)
-    const cached = matchScanCache.get(cacheKey)
+    const cached = scanPageCache.get(cacheKey)
     if (cached) {
-      matched.push(...cached)
-      if (cached.length < pageSize) return matched
+      matched.push(...cached.ids)
+      if (!cached.hasNext) return matched
       continue
     }
 
@@ -651,11 +663,12 @@ async function scanPublishedProductIds(
         pageMatches.push(product.id)
       }
     }
-    matchScanCache.set(cacheKey, pageMatches)
+    // Sonluk belgesi sayfa boyutuna göre: eşleşme sayısı sayfa doluluğunu göstermez.
+    const hasNext = result.docs.length === pageSize && page * pageSize < result.totalDocs
+    scanPageCache.set(cacheKey, { ids: pageMatches, hasNext })
     matched.push(...pageMatches)
 
-    // Önbellekten gelen sayfa tam değilse son sayfadayız.
-    if (result.docs.length < pageSize || page * pageSize >= result.totalDocs) return matched
+    if (!hasNext) return matched
   }
 }
 
