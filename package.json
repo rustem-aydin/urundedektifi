@@ -18,6 +18,8 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "seed:boykot": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-boykot-dedektifi.ts",
     "seed:boykot:crawl": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/crawl-boykot-dedektifi.ts",
+    "seed:countries": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-countries.ts",
+    "seed:countries:prod": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-countries-prod.ts",
     "seed:off-bulk": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/off-bulk-import.ts"
   },
   "dependencies": {

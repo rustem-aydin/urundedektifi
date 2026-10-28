@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import type { User } from '@/payload-types'
+import { slugify } from '@/lib/slugify'
 
 export const Countries: CollectionConfig = {
   slug: 'countries',
@@ -38,7 +39,6 @@ export const Countries: CollectionConfig = {
       label: 'URL Kısa Adı (Slug)',
       unique: true,
       index: true,
-      defaultValue: 'turkey',
       admin: {
         hidden: true,
         description:
@@ -88,16 +88,7 @@ export const Countries: CollectionConfig = {
     beforeValidate: [
       ({ data, operation }) => {
         if (operation === 'create' && data?.name && !data.slug) {
-          data.slug = data.name
-            .toLowerCase()
-            .replace(/ğ/g, 'g')
-            .replace(/ü/g, 'u')
-            .replace(/ş/g, 's')
-            .replace(/ı/g, 'i')
-            .replace(/ö/g, 'o')
-            .replace(/ç/g, 'c')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '')
+          data.slug = slugify(data.name)
         }
         return data
       },
