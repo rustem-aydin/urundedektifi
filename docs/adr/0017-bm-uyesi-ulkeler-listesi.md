@@ -56,3 +56,19 @@ kaymıştı). Bu hatalar yeni ülkelere yanlış `code` yazacaktı.
   atanmaz — kayıt listede yok.
 - Düzeltilmiş prefix tablosu üretime ancak derleme yayınlandığında yansır: yeni derleme öncesi
   üretimde `731…` barkodu "Meksika" atıyordu; yayından sonra "İsveç" atıyor.
+
+## Ürünlerin ülke ile eşleştirilmesi
+
+`scripts/fill-product-countries.ts` (`pnpm products:countries`) mevcut ürünleri tarar ve
+`Üretim Yeri Ülke` alanını barkodun GS1 prefix'inden doldurur. Kuru çalışma varsayılandır;
+`--apply` yazar, dolu ama farklı kayıtlar yalnız `--overwrite` ile düzeltilir.
+
+- 10.244 ürün tarandı: 8.341'i zaten barkoduyla tutarlıydı, 1.716 ülkesiz ürün dolduruldu,
+  4 hatalı kayıt (3 Birleşik Krallık, 1 Avusturya barkodu "Türkiye" işaretliydi) düzeltildi.
+- GTIN-14 barkodlarda ambalaj göstergesi atlanarak ikinci haneden prefix aranır
+  (6 + 869… → Türkiye); bu kural 7 ürünü daha çözdü ve yeni ürünlerde de geçerli.
+- 174 ürün eşleşmedi: barkodları GS1 ülke aralığı taşımıyor (150/169/200/251/668 gibi
+  atanmamış prefixler, kısa/hatalı kodlar) veya GS1 bölgesi (ISBN, Tayvan, Makao).
+  Bu kayıtlar için ülke uydurulmadı; liste `scripts/.off-cache/product-country-leftovers.json`
+  dosyasına yazıldı (yeniden üretilebilir, depoya girmez).
+- Üretim sonucu: 10.070/10.244 ürünün üretim ülkesi dolu.

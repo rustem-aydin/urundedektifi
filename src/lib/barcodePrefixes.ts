@@ -145,6 +145,8 @@ export const PREFIX_RULES: PrefixRule[] = [
 
 /**
  * EAN-13 / UPC / EAN-8 barkodunun ilk 3 hanesinden ülke tespit eder.
+ * 14 haneli GTIN'de ilk hane ambalaj göstergesidir; ham ilk 3 hane eşleşmezse
+ * ikinci haneden başlayan prefix denenir (örn. 6 + 869… → Türkiye).
  * QR kod gibi alfasayısal kodlar için null döner.
  * @returns { country, iso } veya null
  */
@@ -155,12 +157,16 @@ export function detectCountryFromBarcode(
   const digits = String(barcode).replace(/\D/g, '')
   if (digits.length < 3) return null
 
-  const prefix = parseInt(digits.substring(0, 3), 10)
-  if (isNaN(prefix)) return null
+  const candidates = [digits.substring(0, 3)]
+  if (digits.length > 13) candidates.push(digits.substring(1, 4))
 
-  for (const rule of PREFIX_RULES) {
-    if (prefix >= rule.min && prefix <= rule.max) {
-      return { country: rule.country, iso: rule.iso, prefix }
+  for (const candidate of candidates) {
+    const prefix = parseInt(candidate, 10)
+    if (isNaN(prefix)) continue
+    for (const rule of PREFIX_RULES) {
+      if (prefix >= rule.min && prefix <= rule.max) {
+        return { country: rule.country, iso: rule.iso, prefix }
+      }
     }
   }
   return null

@@ -20,7 +20,8 @@
     "seed:boykot:crawl": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/crawl-boykot-dedektifi.ts",
     "seed:countries": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-countries.ts",
     "seed:countries:prod": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-countries-prod.ts",
-    "seed:off-bulk": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/off-bulk-import.ts"
+    "seed:off-bulk": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/off-bulk-import.ts",
+    "products:countries": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/fill-product-countries.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
