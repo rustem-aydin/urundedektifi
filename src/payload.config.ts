@@ -38,6 +38,16 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    // S3 istemci yükleme işleyicisi yalnızca S3_BUCKET tanımlıyken eklentiye
+    // kaydolur, import map ise derleme sırasında .env'deki değere göre üretilir.
+    // Üretimde S3 açıkken haritada bu bileşen bulunamazsa Payload yönetici
+    // paneli boş açılıyor; bu yüzden bağımlılığı koşulsuz bildiriyoruz.
+    dependencies: {
+      s3ClientUploadHandler: {
+        type: 'function',
+        path: '@payloadcms/storage-s3/client#S3ClientUploadHandler',
+      },
+    },
     meta: {
       titleSuffix: ' — Ürün Dedektifi',
     },
