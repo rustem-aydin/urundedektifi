@@ -10,6 +10,7 @@ import { listProductsForRules } from '@/lib/productCase'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { ExpertTabs } from '@/components/ExpertTabs'
 import { FollowButton } from '@/components/FollowButton'
 import { ProductCard } from '@/components/ProductCard'
 import { VerdictStamp } from '@/components/VerdictStamp'
@@ -30,7 +31,11 @@ function formatDate(value?: string | null) {
   if (!value) return null
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
-  return new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).format(date)
+  return new Intl.DateTimeFormat('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
 }
 
 const RULE_PAGE_SIZE = 20
@@ -40,10 +45,10 @@ export default async function ExpertDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ kuralSayfa?: string }>
+  searchParams: Promise<{ kuralSayfa?: string; sekme?: string }>
 }) {
   const { slug } = await params
-  const { kuralSayfa } = await searchParams
+  const { kuralSayfa, sekme } = await searchParams
   const rulePage = Math.max(1, Number(kuralSayfa) || 1)
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -110,7 +115,11 @@ export default async function ExpertDetailPage({
       <header>
         <div className="relative h-36 overflow-hidden rounded-b-md border border-t-0 border-border bg-tape-yellow/15 sm:h-48">
           {cover?.url ? (
-            <img src={cover.url} alt={cover.alt || expert.name} className="size-full object-cover" />
+            <img
+              src={cover.url}
+              alt={cover.alt || expert.name}
+              className="size-full object-cover"
+            />
           ) : (
             <div aria-hidden="true" className="flex size-full items-center justify-center">
               <span className="font-mono text-[0.65rem] tracking-[0.4em] text-faded uppercase">
@@ -222,175 +231,175 @@ export default async function ExpertDetailPage({
         </div>
       )}
 
-      {/* YAZILAR */}
-      {posts.docs.length > 0 && (
-        <section aria-labelledby="expert-posts-heading" className="mt-10">
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-foreground/80 pb-2">
-            <h2 id="expert-posts-heading" className="font-display text-xl">
-              Uzman kaleminden
-            </h2>
-            <span className="font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-              {posts.totalDocs} yazı
-            </span>
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.docs.map((post) => {
-              const postCover = typeof post.cover === 'object' ? post.cover : null
-              const published = formatDate(post.publishedAt ?? post.createdAt)
-              return (
-                <Link key={post.id} href={`/yazilar/${post.slug}`} className="group">
-                  <CaseCard className="flex h-full flex-col gap-2 p-4 transition-shadow group-hover:shadow-md">
-                    {postCover?.url ? (
-                      <img
-                        src={postCover.url}
-                        alt={postCover.alt || post.title}
-                        className="h-28 w-full rounded-sm border border-border object-cover"
-                      />
+      {/* BÖLÜMLER — tek sekme şeridi */}
+      <ExpertTabs
+        defaultValue={sekme}
+        tabs={[
+          ...(posts.docs.length > 0
+            ? [
+                {
+                  value: 'yazilar',
+                  label: 'Uzman kaleminden',
+                  meta: `${posts.totalDocs} yazı`,
+                  content: (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {posts.docs.map((post) => {
+                        const postCover = typeof post.cover === 'object' ? post.cover : null
+                        const published = formatDate(post.publishedAt ?? post.createdAt)
+                        return (
+                          <Link key={post.id} href={`/yazilar/${post.slug}`} className="group">
+                            <CaseCard className="flex h-full flex-col gap-2 p-4 transition-shadow group-hover:shadow-md">
+                              {postCover?.url ? (
+                                <img
+                                  src={postCover.url}
+                                  alt={postCover.alt || post.title}
+                                  className="h-28 w-full rounded-sm border border-border object-cover"
+                                />
+                              ) : (
+                                <div
+                                  aria-hidden="true"
+                                  className="flex h-16 w-full items-center justify-center rounded-sm border border-dashed border-border bg-tape-yellow/15 font-mono text-[0.6rem] tracking-[0.3em] text-faded uppercase"
+                                >
+                                  VAKA NOTU
+                                </div>
+                              )}
+                              <p className="font-display text-base leading-snug">{post.title}</p>
+                              {post.excerpt ? (
+                                <p className="line-clamp-2 text-sm text-muted-foreground">
+                                  {post.excerpt}
+                                </p>
+                              ) : null}
+                              {published ? (
+                                <span className="mt-auto font-mono text-[0.6rem] tracking-[0.14em] text-faded uppercase">
+                                  {published}
+                                </span>
+                              ) : null}
+                            </CaseCard>
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  ),
+                },
+              ]
+            : []),
+          ...(matchedProducts.length > 0
+            ? [
+                {
+                  value: 'urunler',
+                  label: 'Hüküm verdiği ürünler',
+                  meta: `${matchedProducts.length} dosya`,
+                  content: (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                      {matchedProducts.slice(0, 10).map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          href={product.barcode ? `/urun/${product.barcode}` : null}
+                          name={product.name}
+                          brandName={product.brand?.name ?? null}
+                          categoryName={product.category?.name ?? null}
+                          imageUrl={product.gallery[0]?.url ?? null}
+                          imageAlt={product.gallery[0]?.alt ?? product.name}
+                        />
+                      ))}
+                    </div>
+                  ),
+                },
+              ]
+            : []),
+          {
+            value: 'kurallar',
+            label: 'Aktif kurallar',
+            meta: `${rules.totalDocs} kural`,
+            content: (
+              <>
+                {rules.docs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Henüz aktif kural yok.</p>
+                ) : (
+                  <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    {rules.docs.map((r: any, i: number) => (
+                      <li key={r.id}>
+                        <CaseCard tape={i === 0} className="h-full gap-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
+                            <EvidenceTag variant="evidence">
+                              DELİL{' '}
+                              {String((rulePage - 1) * RULE_PAGE_SIZE + i + 1).padStart(2, '0')}
+                            </EvidenceTag>
+                            {r.rating && (
+                              <span
+                                className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"
+                                // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
+                                style={{ color: r.rating.color || undefined }}
+                                title={r.rating.description || r.rating.name}
+                              >
+                                {r.rating.name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-col gap-2 px-4 pb-4">
+                            <Link
+                              href={`/kural/${r.id}`}
+                              className="font-medium underline-offset-4 hover:underline"
+                            >
+                              {r.name}
+                            </Link>
+                            <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                              {ruleTypeLabel(r.ruleType)}
+                              {r.topic && typeof r.topic === 'object' && (
+                                <>
+                                  {' · '}
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-background"
+                                    // Konu rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
+                                    style={{ background: r.topic.color || undefined }}
+                                  >
+                                    {r.topic.icon} {r.topic.name}
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </CaseCard>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+
+                {rules.totalPages > 1 && (
+                  <nav
+                    aria-label="Kural sayfaları"
+                    className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
+                  >
+                    {rulePage > 1 ? (
+                      <Link
+                        href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage - 1}&sekme=kurallar`}
+                        className="underline-offset-4 hover:underline"
+                      >
+                        ← Önceki
+                      </Link>
                     ) : (
-                      <div
-                        aria-hidden="true"
-                        className="flex h-16 w-full items-center justify-center rounded-sm border border-dashed border-border bg-tape-yellow/15 font-mono text-[0.6rem] tracking-[0.3em] text-faded uppercase"
+                      <span aria-hidden="true" />
+                    )}
+                    <span className="text-faded">
+                      {rulePage} / {rules.totalPages}
+                    </span>
+                    {rulePage < rules.totalPages ? (
+                      <Link
+                        href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage + 1}&sekme=kurallar`}
+                        className="underline-offset-4 hover:underline"
                       >
-                        VAKA NOTU
-                      </div>
+                        Sonraki →
+                      </Link>
+                    ) : (
+                      <span aria-hidden="true" />
                     )}
-                    <p className="font-display text-base leading-snug">{post.title}</p>
-                    {post.excerpt ? (
-                      <p className="line-clamp-2 text-sm text-muted-foreground">{post.excerpt}</p>
-                    ) : null}
-                    {published ? (
-                      <span className="mt-auto font-mono text-[0.6rem] tracking-[0.14em] text-faded uppercase">
-                        {published}
-                      </span>
-                    ) : null}
-                  </CaseCard>
-                </Link>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* HÜKÜM VERDİĞİ ÜRÜNLER */}
-      {matchedProducts.length > 0 && (
-        <section aria-labelledby="expert-products-heading" className="mt-10">
-          <div className="flex items-baseline justify-between gap-4 border-b-2 border-foreground/80 pb-2">
-            <h2 id="expert-products-heading" className="font-display text-xl">
-              Hüküm verdiği ürünler
-            </h2>
-            <span className="font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-              {matchedProducts.length} dosya
-            </span>
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {matchedProducts.slice(0, 6).map((product) => (
-              <ProductCard
-                key={product.id}
-                href={product.barcode ? `/urun/${product.barcode}` : null}
-                name={product.name}
-                brandName={product.brand?.name ?? null}
-                categoryName={product.category?.name ?? null}
-                imageUrl={product.gallery[0]?.url ?? null}
-                imageAlt={product.gallery[0]?.alt ?? product.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* KURALLAR */}
-      <section aria-labelledby="expert-rules-heading" className="mt-10">
-        <h2 id="expert-rules-heading" className="font-display text-xl">
-          Aktif kurallar ({rules.totalDocs})
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Bu kurallar, ürün verilerine göre otomatik olarak değerlendirilir.
-        </p>
-        {rules.docs.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">Henüz aktif kural yok.</p>
-        ) : (
-          <ol className="mt-4 flex flex-col gap-4">
-            {rules.docs.map((r: any, i: number) => (
-              <li key={r.id}>
-                <CaseCard tape={i === 0} className="gap-3">
-                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">
-                    <EvidenceTag variant="evidence">
-                      DELİL {String((rulePage - 1) * RULE_PAGE_SIZE + i + 1).padStart(2, '0')}
-                    </EvidenceTag>
-                    {r.rating && (
-                      <span
-                        className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"
-                        // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
-                        style={{ color: r.rating.color || undefined }}
-                        title={r.rating.description || r.rating.name}
-                      >
-                        {r.rating.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 px-4 pb-4">
-                    <Link
-                      href={`/kural/${r.id}`}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {r.name}
-                    </Link>
-                    <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                      {ruleTypeLabel(r.ruleType)}
-                      {r.topic && typeof r.topic === 'object' && (
-                        <>
-                          {' · '}
-                          <span
-                            className="inline-flex items-center gap-1 rounded-sm px-1 py-0.5 text-background"
-                            // Konu rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
-                            style={{ background: r.topic.color || undefined }}
-                          >
-                            {r.topic.icon} {r.topic.name}
-                          </span>
-                        </>
-                      )}
-                    </p>
-                    {r.description && (
-                      <p className="text-sm text-muted-foreground">{r.description}</p>
-                    )}
-                  </div>
-                </CaseCard>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {rules.totalPages > 1 && (
-          <nav
-            aria-label="Kural sayfaları"
-            className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
-          >
-            {rulePage > 1 ? (
-              <Link
-                href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage - 1}`}
-                className="underline-offset-4 hover:underline"
-              >
-                ← Önceki
-              </Link>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-            <span className="text-faded">
-              {rulePage} / {rules.totalPages}
-            </span>
-            {rulePage < rules.totalPages ? (
-              <Link
-                href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage + 1}`}
-                className="underline-offset-4 hover:underline"
-              >
-                Sonraki →
-              </Link>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-          </nav>
-        )}
-      </section>
+                  </nav>
+                )}
+              </>
+            ),
+          },
+        ]}
+      />
     </div>
   )
 }
