@@ -5,8 +5,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { findAllDocs } from '@/lib/findAllDocs'
-import { listProductsForRules } from '@/lib/productCase'
+import { expertRules, listProductsForRules } from '@/lib/productCase'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -39,6 +38,8 @@ function formatDate(value?: string | null) {
 }
 
 const RULE_PAGE_SIZE = 20
+/** Sekmede gösterilen ürün kartı: 5 sütunda iki tam satır. */
+const PRODUCT_CARD_LIMIT = 10
 
 export default async function ExpertDetailPage({
   params,
@@ -65,7 +66,7 @@ export default async function ExpertDetailPage({
   const expert = result.docs[0]
   if (!expert) notFound()
 
-  const [rules, allRules, ratings, posts, followers] = await Promise.all([
+  const [rules, ratings, posts, followers, matched] = await Promise.all([
     payload.find({
       collection: 'expert-rules',
       where: {
@@ -74,12 +75,6 @@ export default async function ExpertDetailPage({
       sort: '-createdAt',
       limit: RULE_PAGE_SIZE,
       page: rulePage,
-      depth: 1,
-    }),
-    // Ürün eşleşmesi TÜM kurallarla hesaplanır; listede yalnız o sayfa gösterilir.
-    findAllDocs<never>(payload, 'expert-rules', {
-      where: { and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }] },
-      sort: '-createdAt',
       depth: 1,
     }),
     payload.find({
@@ -100,9 +95,15 @@ export default async function ExpertDetailPage({
       where: { following: { in: [expert.id] } },
       overrideAccess: true,
     }),
+    // Ürün eşleşmesi TÜM kurallarla hesaplanır; kart için yalnız gösterilecek kadar Dosya kurulur.
+    // Kurallar istekler arası önbellekten gelir (3.900+ satır her açılışta okunmaz).
+    expertRules(payload, expert.id).then((allRules) =>
+      listProductsForRules(payload, allRules, { limit: PRODUCT_CARD_LIMIT }),
+    ),
   ])
 
-  const matchedProducts = await listProductsForRules(payload, allRules)
+  const matchedProducts = matched.products
+  const matchedTotal = matched.total
 
   const cover = typeof expert.cover === 'object' ? expert.cover : null
   const socials = Object.entries(expert.socialLinks ?? {}).filter(
@@ -283,15 +284,15 @@ export default async function ExpertDetailPage({
                 },
               ]
             : []),
-          ...(matchedProducts.length > 0
+          ...(matchedTotal > 0
             ? [
                 {
                   value: 'urunler',
                   label: 'Hüküm verdiği ürünler',
-                  meta: `${matchedProducts.length} dosya`,
+                  meta: `${matchedTotal} dosya`,
                   content: (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                      {matchedProducts.slice(0, 10).map((product) => (
+                      {matchedProducts.map((product) => (
                         <ProductCard
                           key={product.id}
                           href={product.barcode ? `/urun/${product.barcode}` : null}

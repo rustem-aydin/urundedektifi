@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
-import { invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
-import { findAllDocs } from '@/lib/findAllDocs'
+import { expertRules, invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -77,14 +76,12 @@ export const Experts: CollectionConfig = {
         }
 
         // Kural seti binlerce marka kuralına çıktı: sabit limit kullanılırsa ürünler
-        // sessizce eksik eşleşir. Tüm kurallar sayfalanarak okunur.
-        const rules = await findAllDocs<{ id: number }>(req.payload, 'expert-rules', {
-          where: { and: [{ expert: { equals: id } }, { isActive: { equals: true } }] },
-          depth: 1,
-        })
+        // sessizce eksik eşleşir. Kurallar önbellekten gelir; kart için yalnız istenen
+        // kadarı Dosya'ya çevrilir (334 eşleşme için tam dönüşüm boşa gidiyordu).
+        const rules = await expertRules(req.payload, id)
 
-        const products = await listProductsForRules(req.payload, rules as never)
-        return Response.json({ products: products.slice(0, 6) })
+        const { total, products } = await listProductsForRules(req.payload, rules, { limit: 6 })
+        return Response.json({ total, products })
       },
     },
   ],
@@ -106,8 +103,7 @@ export const Experts: CollectionConfig = {
       unique: true,
       index: true,
       admin: {
-        description:
-          'URL\'de kullanılacak kısa ad. /uzmanlar/ahmet-hocam gibi. Otomatik üretilir.',
+        description: "URL'de kullanılacak kısa ad. /uzmanlar/ahmet-hocam gibi. Otomatik üretilir.",
       },
     },
     {
@@ -168,7 +164,8 @@ export const Experts: CollectionConfig = {
           label: 'Sertifika/Belge Adı',
           required: true,
           admin: {
-            description: 'Sertifika veya belgenin tam adı (Örn: "Helal Gıda Denetçisi Sertifikası").',
+            description:
+              'Sertifika veya belgenin tam adı (Örn: "Helal Gıda Denetçisi Sertifikası").',
           },
         },
         {
@@ -229,7 +226,7 @@ export const Experts: CollectionConfig = {
           type: 'text',
           label: 'Twitter / X Hesabı',
           admin: {
-            description: 'Twitter profil URL\'i.',
+            description: "Twitter profil URL'i.",
           },
         },
         {
@@ -237,7 +234,7 @@ export const Experts: CollectionConfig = {
           type: 'text',
           label: 'Instagram Hesabı',
           admin: {
-            description: 'Instagram profil URL\'i.',
+            description: "Instagram profil URL'i.",
           },
         },
         {
@@ -245,7 +242,7 @@ export const Experts: CollectionConfig = {
           type: 'text',
           label: 'LinkedIn Profili',
           admin: {
-            description: 'LinkedIn profil URL\'i.',
+            description: "LinkedIn profil URL'i.",
           },
         },
         {
@@ -253,7 +250,7 @@ export const Experts: CollectionConfig = {
           type: 'text',
           label: 'YouTube Kanalı',
           admin: {
-            description: 'YouTube kanal URL\'i.',
+            description: "YouTube kanal URL'i.",
           },
         },
       ],

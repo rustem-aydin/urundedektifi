@@ -1,5 +1,7 @@
 import type { Payload } from 'payload'
 import { LRUCache } from 'lru-cache'
+import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
+import { findAllDocs } from './findAllDocs'
 import {
   evaluateProduct,
   rulesForProduct,
@@ -190,7 +192,10 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
   const nutrition =
     nutritionItems.length > 0
       ? {
-          per: (per === '100ml' || per === 'serving' ? per : '100g') as '100g' | '100ml' | 'serving',
+          per: (per === '100ml' || per === 'serving' ? per : '100g') as
+            | '100g'
+            | '100ml'
+            | 'serving',
           perLabel: NUTRITION_PER_LABELS[per] ?? NUTRITION_PER_LABELS['100g'],
           items: nutritionItems,
         }
@@ -222,7 +227,9 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
     slug: product.slug ?? null,
     description: product.description ?? null,
     usage: product.usage ?? null,
-    brand: brand ? { id: String(brand.id), name: brand.name, isBoycotted: brand.isBoycotted } : null,
+    brand: brand
+      ? { id: String(brand.id), name: brand.name, isBoycotted: brand.isBoycotted }
+      : null,
     category: category ? { id: String(category.id), name: category.name } : null,
     country: country ? { id: String(country.id), name: country.name } : null,
     manufacturer: product.manufacturer ?? null,
@@ -294,6 +301,26 @@ const caseCache = new LRUCache<string, ProductCase>({
 const ruleSetCache = new LRUCache<string, any[]>({ max: 1, ttl: 1000 * 60 * 10 })
 const RULESET_KEY = 'active-rules'
 
+/** Uzman başına aktif kural listesi (profiller her açılışta 3.900+ satır okumasın). */
+const expertRulesCache = new LRUCache<string, Rule[]>({ max: 50, ttl: 1000 * 60 * 10 })
+
+/**
+ * Uzmanın aktif kuralları (derinlik 1) — eşleştirme ve ürün dosyaları için tek kaynak.
+ * Aynı dizi örneği döndüğünde `rulesForProduct` indeksi de yeniden kurulmaz.
+ */
+export async function expertRules(payload: Payload, expertId: string | number): Promise<Rule[]> {
+  const key = String(expertId)
+  const cached = expertRulesCache.get(key)
+  if (cached) return cached
+  const rules = await findAllDocs<Rule>(payload, 'expert-rules', {
+    where: { and: [{ expert: { equals: expertId } }, { isActive: { equals: true } }] },
+    sort: '-createdAt',
+    depth: 1,
+  })
+  expertRulesCache.set(key, rules)
+  return rules
+}
+
 /** Admin hook'larından çağrılır: ürün/kural değişince önbelleği düşür. */
 export function invalidateProductCaseCache(barcode?: string | number | null) {
   if (barcode != null) caseCache.delete(String(barcode))
@@ -304,6 +331,7 @@ export function invalidateProductCaseCache(barcode?: string | number | null) {
 
 export function invalidateRuleSetCache() {
   ruleSetCache.delete(RULESET_KEY)
+  expertRulesCache.clear()
   // Kural tanımı değişince eşleşme kümesi de değişir.
   matchScanCache.clear()
 }
@@ -351,10 +379,7 @@ export async function getProductCase(
  * Dosya 10 dk önbellekte yaşadığı için sayaç önbellekten sunulmaz: aksi hâlde sayfa
  * yenilendiğinde sayı geriye düşerdi. Detay ekranları bu taze değeri kullanır.
  */
-export async function viewCountFor(
-  payload: Payload,
-  id: string | number,
-): Promise<number> {
+export async function viewCountFor(payload: Payload, id: string | number): Promise<number> {
   // `goruntulenme` alanı henüz üretim şemasında yok; alan seçimi tipleri kırıyordu.
   // Alan eklendiğinde bu okuma doğrudan o değeri döndürür.
   const doc = (await payload
@@ -367,46 +392,6 @@ export async function viewCountFor(
     .catch(() => null)) as { goruntulenme?: unknown } | null
   const value = Math.trunc(Number(doc?.goruntulenme ?? 0))
   return Number.isFinite(value) && value > 0 ? value : 0
-}
-
-export type ProductCaseFilter = {
-  q?: string
-  category?: string
-  brand?: string
-  labels?: string[]
-  limit?: number
-  /** 1 tabanlı sayfa; sonuç `limit` kadar ürün döner (sonsuz kaydırma için). */
-  page?: number
-}
-
-/**
- * Yayında olan ürünlerin Dosya listesi.
- * Aktif kural seti tek kez yüklenir; her ürün için bellek içi eşleştirme (N+1 yok).
- */
-export async function listProductCases(
-  payload: Payload,
-  filter: ProductCaseFilter = {},
-): Promise<{ docs: ProductCase[]; totalDocs: number }> {
-  const where: any = { and: [{ status: { equals: 'published' } }] }
-  if (filter.q) where.and.push({ name: { contains: filter.q } })
-  if (filter.category) where.and.push({ category: { equals: filter.category } })
-  if (filter.brand) where.and.push({ brand: { equals: filter.brand } })
-  for (const l of filter.labels || []) where.and.push({ labels: { contains: l } })
-
-  const products = await payload.find({
-    collection: 'products',
-    where,
-    // En çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre bozulur.
-    sort: ['-goruntulenme', '-createdAt'],
-    limit: filter.limit ?? 48,
-    page: filter.page ?? 1,
-    depth: 2,
-    select: PRODUCT_SELECT,
-  })
-
-  const rules = await getCachedRuleSet(payload)
-  const docs = products.docs.map((p) => toProductCase(p, rules))
-  return { docs, totalDocs: products.totalDocs }
 }
 
 /** Oturumdaki kullanıcının takip ettiği uzman kimlikleri (misafir → boş dizi). */
@@ -515,12 +500,101 @@ function scanSelectFor(rules: Rule[]): Record<string, unknown> {
 /** Tarama sonucu kısa süreli önbellekte: kural sayfası her açılışta 10 bin kaydı gezmesin. */
 const matchScanCache = new LRUCache<string, Array<string | number>>({
   max: 200,
-  ttl: 1000 * 60,
+  ttl: 1000 * 60 * 5,
 })
+
+/**
+ * SQL ön süzgeci — katalog taramasının yerini alan indeksli sorgu.
+ *
+ * Yalnız kimlik eşitliğiyle eşleşen kural tipleri (marka, ülke) SQL'e çevrilebilir.
+ * 10 bin ürünlük katalogda Payload sayfaları ~5 sn sürüyordu; marka/ülke kuralları
+ * tek `EXISTS` sorgusuna iner. Dönen kimlikler yine `evaluateRule` ile doğrulanır:
+ * eşleştirmenin tek kaynağı kural motoru kalır. Kapsam dışı bir kural tipi
+ * (içindekiler, etiket, besin, alerjen…) varsa `null` döner ve tam tarama yapılır.
+ */
+async function prefilterProductIds(
+  payload: Payload,
+  rules: Rule[],
+): Promise<Array<string | number> | null> {
+  const expertIds = new Set<string>()
+  for (const rule of rules) {
+    if (rule.ruleType !== 'brand' && rule.ruleType !== 'country') return null
+    const expert = rule.expert
+    const expertId = expert && typeof expert === 'object' ? expert.id : expert
+    if (expertId == null) return null
+    expertIds.add(String(expertId))
+  }
+  // Sorgu tek uzmanın kural setini varsayar.
+  if (expertIds.size !== 1) return null
+  const expertId = Number([...expertIds][0])
+  if (!Number.isSafeInteger(expertId)) return null
+
+  const db = payload.db as unknown as PostgresAdapter
+  const result = (await db.execute({
+    drizzle: db.drizzle,
+    sql: sql`
+      SELECT p."id" AS "id"
+      FROM "products" p
+      WHERE p."status" = 'published'
+        AND EXISTS (
+          SELECT 1
+          FROM "expert_rules" r
+          WHERE r."expert_id" = ${expertId}
+            AND r."is_active" = true
+            AND (
+              (r."rule_type" = 'brand' AND r."brand_id" = p."brand_id")
+              OR (r."rule_type" = 'country' AND r."country_id" = p."country_id")
+            )
+        )
+      ORDER BY p."created_at" DESC, p."id" DESC
+    `,
+  })) as { rows?: { id?: number | string }[] }
+
+  return (result.rows ?? []).flatMap((row) => (row.id == null ? [] : [row.id]))
+}
+
+/** SQL adaylarını kural motoruyla doğrular (sıra korunur). */
+async function confirmProductIds(
+  payload: Payload,
+  rules: Rule[],
+  ids: Array<string | number>,
+): Promise<Array<string | number>> {
+  const matched: Array<string | number> = []
+  const select = scanSelectFor(rules)
+  const chunkSize = 500
+  for (let index = 0; index < ids.length; index += chunkSize) {
+    const chunk = ids.slice(index, index + chunkSize)
+    const found = await payload.find({
+      collection: 'products',
+      where: { and: [{ status: { equals: 'published' } }, { id: { in: chunk } }] },
+      limit: chunk.length,
+      depth: 1,
+      select,
+    })
+    const byId = new Map((found.docs as any[]).map((product) => [String(product.id), product]))
+    for (const id of chunk) {
+      const product = byId.get(String(id))
+      if (!product) continue
+      if (
+        rulesForProduct(product as never, rules).some(
+          (rule) => evaluateRule(rule, product as never).matched,
+        )
+      ) {
+        matched.push(id)
+      }
+    }
+  }
+  return matched
+}
 
 /** Tarama anahtarı: kural kimlikleri bir kez hesaplanır, sayfa başına yeniden sıralanmaz. */
 function scanCacheKey(ruleSetKey: string, from: number): string {
   return `${from}|${ruleSetKey}`
+}
+
+/** SQL ön süzgecinin sonucu için ayrı anahtar uzayı (sayfa anahtarlarıyla çakışmasın). */
+function prefilterCacheKey(ruleSetKey: string): string {
+  return `sql|${ruleSetKey}`
 }
 
 function ruleSetKeyFor(rules: Rule[]): string {
@@ -538,6 +612,18 @@ async function scanPublishedProductIds(
   const pageSize = 1000
   const select = scanSelectFor(rules)
   const ruleSetKey = ruleSetKeyFor(rules)
+
+  // Marka/ülke kuralları SQL'e çevrilebildiğinde katalog hiç gezilmez (10 bin üründe ~5 sn).
+  const prefilterKey = prefilterCacheKey(ruleSetKey)
+  const prefiltered = matchScanCache.get(prefilterKey)
+  if (prefiltered) return prefiltered
+  const candidates = await prefilterProductIds(payload, rules)
+  if (candidates) {
+    const confirmed = await confirmProductIds(payload, rules, candidates)
+    matchScanCache.set(prefilterKey, confirmed)
+    return confirmed
+  }
+
   const matched: Array<string | number> = []
   for (let page = 1; ; page++) {
     const cacheKey = scanCacheKey(ruleSetKey, page)
@@ -602,21 +688,27 @@ async function casesForProductIds(
 /**
  * Bir uzmanın kurallarına takılan yayınlanmış ürünler.
  *
- * `listProductsMatchingRule` kural başına ayrı tarama yapar; uzman profili tek istekte
- * tüm kuralları istediği için ürün listesi bir kez çekilip kurallar bellekte değerlendirilir.
+ * Eşleşme kümesi SQL ön süzgecinden (marka/ülke) veya katalog taramasından gelir;
+ * `limit` verildiğinde yalnız gösterilecek kartlar Dosya'ya çevrilir, sayı tüm
+ * eşleşmelerden döner. Profil 334 eşleşme için 334 Dosya kuruyordu.
  */
 export async function listProductsForRules(
   payload: Payload,
   rules: Rule[],
-): Promise<ProductCase[]> {
-  if (rules.length === 0) return []
-  return casesForProductIds(payload, rules, await scanPublishedProductIds(payload, rules))
+  options: { limit?: number } = {},
+): Promise<{ total: number; products: ProductCase[] }> {
+  if (rules.length === 0) return { total: 0, products: [] }
+  const ids = await scanPublishedProductIds(payload, rules)
+  // Kart için yalnız gösterilecek kadar Dosya kurulur; sayı tüm eşleşmelerden gelir.
+  const shown = options.limit != null ? ids.slice(0, Math.max(0, options.limit)) : ids
+  return { total: ids.length, products: await casesForProductIds(payload, rules, shown) }
 }
 
 /**
  * Yayındaki ürünlerden tek bir kurala takılanları Dosya'ya çevirir.
  * Kural detay sayfası ve `/api/expert-rules/:id/products` ucu bunu kullanır;
  * eşleştirme `verdictEngine`'in tek kaynağından gelir (kopya mantık yok).
+ * Marka/ülke kuralında katalog taranmaz: SQL ön süzgeci kullanılır.
  */
 export async function listProductsMatchingRule(
   payload: Payload,

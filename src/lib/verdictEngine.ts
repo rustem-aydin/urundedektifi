@@ -74,7 +74,9 @@ export type VerdictResult = {
 
 function getId(rel: any): string | null {
   if (!rel) return null
-  if (typeof rel === 'object') return rel.id || null
+  // Kimlik karşılaştırmaları derinliğe bağlı olmamalı: depth 0'da ilişki sayı,
+  // depth 1'de nesne gelir. Tek biçime (string) çevrilir.
+  if (typeof rel === 'object') return rel.id != null ? String(rel.id) : null
   return String(rel)
 }
 
@@ -107,14 +109,17 @@ function findNutritionAmount(product: Product, field: string): number | undefine
   return undefined
 }
 
-export function evaluateRule(rule: Rule, product: Product): { matched: boolean; matchedValue?: string } {
+export function evaluateRule(
+  rule: Rule,
+  product: Product,
+): { matched: boolean; matchedValue?: string } {
   const rt = rule.ruleType
 
   switch (rt) {
     case 'ingredient_text': {
       const ing = getRelObj(rule.ingredient)
       if (!ing) return { matched: false }
-      const ingId = ing.id
+      const ingId = getId(rule.ingredient)
       const found = product.items?.some((ia: any) => {
         const id = getId(ia?.ingredients)
         return id === ingId
@@ -126,7 +131,7 @@ export function evaluateRule(rule: Rule, product: Product): { matched: boolean; 
     case 'ingredient_excludes': {
       const ing = getRelObj(rule.ingredient)
       if (!ing) return { matched: false }
-      const ingId = ing.id
+      const ingId = getId(rule.ingredient)
       const found = product.items?.some((ia: any) => {
         const id = getId(ia?.ingredients)
         return id === ingId
@@ -137,7 +142,7 @@ export function evaluateRule(rule: Rule, product: Product): { matched: boolean; 
     case 'additive_code': {
       const additive = getRelObj(rule.additive)
       if (!additive) return { matched: false }
-      const addId = additive.id
+      const addId = getId(rule.additive)
       const found = product.additives?.some((a: any) => getId(a) === addId)
       return found
         ? { matched: true, matchedValue: `${additive.code} (${additive.name}) içeriyor` }
@@ -166,7 +171,7 @@ export function evaluateRule(rule: Rule, product: Product): { matched: boolean; 
       const country = getRelObj(rule.country)
       if (!country) return { matched: false }
       const productCountryId = getId(product.country)
-      if (productCountryId === country.id) {
+      if (productCountryId === getId(rule.country)) {
         return { matched: true, matchedValue: `Menşe ülke: ${country.name}` }
       }
       return { matched: false }
@@ -175,7 +180,7 @@ export function evaluateRule(rule: Rule, product: Product): { matched: boolean; 
       const brand = getRelObj(rule.brand)
       if (!brand) return { matched: false }
       const productBrandId = getId(product.brand)
-      if (productBrandId === brand.id) {
+      if (productBrandId === getId(rule.brand)) {
         return { matched: true, matchedValue: `Marka: ${brand.name}` }
       }
       return { matched: false }
@@ -193,7 +198,7 @@ export function evaluateRule(rule: Rule, product: Product): { matched: boolean; 
       const productType = getRelObj(rule.productType)
       if (!productType) return { matched: false }
       const productCatId = getId(product.category)
-      if (productCatId === productType.id) {
+      if (productCatId === getId(rule.productType)) {
         return { matched: true, matchedValue: `Kategori: ${productType.name}` }
       }
       if (product.category?.name?.toLowerCase().includes(productType.name?.toLowerCase() || '')) {
@@ -381,8 +386,8 @@ export function evaluateProduct(product: Product, rules: Rule[]): VerdictResult 
             color: topic?.color,
           }
         : topicId
-        ? { id: topicId, name: 'Konu', slug: String(topicId) }
-        : null
+          ? { id: topicId, name: 'Konu', slug: String(topicId) }
+          : null
 
     const rating = normalizeRating(rule.rating)
 
