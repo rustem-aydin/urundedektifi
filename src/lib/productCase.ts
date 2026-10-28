@@ -1,4 +1,4 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
 import { LRUCache } from 'lru-cache'
 import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import { findAllDocs } from './findAllDocs'
@@ -683,6 +683,46 @@ async function casesForProductIds(
   return ids
     .map((id) => cases.get(String(id)))
     .filter((productCase): productCase is ProductCase => Boolean(productCase))
+}
+
+/** Liste süzgeci: ad, kategori, marka ve etiketler. */
+export type ProductCaseFilter = {
+  q?: string
+  category?: string
+  brand?: string
+  labels?: string[]
+  limit?: number
+  /** 1 tabanlı sayfa; sonuç `limit` kadar ürün döner (sonsuz kaydırma için). */
+  page?: number
+}
+
+/** Yayında olan ürünlerin Dosya listesi. Aktif kural seti tek kez yüklenir. */
+export async function listProductCases(
+  payload: Payload,
+  filter: ProductCaseFilter = {},
+): Promise<{ docs: ProductCase[]; totalDocs: number }> {
+  const and: Where[] = [{ status: { equals: 'published' } }]
+  if (filter.q) and.push({ name: { contains: filter.q } })
+  if (filter.category) and.push({ category: { equals: filter.category } })
+  if (filter.brand) and.push({ brand: { equals: filter.brand } })
+  for (const label of filter.labels || []) and.push({ labels: { contains: label } })
+
+  const products = await payload.find({
+    collection: 'products',
+    where: { and },
+    // En çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre bozulur.
+    sort: ['-goruntulenme', '-createdAt'],
+    limit: filter.limit ?? 48,
+    page: filter.page ?? 1,
+    depth: 2,
+    select: PRODUCT_SELECT,
+  })
+
+  const rules = await getCachedRuleSet(payload)
+  return {
+    docs: products.docs.map((product) => toProductCase(product, rules)),
+    totalDocs: products.totalDocs,
+  }
 }
 
 /**
