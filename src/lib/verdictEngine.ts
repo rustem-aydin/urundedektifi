@@ -144,8 +144,10 @@ export function evaluateRule(
       if (!additive) return { matched: false }
       const addId = getId(rule.additive)
       const found = product.additives?.some((a: any) => getId(a) === addId)
+      // E-kodu opsiyonel: kodsuz katkıda hüküm yalnız adla yazılır ("null (…)" olmasın).
+      const label = additive.code ? `${additive.code} (${additive.name})` : `${additive.name}`
       return found
-        ? { matched: true, matchedValue: `${additive.code} (${additive.name}) içeriyor` }
+        ? { matched: true, matchedValue: `${label} içeriyor` }
         : { matched: false }
     }
     case 'allergen': {

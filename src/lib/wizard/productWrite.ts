@@ -161,17 +161,23 @@ export async function resolveCreatedMasters(draft: Draft, token: string): Promis
 
   const additives = []
   for (const row of form.additives) {
-    if (!row.code) {
-      // Additives kaydı E-kodu zorunlu tutuyor; kodsuz kayıt açılamaz.
+    const name = row.name || row.code
+    if (!name) {
+      // E-kodu opsiyonel; en az bir ad gerekir (Additives.name zorunlu).
       errors.push({
-        name: row.name || 'katkı',
-        message: 'E-kodu olmadan katkı kaydı oluşturulamaz.',
+        name: 'katkı',
+        message: 'Ne E-kodu ne de ad yazılmış: katkı kaydı oluşturulamaz.',
       })
       additives.push(row)
       continue
     }
-    const resolved = await attempt(row.code, row.resolution, () =>
-      resolveOne('additives', row.resolution, { code: row.code, name: row.name || row.code }, token),
+    const resolved = await attempt(name, row.resolution, () =>
+      resolveOne(
+        'additives',
+        row.resolution,
+        row.code ? { code: row.code, name } : { name },
+        token,
+      ),
     )
     additives.push(resolved ? { ...row, resolution: resolved } : row)
   }

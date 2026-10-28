@@ -802,7 +802,7 @@ export interface Allergen {
   createdAt: string;
 }
 /**
- * Gıda katkı maddelerinin (E-kodları) master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "E621 Monosodyum Glutamat" → sağlığa zararlı kuralı).
+ * Gıda katkı maddelerinin master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "E621 Monosodyum Glutamat" → sağlığa zararlı kuralı). E-kodu her etikette yazmaz; kod yoksa boş bırakın.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "additives".
@@ -810,9 +810,13 @@ export interface Allergen {
 export interface Additive {
   id: number;
   /**
-   * Avrupa katkı kodu (Örn: "E330", "E621", "E102"). Büyük harfle ve "E" ile başlamalı.
+   * Otomatik üretilir: E-kodu varsa "E330 · Sitrik Asit", yoksa yalnız katkı adı.
    */
-  code: string;
+  title?: string | null;
+  /**
+   * Avrupa katkı kodu (Örn: "E330", "E621", "E102"). Opsiyonel: etikette kod yazmıyorsa boş bırakın.
+   */
+  code?: string | null;
   /**
    * Katkı maddesinin tam adı (Örn: "Sitrik Asit", "Monosodyum Glutamat", "Tartrazin").
    */
@@ -1985,6 +1989,7 @@ export interface IngredientsSelect<T extends boolean = true> {
  * via the `definition` "additives_select".
  */
 export interface AdditivesSelect<T extends boolean = true> {
+  title?: T;
   code?: T;
   name?: T;
   aliases?:

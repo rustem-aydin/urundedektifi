@@ -1,5 +1,15 @@
 import type { CollectionConfig } from 'payload'
 
+/**
+ * "e 330" / " E330 " → "E330"; boş değer `null`. Boş bırakılan E-kodu tekil indekse
+ * (Postgres'te birden çok NULL'a izin verir) takılmadan kaybolur.
+ */
+export const normalizeAdditiveCode = (raw: unknown): string | null => {
+  if (typeof raw !== 'string') return null
+  const value = raw.replace(/\s+/g, '').toUpperCase()
+  return value.length > 0 ? value : null
+}
+
 export const Additives: CollectionConfig = {
   slug: 'additives',
   labels: {
@@ -7,25 +17,48 @@ export const Additives: CollectionConfig = {
     plural: 'Katkı Maddeleri (E-Kod Listesi)',
   },
   admin: {
-    useAsTitle: 'code',
-    defaultColumns: ['code', 'name', 'function', 'riskLevel', 'halalStatus'],
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'code', 'function', 'riskLevel', 'halalStatus'],
     group: 'Master Listeler',
     description:
-      'Gıda katkı maddelerinin (E-kodları) master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "E621 Monosodyum Glutamat" → sağlığa zararlı kuralı).',
+      'Gıda katkı maddelerinin master listesi. Uzman kuralları bu listeden seçim yapar (Örn: "E621 Monosodyum Glutamat" → sağlığa zararlı kuralı). E-kodu her etikette yazmaz; kod yoksa boş bırakın.',
   },
   access: {
     read: () => true,
   },
+  hooks: {
+    beforeChange: [
+      ({ data, originalDoc }) => {
+        // `'code' in data` şart: alan panelde temizlendiğinde `null` gelir; `??` ile
+        // eski değere düşmek silmeyi engellerdi.
+        const code = normalizeAdditiveCode('code' in data ? data.code : originalDoc?.code)
+        const name = String(('name' in data ? data.name : originalDoc?.name) ?? '').trim()
+        data.code = code
+        if (name) data.title = [code, name].filter(Boolean).join(' · ')
+        return data
+      },
+    ],
+  },
   fields: [
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Görünen Ad',
+      admin: {
+        readOnly: true,
+        description: 'Otomatik üretilir: E-kodu varsa "E330 · Sitrik Asit", yoksa yalnız katkı adı.',
+        position: 'sidebar',
+      },
+    },
     {
       name: 'code',
       type: 'text',
       label: 'E-Kodu',
-      required: true,
       unique: true,
       index: true,
       admin: {
-        description: 'Avrupa katkı kodu (Örn: "E330", "E621", "E102"). Büyük harfle ve "E" ile başlamalı.',
+        description:
+          'Avrupa katkı kodu (Örn: "E330", "E621", "E102"). Opsiyonel: etikette kod yazmıyorsa boş bırakın.',
       },
     },
     {
