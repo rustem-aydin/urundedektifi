@@ -129,21 +129,21 @@ export function StoryRail() {
               <span
                 className={
                   story.unread
-                    ? 'rounded-full bg-gradient-to-tr from-stamp to-tape-yellow p-[2.5px]'
-                    : 'rounded-full bg-border p-[2.5px]'
+                    ? 'block size-16 shrink-0 rounded-full bg-gradient-to-tr from-stamp to-tape-yellow p-[2.5px]'
+                    : 'block size-16 shrink-0 rounded-full bg-border p-[2.5px]'
                 }
               >
-                <span className="block rounded-full bg-background p-[2px]">
+                <span className="block size-full overflow-hidden rounded-full bg-background p-[2px]">
                   {typeof story.expert.avatar === 'object' && story.expert.avatar?.url ? (
                     <img
                       src={story.expert.avatar.url}
                       alt={story.expert.avatar.alt || story.expert.name}
-                      className="size-16 rounded-full object-cover"
+                      className="aspect-square w-full rounded-full object-cover"
                     />
                   ) : (
                     <span
                       aria-hidden="true"
-                      className="flex size-16 items-center justify-center rounded-full bg-muted font-display text-xl text-muted-foreground"
+                      className="flex aspect-square w-full items-center justify-center rounded-full bg-muted font-display text-xl text-muted-foreground"
                     >
                       {story.expert.name.slice(0, 1)}
                     </span>
