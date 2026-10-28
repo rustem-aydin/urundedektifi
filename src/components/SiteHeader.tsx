@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 const NAV_ITEMS = [
   { href: '/tara', label: 'Tara' },
   { href: '/urunler', label: 'Ürünler' },
+  { href: '/kategoriler', label: 'Kategoriler' },
   { href: '/konular', label: 'Konular' },
   { href: '/uzmanlar', label: 'Uzmanlar' },
   { href: '/ekle', label: 'Ekle' },
@@ -39,7 +40,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label="Ana gezinme" className="hidden items-center gap-1 sm:flex">
+        <nav aria-label="Ana gezinme" className="hidden items-center gap-1 md:flex">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
@@ -68,7 +69,7 @@ export function SiteHeader() {
           <ThemeToggle />
         </nav>
 
-        <div className="flex items-center gap-1 sm:hidden">
+        <div className="flex items-center gap-1 md:hidden">
           <ThemeToggle />
           <button
             type="button"
@@ -87,7 +88,7 @@ export function SiteHeader() {
         <nav
           id="mobile-nav"
           aria-label="Mobil gezinme"
-          className="border-t border-border px-4 pt-2 pb-3 sm:hidden"
+          className="border-t border-border px-4 pt-2 pb-3 md:hidden"
         >
           <ul className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => {

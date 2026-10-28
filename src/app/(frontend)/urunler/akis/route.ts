@@ -2,8 +2,7 @@ import { getPayload } from 'payload'
 import type { NextRequest } from 'next/server'
 
 import config from '@/payload.config'
-import { listProductCases } from '@/lib/productCase'
-import { PRODUCT_PAGE_SIZE, toProductCardData } from '@/lib/productCardData'
+import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,15 +18,16 @@ export async function GET(request: NextRequest) {
   const requested = Number.parseInt(params.get('sayfa') ?? '1', 10)
   const page = Number.isFinite(requested) && requested > 0 ? requested : 1
   const q = (params.get('q') ?? '').trim()
-  const category = params.get('kategori') ?? ''
+  // Detay sayfası kategori + tüm alt kategorileri tekrarlı `kategori` parametresiyle gönderir.
+  const categoryIds = params.getAll('kategori').filter(Boolean)
   const brand = params.get('marka') ?? ''
   const labels = params.getAll('etiket')
 
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
-  const { docs, totalDocs } = await listProductCases(payload, {
+  const { docs, totalDocs } = await listProductCards(payload, {
     q,
-    category,
+    categories: categoryIds.length > 0 ? categoryIds : undefined,
     brand,
     labels,
     page,
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   })
 
   return Response.json({
-    products: docs.map(toProductCardData),
+    products: docs,
     totalDocs,
     page,
     pageSize: PRODUCT_PAGE_SIZE,

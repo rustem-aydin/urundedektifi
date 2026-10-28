@@ -6,8 +6,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { listProductCases } from '@/lib/productCase'
-import { PRODUCT_PAGE_SIZE, toProductCardData } from '@/lib/productCardData'
+import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
@@ -58,7 +57,7 @@ export default async function ProductsPage({
     payload.find({ collection: 'categories', limit: 100, sort: 'name', depth: 0 }),
     // Marka listesi sunucuda çekilmez: 3.950 marka tek istekte 10 sn'ye yaklaşıyordu.
     // Süzgeç, yazdıkça `/api/brands` üzerinden ilk 20 eşleşmeyi arar (bkz. BrandCombobox).
-    listProductCases(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
+    listProductCards(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
   ])
 
   // Seçili markanın adı: tek kayıt, süzgeç düğmesinde görünür.
@@ -161,7 +160,7 @@ export default async function ProductsPage({
           <div className="mt-4">
             <InfiniteProductGrid
               key={feedParams || 'tumu'}
-              initialProducts={docs.map(toProductCardData)}
+              initialProducts={docs}
               totalDocs={products.totalDocs}
               query={feedParams}
             />
