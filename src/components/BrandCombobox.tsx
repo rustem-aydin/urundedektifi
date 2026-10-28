@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +13,8 @@ import { cn } from '@/lib/utils'
  *
  * Katalog 3.950 markaya çıktığı için tüm markalar sunucuda render edilmiyor: arama
  * kutusuna yazıldıkça `/api/brands` (herkese açık okuma) üzerinden ilk 20 eşleşme
- * getirilir. Seçim URL'e `marka=<id>` olarak yazılır; sayfa sunucuda süzer.
+ * getirilir. Seçim `onChange` ile üst bileşene bildirilir; URL'i (ve sunucu süzgecini)
+ * `ProductsFilterBar` yazar.
  */
 
 type Option = { id: string; name: string }
@@ -22,17 +22,14 @@ type Option = { id: string; name: string }
 type Props = {
   brand: string
   brandName?: string | null
-  baseParams: string
+  /** Seçim yapıldığında marka kimliği; "Tüm markalar" için boş dize. */
+  onChange: (id: string, name: string | null) => void
 }
 
-const ALL = '__all__'
-
-export function BrandCombobox({ brand, brandName, baseParams }: Props) {
-  const router = useRouter()
+export function BrandCombobox({ brand, brandName, onChange }: Props) {
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [options, setOptions] = React.useState<Option[]>([])
-  const [selectedName, setSelectedName] = React.useState<string | null>(brandName ?? null)
   const [loading, setLoading] = React.useState(false)
 
   React.useEffect(() => {
@@ -62,18 +59,13 @@ export function BrandCombobox({ brand, brandName, baseParams }: Props) {
     }
   }, [open, query])
 
-  const apply = (id: string, name: string | null) => {
-    const params = new URLSearchParams(baseParams)
-    if (id === ALL) params.delete('marka')
-    else params.set('marka', id)
-    const qs = params.toString()
-    router.push(qs ? `/urunler?${qs}` : '/urunler')
-    setSelectedName(name)
+  const select = (id: string, name: string | null) => {
+    onChange(id, name)
     setOpen(false)
     setQuery('')
   }
 
-  const label = brand && selectedName ? selectedName : brand ? 'Seçili marka' : 'Tüm markalar'
+  const label = brand ? (brandName ?? 'Seçili marka') : 'Tüm markalar'
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -110,7 +102,7 @@ export function BrandCombobox({ brand, brandName, baseParams }: Props) {
             type="button"
             role="option"
             aria-selected={!brand}
-            onClick={() => apply(ALL, null)}
+            onClick={() => select('', null)}
             className={cn(
               'flex w-full items-center justify-between rounded-sm px-2 py-2 text-left text-sm hover:bg-muted',
               !brand && 'font-medium',
@@ -127,7 +119,7 @@ export function BrandCombobox({ brand, brandName, baseParams }: Props) {
                 type="button"
                 role="option"
                 aria-selected={active}
-                onClick={() => apply(option.id, option.name)}
+                onClick={() => select(option.id, option.name)}
                 className={cn(
                   'flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-muted',
                   active && 'font-medium',

@@ -17,26 +17,6 @@ export const metadata: Metadata = {
   description: 'Yayındaki tüm ürün dosyaları — isim, kategori, marka ve etikete göre filtreleyin.',
 }
 
-const LABEL_OPTIONS = [
-  { label: 'Vegan', value: 'vegan' },
-  { label: 'Vejetaryen', value: 'vegetarian' },
-  { label: 'Glütensiz', value: 'gluten-free' },
-  { label: 'Laktozsuz', value: 'lactose-free' },
-  { label: 'Organik / Bio', value: 'organic' },
-  { label: 'Helal Sertifikalı', value: 'halal-certified' },
-  { label: 'Koşer', value: 'kosher' },
-  { label: 'GDO içermez (Non-GMO)', value: 'non-gmo' },
-  { label: 'Doğal', value: 'natural' },
-  { label: 'Katkısız', value: 'no-additives' },
-  { label: 'Şekersiz', value: 'sugar-free' },
-  { label: 'Hayvan Deneysiz (Cruelty Free)', value: 'cruelty-free' },
-  { label: 'BPA İçermez', value: 'bpa-free' },
-  { label: 'Paraben İçermez', value: 'paraben-free' },
-  { label: 'Sülfatsız', value: 'sulfate-free' },
-  { label: 'Geri Dönüştürülebilir Ambalaj', value: 'recyclable' },
-  { label: 'Fair Trade / Adil Ticaret', value: 'fair-trade' },
-]
-
 type SearchParams = { q?: string; kategori?: string; marka?: string; etiket?: string | string[] }
 
 export default async function ProductsPage({
@@ -54,7 +34,8 @@ export default async function ProductsPage({
   const payload = await getPayload({ config: payloadConfig })
 
   const [categories, products] = await Promise.all([
-    payload.find({ collection: 'categories', limit: 100, sort: 'name', depth: 0 }),
+    // Süzgeç çipleri tüm kategorileri gösterir; katalog 33–50 aralığında, tavan güvenlik payı.
+    payload.find({ collection: 'categories', limit: 200, sort: 'name', depth: 0 }),
     // Marka listesi sunucuda çekilmez: 3.950 marka tek istekte 10 sn'ye yaklaşıyordu.
     // Süzgeç, yazdıkça `/api/brands` üzerinden ilk 20 eşleşmeyi arar (bkz. BrandCombobox).
     listProductCards(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
@@ -96,35 +77,6 @@ export default async function ProductsPage({
           brandName={(selectedBrand as { name?: string } | null)?.name ?? null}
         />
       </div>
-
-      {LABEL_OPTIONS.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Etikete göre filtrele">
-          {LABEL_OPTIONS.map((o) => {
-            const active = labels.includes(o.value)
-            const rest = active ? labels.filter((l) => l !== o.value) : [...labels, o.value]
-            const sp = new URLSearchParams()
-            if (q) sp.set('q', q)
-            if (category) sp.set('kategori', category)
-            if (brand) sp.set('marka', brand)
-            for (const l of rest) sp.append('etiket', l)
-            const qs = sp.toString()
-            return (
-              <Link
-                key={o.value}
-                href={qs ? `/urunler?${qs}` : '/urunler'}
-                aria-pressed={active}
-                className={
-                  active
-                    ? 'inline-flex items-center rounded-sm border border-foreground bg-foreground px-2 py-1 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-background transition-colors'
-                    : 'inline-flex items-center rounded-sm border border-border bg-card px-2 py-1 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground'
-                }
-              >
-                {o.label}
-              </Link>
-            )
-          })}
-        </div>
-      )}
 
       {products.totalDocs === 0 ? (
         <div className="mt-10 flex flex-col items-start gap-4 rounded-md border border-dashed border-border bg-card p-8">
