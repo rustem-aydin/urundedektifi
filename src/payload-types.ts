@@ -91,7 +91,11 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {};
+  collectionsJoins: {
+    brands: {
+      products: 'products';
+    };
+  };
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -458,6 +462,14 @@ export interface Brand {
    */
   website?: string | null;
   /**
+   * Bu markaya bağlı ürünler. Ürün adının yanındaki kalem simgesine tıklayarak ürünü panelde açabilir, "Yeni" ile marka önceden seçili şekilde ürün ekleyebilirsiniz.
+   */
+  products?: {
+    docs?: (number | Product)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
    * Bu marka genel olarak boykot ediliyor mu? İşaretlenirse, kural motorunda "Marka boykotlu" kuralı bu markaya otomatik uygulanır.
    */
   isBoycotted?: boolean | null;
@@ -465,20 +477,6 @@ export interface Brand {
    * Bu marka neden boykot ediliyor? Kullanıcılara gösterilecek açıklama (Örn: "İsrail-Filistin sorunu sebebiyle uluslararası BDS hareketi tarafından boykot edilmektedir.").
    */
   boycottReason?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "nutrients".
- */
-export interface Nutrient {
-  id: number;
-  name: string;
-  /**
-   * Teknik ad: energy-kj, fat, vitamin-c, vb.
-   */
-  slug: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -870,6 +868,20 @@ export interface Additive {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nutrients".
+ */
+export interface Nutrient {
+  id: number;
+  name: string;
+  /**
+   * Teknik ad: energy-kj, fat, vitamin-c, vb.
+   */
+  slug: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1703,6 +1715,7 @@ export interface BrandsSelect<T extends boolean = true> {
   description?: T;
   country?: T;
   website?: T;
+  products?: T;
   isBoycotted?: T;
   boycottReason?: T;
   updatedAt?: T;

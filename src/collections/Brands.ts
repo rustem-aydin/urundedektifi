@@ -81,6 +81,27 @@ export const Brands: CollectionConfig = {
       },
     },
     {
+      name: 'products',
+      type: 'join',
+      collection: 'products',
+      on: 'brand',
+      label: 'Markanın Ürünleri',
+      defaultSort: '-createdAt',
+      defaultLimit: 20,
+      access: {
+        // Marka→ürün listesi yalnızca panelde kullanılıyor. Herkese açık API isteklerinde
+        // (ürün sayfası, marka arama kutusu) gereksiz join alt sorgusu çalışmasın diye
+        // yalnızca oturum açmış kullanıcılara döner.
+        read: ({ req: { user } }) => Boolean(user),
+      },
+      admin: {
+        defaultColumns: ['name', 'barcode', 'status', 'createdAt'],
+        allowCreate: true,
+        description:
+          'Bu markaya bağlı ürünler. Ürün adının yanındaki kalem simgesine tıklayarak ürünü panelde açabilir, "Yeni" ile marka önceden seçili şekilde ürün ekleyebilirsiniz.',
+      },
+    },
+    {
       name: 'isBoycotted',
       type: 'checkbox',
       label: 'Genel Olarak Boykotlu Marka',
