@@ -48,8 +48,11 @@ kaymıştı). Bu hatalar yeni ülkelere yanlış `code` yazacaktı.
 
 - Yerel veritabanı: 193 ülke, 430 ek prefix satırı; mevcut 7 kaydın kimliği/slug'ı korundu,
   ISO ve kodları tamamlandı.
-- Üretim veritabanı bu ADR ile otomatik dolmaz: `seed:countries:prod` yönetici
-  kimliği (`SEED_EMAIL`, `SEED_PASSWORD`) ister; kimlik verilmeden yazma yapılamaz.
+- Üretim veritabanı: aynı seed `pnpm seed:countries:prod` ile yazıldı (193 ülke, 109 GS1
+  kodlu, 9.4 bin ürüne dokunmadan). Tekrar çalıştırma 0 yazar; betik yönetici kimliği
+  (`SEED_EMAIL`, `SEED_PASSWORD`) ister.
 - Barkod otomasyonu yalnız GS1'i olan 109 ülkeyi doldurabilir; kodsuz ülkelerde kullanıcı
   seçimi gerekir. GS1 aralığı olan ama BM üyesi olmayan bölgelerde (ör. Tayvan) ülke
   atanmaz — kayıt listede yok.
+- Düzeltilmiş prefix tablosu üretime ancak derleme yayınlandığında yansır: yeni derleme öncesi
+  üretimde `731…` barkodu "Meksika" atıyordu; yayından sonra "İsveç" atıyor.
