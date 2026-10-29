@@ -51,3 +51,6 @@ node_modules/
 
 # Open Food Facts toplu aktarım önbelleği ve ilerleme durumu
 scripts/.off-cache/
+
+# Prod seed betiklerinin indirdiği ürün fotoğrafları
+/.seed-images/
