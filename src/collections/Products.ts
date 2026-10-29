@@ -20,6 +20,7 @@ import {
   type FeedbackProduct,
 } from '@/lib/productFeedback'
 import type { User } from '@/payload-types'
+import { contributorsForBarcode, recordContribution } from '@/lib/productContributions'
 
 /** Ürün uçlarının ortak kapanışı: yazma sonrası istemci tek istekte taze özet alır. */
 async function feedbackSummaryFor(req: PayloadRequest, product: FeedbackProduct) {
@@ -78,6 +79,23 @@ export const Products: CollectionConfig = {
           ...productCase,
           goruntulenme: await viewCountFor(req.payload, productCase.id),
         })
+      },
+    },
+    {
+      // "Katkıda Bulunanlar": ürünü oluşturan, düzenleyen ve doğrulayan kişiler.
+      // Herkese açık — ürün sayfasındaki avatar grubu ve mobil alt çekmece buradan beslenir.
+      path: '/contributors/:barcode',
+      method: 'get',
+      handler: async (req) => {
+        const barcode = req.routeParams?.barcode as string | undefined
+        if (!barcode) {
+          return Response.json({ error: 'Barkod gerekli' }, { status: 400 })
+        }
+        const contributors = await contributorsForBarcode(req.payload, barcode)
+        if (!contributors) {
+          return Response.json({ error: 'Ürün bulunamadı' }, { status: 404 })
+        }
+        return Response.json(contributors)
       },
     },
     {
@@ -178,6 +196,14 @@ export const Products: CollectionConfig = {
             target: assertTarget(body?.target),
             verdict: assertVerdict(body?.verdict),
             note: typeof body?.note === 'string' ? body.note : null,
+          })
+          // Doğrulama yapan da katkıcıdır (aynı kişi ise tek satırda rozet olarak görünür).
+          await recordContribution({
+            payload: req.payload,
+            productId: product.id,
+            userId: (req.user as User | null)?.id,
+            kind: 'verify',
+            req,
           })
           return Response.json(await feedbackSummaryFor(req, product))
         } catch (error) {
@@ -870,8 +896,33 @@ export const Products: CollectionConfig = {
   ],
   hooks: {
     afterChange: [
-      ({ doc }) => {
+      async ({ doc, req, operation }) => {
         invalidateProductCaseCache(doc?.barcode)
+        // Katkı kaydı: panelden ya da jetonla yapılan her yazım "oluşturdu"/"düzenledi"
+        // olarak işlenir. Misafir yazımında (req.user yok) kayıt tutulmaz.
+        await recordContribution({
+          payload: req.payload,
+          productId: doc?.id,
+          userId: (req.user as User | null)?.id,
+          kind: operation === 'create' ? 'create' : 'update',
+          req,
+        })
+      },
+    ],
+    beforeDelete: [
+      async ({ id, req }) => {
+        // Ürün silinmeden ÖNCE katkı satırları temizlenir: FK `ON DELETE SET NULL`
+        // silme anında çalıştığı için `afterDelete` içinde artık eşleşecek satır kalmaz.
+        await req.payload
+          .delete({
+            collection: 'product-contributions',
+            where: { product: { equals: id } },
+            overrideAccess: true,
+            req,
+          })
+          .catch((error: unknown) => {
+            req.payload.logger.error({ err: error, msg: `Katkı temizliği başarısız (${id})` })
+          })
       },
     ],
     afterDelete: [

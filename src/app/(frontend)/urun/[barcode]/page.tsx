@@ -23,6 +23,8 @@ import { CaseSection } from '@/components/CaseSection'
 import { ProductGallery } from '@/components/ProductGallery'
 import { ProductAdminActions } from '@/components/ProductAdminActions'
 import { ProductViewCounter } from '@/components/ProductViewCounter'
+import { ContributorsStrip } from '@/components/ContributorsStrip'
+import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
 
 export async function generateMetadata({
@@ -72,6 +74,7 @@ export default async function ProductDetailPage({
 
   // Dosya önbellekte yaşar; sayaç her istekte canlı okunur.
   const goruntulenme = await viewCountFor(payload, product.id)
+  const { total: contributorTotal, contributors } = await listContributors(payload, product.id)
 
   const { verdict } = product
   const priceSummary = product.priceSummary
@@ -188,6 +191,17 @@ export default async function ProductDetailPage({
       </header>
 
       <div className="mt-10 flex flex-col gap-10">
+        {/* KATKIDA BULUNANLAR — oluşturan / düzenleyen / doğrulayan, kişi başına tek satır */}
+        <CaseSection
+          id="katkida-bulunanlar"
+          eyebrow="Katkı"
+          title={`Katkıda Bulunanlar (${contributorTotal})`}
+          hasData={contributorTotal > 0}
+          emptyMessage="Bu dosyaya henüz katkı kaydı yok. Ürün eklendikçe, düzenlendikçe ve doğrulandıkça katkıda bulunanlar burada listelenir."
+        >
+          <ContributorsStrip contributors={contributors} total={contributorTotal} />
+        </CaseSection>
+
         {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
         <VerdictSection avatars={expertAvatars} />
 

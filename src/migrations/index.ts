@@ -8,6 +8,7 @@ import * as migration_20261025_061858 from './20261025_061858';
 import * as migration_20261025_173424_add_goruntulenme from './20261025_173424_add_goruntulenme';
 import * as migration_20261028_204639_additives_code_optional from './20261028_204639_additives_code_optional';
 import * as migration_20261029_193000_drop_media_image_sizes from './20261029_193000_drop_media_image_sizes';
+import * as migration_20261029_210000_add_profiles_and_contributions from './20261029_210000_add_profiles_and_contributions';
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20261029_193000_drop_media_image_sizes.up,
     down: migration_20261029_193000_drop_media_image_sizes.down,
     name: '20261029_193000_drop_media_image_sizes',
+  },
+  {
+    up: migration_20261029_210000_add_profiles_and_contributions.up,
+    down: migration_20261029_210000_add_profiles_and_contributions.down,
+    name: '20261029_210000_add_profiles_and_contributions',
   },
 ];

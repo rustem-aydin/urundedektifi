@@ -76,6 +76,7 @@ export interface Config {
     nutrients: Nutrient;
     products: Product;
     'product-feedback': ProductFeedback;
+    'product-contributions': ProductContribution;
     allergens: Allergen;
     pages: Page;
     experts: Expert;
@@ -105,6 +106,7 @@ export interface Config {
     nutrients: NutrientsSelect<false> | NutrientsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     'product-feedback': ProductFeedbackSelect<false> | ProductFeedbackSelect<true>;
+    'product-contributions': ProductContributionsSelect<false> | ProductContributionsSelect<true>;
     allergens: AllergensSelect<false> | AllergensSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
@@ -193,6 +195,10 @@ export interface User {
    */
   avatar?: (number | null) | Media;
   /**
+   * Herkese açık profilde görünen kısa tanıtım. Boş bırakılabilir; e-posta ve diğer hesap bilgileri profilde gösterilmez.
+   */
+  bio?: string | null;
+  /**
    * Kullanıcının takip ettiği uzmanlar. Anasayfadaki yazı rayını ve uzman profillerindeki takip durumunu besler.
    */
   following?: (number | Expert)[] | null;
@@ -238,40 +244,6 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
 }
 /**
  * Ürün değerlendirmesi yapan uzmanlar. Her uzman kendi derecelendirme ölçeğini oluşturur (Boykot, Helal, Sağlık vb.) ve kendi kurallarını yazar. Sadece doğrulanmış ve "Herkese Açık" işaretli uzmanlar sitede görünür.
@@ -918,6 +890,20 @@ export interface ProductFeedback {
   createdAt: string;
 }
 /**
+ * Bir ürüne kimin ne işle katkı verdiği. Oluşturma, düzenleme ve doğrulama otomatik kaydedilir; elle ekleme yapılmaz.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-contributions".
+ */
+export interface ProductContribution {
+  id: number;
+  product?: (number | null) | Product;
+  user?: (number | null) | User;
+  kind: 'create' | 'update' | 'verify';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Hakkımızda, Metodoloji, Gizlilik Politikası, Kullanım Şartları gibi statik içerik sayfaları.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1501,6 +1487,10 @@ export interface PayloadLockedDocument {
         value: number | ProductFeedback;
       } | null)
     | ({
+        relationTo: 'product-contributions';
+        value: number | ProductContribution;
+      } | null)
+    | ({
         relationTo: 'allergens';
         value: number | Allergen;
       } | null)
@@ -1600,6 +1590,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   avatar?: T;
+  bio?: T;
   following?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1635,50 +1626,6 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1830,6 +1777,17 @@ export interface ProductFeedbackSelect<T extends boolean = true> {
   verdict?: T;
   text?: T;
   author?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-contributions_select".
+ */
+export interface ProductContributionsSelect<T extends boolean = true> {
+  product?: T;
+  user?: T;
+  kind?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -36,7 +36,7 @@ export function SiteHeader() {
             <ScanBarcode className="size-4" aria-hidden="true" />
           </span>
           <span className="font-display text-base leading-none tracking-wide sm:text-lg">
-            Ürün Dedektifi
+            Şeffaf Ürün
           </span>
         </Link>
 
@@ -58,7 +58,7 @@ export function SiteHeader() {
             )
           })}
           <Link
-            href="/giris"
+            href={user ? `/profil/${user.id}` : '/giris'}
             className={cn(
               'ml-1 rounded-md border border-border px-2.5 py-1 font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
               (canAddProduct || user) && 'border-stamp/50 text-stamp',
@@ -111,7 +111,7 @@ export function SiteHeader() {
             })}
             <li>
               <Link
-                href="/giris"
+                href={user ? `/profil/${user.id}` : '/giris'}
                 onClick={() => setOpen(false)}
                 className="flex min-h-11 items-center rounded-md px-3 font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
               >

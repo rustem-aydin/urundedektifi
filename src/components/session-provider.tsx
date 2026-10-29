@@ -35,6 +35,8 @@ type SessionValue = {
   signIn: (email: string, password: string) => Promise<void>
   signUp: (input: { name: string; email: string; password: string }) => Promise<void>
   signOut: () => void
+  /** Profil düzenlemesinden sonra kullanıcıyı sunucudan tazeler. */
+  refreshUser: () => Promise<void>
   isFollowing: (expertId: string | number) => boolean
   /** İyimser güncelleme; sunucu yazımı başarısızsa geri alınır. */
   toggleFollow: (expertId: string | number) => Promise<void>
@@ -130,6 +132,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setFollowingIds([])
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return
+    const me = await fetchMe(token)
+    setUser(me)
+    setFollowingIds(normalizeFollowing(me.following))
+  }, [token])
+
   const toggleFollow = useCallback(
     async (expertId: string | number) => {
       if (!user || !token) {
@@ -169,10 +178,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      refreshUser,
       isFollowing,
       toggleFollow,
     }),
-    [user, token, restoring, busy, followingIds, signIn, signUp, signOut, isFollowing, toggleFollow],
+    [
+      user,
+      token,
+      restoring,
+      busy,
+      followingIds,
+      signIn,
+      signUp,
+      signOut,
+      refreshUser,
+      isFollowing,
+      toggleFollow,
+    ],
   )
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>

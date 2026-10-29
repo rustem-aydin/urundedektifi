@@ -289,6 +289,20 @@ export async function updateFollowing(
   )
 }
 
+/** Herkese açık profil alanları: ad, kısa tanıtım ve avatar (Payload kendi dokümanını günceller). */
+export async function updateProfile(
+  id: string | number,
+  data: { name?: string; bio?: string | null; avatar?: string | number | null },
+  token: string,
+): Promise<User> {
+  const result = await request<{ doc: User }>(
+    `/users/${encodeURIComponent(String(id))}`,
+    { method: 'PATCH', body: JSON.stringify(data) },
+    token,
+  )
+  return result.doc
+}
+
 export async function fetchExpertStats(expertId: string): Promise<ExpertStats> {
   return request<ExpertStats>(`/experts/${encodeURIComponent(expertId)}/stats`)
 }

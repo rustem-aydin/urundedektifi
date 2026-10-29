@@ -26,6 +26,9 @@ export type User = {
   email: string
   name: string
   role: UserRole
+  /** Herkese açık profil alanları (profil düzenleme ekranı). */
+  bio?: string | null
+  avatar?: MediaRef | null
   /** Takip edilen uzmanlar (`users.following`, hasMany). Derinliğe göre id ya da nesne gelir. */
   following?: FollowingRef[] | null
 }

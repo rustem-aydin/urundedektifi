@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import type { User } from '@/payload-types'
+import { buildPublicProfile } from '@/lib/productContributions'
 
 const isAdmin = (user: User | null) => user?.role === 'admin'
 
@@ -48,6 +49,21 @@ export const Users: CollectionConfig = {
       return { id: { equals: current.id } }
     },
   },
+  endpoints: [
+    {
+      // Herkese açık profil: e-posta ve hesap alanları sızmadan yalnız kamuya açık özet.
+      // Web `/profil/[id]` sunucu tarafında bu yardımcıyı doğrudan çağırır; mobil bu uçtan okur.
+      path: '/profile/:id',
+      method: 'get',
+      handler: async (req) => {
+        const id = String(req.routeParams?.id ?? '')
+        if (!id) return Response.json({ error: 'Kullanıcı gerekli' }, { status: 400 })
+        const profile = await buildPublicProfile(req.payload, id)
+        if (!profile) return Response.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 })
+        return Response.json(profile)
+      },
+    },
+  ],
   fields: [
     {
       name: 'name',
@@ -88,6 +104,16 @@ export const Users: CollectionConfig = {
       label: 'Profil Fotoğrafı',
       admin: {
         description: 'Kare formatında, en az 200x200 piksel önerilir.',
+      },
+    },
+    {
+      name: 'bio',
+      type: 'textarea',
+      label: 'Kısa Tanıtım',
+      maxLength: 280,
+      admin: {
+        description:
+          'Herkese açık profilde görünen kısa tanıtım. Boş bırakılabilir; e-posta ve diğer hesap bilgileri profilde gösterilmez.',
       },
     },
     {

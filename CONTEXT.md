@@ -1,10 +1,14 @@
-# Ürün Dedektifi
+# Şeffaf Ürün
 
 Barkodla sorgulanan ürünlerin güvenilirliğini (boykot, sağlık, helal, içerik) uzman kurallarına göre değerlendiren, "delil dosyası" anlatısıyla sunan bir tüketici uygulaması.
 
 ## Language
 
 ### Ürün & Barkod
+
+**Şeffaf Ürün**:
+Uygulamanın adı (2026-10-28'e kadar "Ürün Dedektifi"). Marka metni, sayfa başlığı ve mağaza adıdır; koleksiyon/alan/rota adlarında kullanılmaz.
+_Avoid_: Ürün Dedektifi, urundedektifi (eski ad; yalnız ADR 0018 ve mevcut altyapı adlarında geçer)
 
 **Barkod**:
 GS1/EAN-13 (veya UPC/EAN-8) ürün kimliği. Hem okutma hem sorgulama anahtarıdır; aynı barkodla ikinci ürün kaydı olmaz.
@@ -112,3 +116,21 @@ _Avoid_: değerlendirme, inceleme, review
 **Görüntülenme Sayacı**:
 Bir Ürün Dosyasının kaç kez açıldığı (`products.goruntulenme`). Yalnız `POST /api/products/:id/goruntulenme` ucundan artar; alan düzeyi erişim kapalı olduğu için panelden veya REST yazmasıyla değiştirilemez, taslak/arşiv ürün sayılmaz. Detay ekranında göz ikonu + `1.234 görüntülenme` olarak görünür; liste kartları saymaz.
 _Avoid_: tıklanma, hit, ziyaret, popülerlik, izlenme
+
+### Katkı ve Profil
+
+**Katkı**:
+`product-contributions` koleksiyonundaki tek kayıt: bir Tüketici Hesabının bir Ürün Dosyasına yaptığı iş — `create` (oluşturdu), `update` (kaydedilmiş düzenleme), `verify` (doğrulama oyu). Yalnız sunucudan yazılır (ürün kancaları + doğrulama oyu ucu); REST `create/update` kapalıdır, okuma herkese açıktır.
+_Avoid_: emek, puan, bonus, credit
+
+**Katkıda Bulunanlar**:
+Bir Ürün Dosyasının altında avatar grubu olarak listelenen kişiler. Aynı kişi birden çok iş yaptıysa **tek avatar** olur ve işler rozet olarak (`Oluşturdu/Düzenledi/Doğruladı`) yazılır. Web'de diyalog, mobilde alt çekmece açılır; satır kişinin Katkı Profiline gider.
+_Avoid_: yazarlar, editörler, ekip
+
+**Katkı Profili**:
+Herkese açık kullanıcı profili (`/profil/[id]`, `GET /api/users/profile/:id`): ad, kısa tanıtım (`users.bio`), avatar, üç sayı (**katkı sağladığı ürün**, **toplam görüntülenme**, **katkı işi**), katkı verdiği yayındaki ürünler ve takip ettiği uzmanlar. E-posta, oturumlar ve rol dışındaki hesap alanları asla dönmez.
+_Avoid_: kullanıcı sayfası, hesap profili, üye profili
+
+**Toplam Görüntülenme**:
+Katkı Profilindeki sayı: katkı verilen **yayındaki** ürünlerin Görüntülenme Sayaçlarının ürün başına bir kez toplanması. Tekil ziyaretçi ölçümü yoktur; aynı ürüne üç kez katkı vermek sayıyı üçlemez.
+_Avoid_: erişim, izlenme toplamı, tekil ziyaretçi
