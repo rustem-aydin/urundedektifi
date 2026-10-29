@@ -177,6 +177,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               </li>
             ))}
           </ul>
+          {profile.products.length < profile.stats.productCount ? (
+            <p className="mt-3 font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
+              En çok görüntülenen {profile.products.length} ürün gösteriliyor · toplam{' '}
+              {numberFormat.format(profile.stats.productCount)}
+            </p>
+          ) : null}
         </CaseSection>
 
         {/* TAKİP ETTİKLERİ */}

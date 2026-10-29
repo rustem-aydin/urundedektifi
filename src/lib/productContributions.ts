@@ -1,4 +1,5 @@
 import type { Payload, PayloadRequest } from 'payload'
+import { sql } from '@payloadcms/db-postgres'
 
 import { findAllDocs } from './findAllDocs'
 import { CONTRIBUTION_KINDS, CONTRIBUTION_LABELS, type ContributionKind } from './contributionLabels'
@@ -17,6 +18,12 @@ export type { ContributionKind }
 
 /** Rozet sırası: oluşturan → düzenleyen → doğrulayan. */
 const KIND_ORDER: ContributionKind[] = ['create', 'update', 'verify']
+
+/**
+ * Profilde listelenen ürün sayısı üst sınırı (en çok görüntülenenler önce).
+ * Bir kullanıcı 9.000+ ürüne katkı verebiliyor: hepsini basmak sayfayı 22 MB'a çıkarıyordu.
+ */
+export const PROFILE_PRODUCT_LIMIT = 30
 
 export type Contributor = {
   id: string
@@ -226,6 +233,10 @@ export async function listContributors(
 /**
  * Herkese açık profil: kimlik + katkı özeti + katkı verdiği ürünler + takip ettikleri.
  * E-posta, yetki jetonları ve iç alanlar asla dışarı çıkmaz; yalnız aşağıdaki alanlar döner.
+ *
+ * Sayılar tek bir toplama sorgusundan gelir: bir kullanıcının 9.000+ katkısı olabiliyor,
+ * satırları tek tek çekmek profili saniyelerce süründürüyordu. Liste de en çok görüntülenen
+ * `PROFILE_PRODUCT_LIMIT` ürünle sınırlıdır; toplam sayı `stats.productCount` ile verilir.
  */
 export async function buildPublicProfile(
   payload: Payload,
@@ -236,46 +247,80 @@ export async function buildPublicProfile(
     .catch(() => null)) as UserDoc | null
   if (!user) return null
 
-  const contributions = await findAllDocs<ContributionDoc>(payload, 'product-contributions', {
-    where: { user: { equals: userId } },
-    depth: 0,
-  })
+  const numericId = Number(userId)
+  const statsRows = (await payload.db.drizzle.execute(sql`
+    select
+      (select count(*)::int from "product_contributions" where "user_id" = ${numericId}) as contribution_count,
+      coalesce(agg.product_count, 0)::int as product_count,
+      coalesce(agg.view_total, 0)::int as view_total
+    from (
+      select count(*)::int as product_count, coalesce(sum(t."goruntulenme"), 0) as view_total
+      from (
+        select distinct p."id", p."goruntulenme"
+        from "products" p
+        join "product_contributions" c on c."product_id" = p."id"
+        where c."user_id" = ${numericId} and p."status" = 'published'
+      ) t
+    ) agg
+  `)) as { rows?: { contribution_count?: number; product_count?: number; view_total?: number }[] }
 
-  const rolesByProduct = new Map<string, ContributionKind[]>()
-  for (const contribution of contributions) {
-    const productId = relationId(contribution.product)
-    if (!productId) continue
-    const roles = rolesByProduct.get(productId) ?? []
-    if (!roles.includes(contribution.kind)) roles.push(contribution.kind)
-    rolesByProduct.set(productId, roles)
-  }
+  const statsRow = statsRows.rows?.[0]
+  const topRows = (await payload.db.drizzle.execute(sql`
+    select p."id"
+    from "products" p
+    join "product_contributions" c on c."product_id" = p."id"
+    where c."user_id" = ${numericId} and p."status" = 'published'
+    group by p."id", p."goruntulenme", p."created_at"
+    order by p."goruntulenme" desc nulls last, p."created_at" desc
+    limit ${PROFILE_PRODUCT_LIMIT}
+  `)) as { rows?: { id?: number }[] }
 
-  const productIds = [...rolesByProduct.keys()]
+  const topIds = (topRows.rows ?? []).map((row) => Number(row.id)).filter((id) => Number.isFinite(id))
   const published =
-    productIds.length > 0
+    topIds.length > 0
       ? await findAllDocs<ProductDoc>(payload, 'products', {
-          where: {
-            and: [{ id: { in: productIds } }, { status: { equals: 'published' } }],
-          },
+          where: { id: { in: topIds } },
           depth: 1,
-          sort: '-goruntulenme',
         })
       : []
 
-  const products: ProfileProduct[] = published.map((product) => {
-    const image = mediaOf(product.frontImage)
-    return {
-      id: String(product.id),
-      name: product.name ?? 'İsimsiz ürün',
-      barcode: product.barcode ?? null,
-      frontImageUrl: image.url,
-      frontImageAlt: image.alt,
-      goruntulenme: Math.max(0, Math.trunc(Number(product.goruntulenme ?? 0)) || 0),
-      roles: KIND_ORDER.filter((kind) => (rolesByProduct.get(String(product.id)) ?? []).includes(kind)),
-    }
-  })
+  const rolesRows =
+    topIds.length > 0
+      ? ((await payload.db.drizzle.execute(sql`
+          select "product_id", array_agg(distinct "kind"::text) as roles
+          from "product_contributions"
+          where "user_id" = ${numericId} and "product_id" in (${sql.join(
+            topIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})
+          group by "product_id"
+        `)) as { rows?: { product_id?: number; roles?: string[] }[] }).rows ?? []
+      : []
 
-  const viewTotal = products.reduce((sum, product) => sum + product.goruntulenme, 0)
+  const rolesByProduct = new Map<string, ContributionKind[]>()
+  for (const row of rolesRows) {
+    const productId = String(row.product_id ?? '')
+    if (!productId) continue
+    rolesByProduct.set(productId, (row.roles ?? []).filter((kind): kind is ContributionKind => KIND_ORDER.includes(kind as ContributionKind)))
+  }
+
+  const byId = new Map(published.map((product) => [String(product.id), product]))
+  const products: ProfileProduct[] = topIds
+    .map((id) => byId.get(String(id)))
+    .filter((product): product is ProductDoc => Boolean(product))
+    .map((product) => {
+      const image = mediaOf(product.frontImage)
+      const roles = rolesByProduct.get(String(product.id)) ?? []
+      return {
+        id: String(product.id),
+        name: product.name ?? 'İsimsiz ürün',
+        barcode: product.barcode ?? null,
+        frontImageUrl: image.url,
+        frontImageAlt: image.alt,
+        goruntulenme: Math.max(0, Math.trunc(Number(product.goruntulenme ?? 0)) || 0),
+        roles: KIND_ORDER.filter((kind) => roles.includes(kind)),
+      }
+    })
 
   const followingIds = (user.following ?? []).map((ref) => relationId(ref)).filter(Boolean)
   const experts =
@@ -312,9 +357,9 @@ export async function buildPublicProfile(
     avatarAlt: avatar.alt,
     createdAt: user.createdAt ?? null,
     stats: {
-      productCount: products.length,
-      viewTotal,
-      contributionCount: contributions.length,
+      productCount: Math.max(0, Math.trunc(Number(statsRow?.product_count ?? 0)) || 0),
+      viewTotal: Math.max(0, Math.trunc(Number(statsRow?.view_total ?? 0)) || 0),
+      contributionCount: Math.max(0, Math.trunc(Number(statsRow?.contribution_count ?? 0)) || 0),
     },
     products,
     following,
