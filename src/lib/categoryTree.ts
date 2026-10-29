@@ -48,17 +48,11 @@ function relationId(value: unknown): string | null {
 function iconFields(icon: unknown): { iconUrl: string | null; iconAlt: string | null } {
   if (!icon || typeof icon !== 'object') return { iconUrl: null, iconAlt: null }
 
+  // Medya türevi üretilmiyor: ölçeklendirme istemcide (next/image) yapılır.
   let iconUrl: string | null = null
   let iconAlt: string | null = null
   if ('url' in icon && typeof icon.url === 'string') iconUrl = icon.url
   if ('alt' in icon && typeof icon.alt === 'string') iconAlt = icon.alt
-
-  if ('sizes' in icon && icon.sizes && typeof icon.sizes === 'object' && 'small' in icon.sizes) {
-    const small = icon.sizes.small
-    if (small && typeof small === 'object' && 'url' in small && typeof small.url === 'string') {
-      iconUrl = small.url
-    }
-  }
 
   return { iconUrl, iconAlt }
 }

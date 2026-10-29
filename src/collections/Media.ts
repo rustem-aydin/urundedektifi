@@ -23,12 +23,9 @@ export const Media: CollectionConfig = {
   upload: {
     staticDir: path.resolve(dirname, '../../media'),
     mimeTypes: ['image/*', 'application/pdf'],
-    imageSizes: [
-      { name: 'thumbnail', width: 240, height: 240, position: 'centre' },
-      { name: 'small', width: 480 },
-      { name: 'medium', width: 800 },
-      { name: 'large', width: 1200 },
-    ],
+    // Türev (thumbnail/small/medium/large) üretilmez: her yükleme tek dosya olarak
+    // saklanır, ölçeklendirme Next.js tarafında (next/image) yapılır. Uygulama bu
+    // türevleri hiç kullanmıyordu; bucket'ta nesne sayısını 1/2,7'ye indirir.
   },
   hooks: {
     beforeOperation: [
