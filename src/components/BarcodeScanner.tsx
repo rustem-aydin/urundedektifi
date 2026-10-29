@@ -9,6 +9,26 @@ import { EvidenceTag } from '@/components/EvidenceTag'
 import { Button } from '@/components/ui/button'
 export const dynamic = 'force-dynamic'
 
+/**
+ * Tarama ayarları — 1D barkodlar (EAN-13) için kritik:
+ *
+ * Sabit `qrbox` (ör. 250×250) çerçeveyi ortadan kırpıyor; EAN-13'ün 95 modülü
+ * o pencereye sığmadığı için hiçbir kare çözülemiyordu (izin verilse bile
+ * tarama sessizce başarısız). Kamera görüntüsünün %90'ı taranır, yükseklik
+ * manzara/dikey orana göre daraltılır.
+ */
+const SCAN_FORMATS = ['EAN_13', 'EAN_8', 'UPC_A', 'UPC_E', 'CODE_128', 'QR_CODE'] as const
+
+const SCAN_CONFIG = {
+  fps: 10,
+  qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
+    width: Math.round(viewfinderWidth * 0.9),
+    height: Math.round(
+      viewfinderHeight * (viewfinderWidth >= viewfinderHeight ? 0.6 : 0.45),
+    ),
+  }),
+}
+
 export default function BarcodeScanner() {
   const router = useRouter()
   const scannerRef = useRef<any>(null)
@@ -29,7 +49,12 @@ export default function BarcodeScanner() {
         setCameraStatus('Tarayıcı hazırlanıyor…')
         const module = await import('html5-qrcode')
         Html5QrcodeModule = module.Html5Qrcode
-        scannerRef.current = new Html5QrcodeModule('reader')
+        const formats = SCAN_FORMATS.map(
+          (name) => module.Html5QrcodeSupportedFormats[name],
+        ).filter((value: unknown) => typeof value === 'number')
+        scannerRef.current = new Html5QrcodeModule('reader', {
+          formatsToSupport: formats.length > 0 ? formats : undefined,
+        })
         setIsReady(true)
         setCameraStatus('Hazır — barkodu kameraya göster.')
       } catch (err: any) {
@@ -103,7 +128,7 @@ export default function BarcodeScanner() {
     try {
       await scannerRef.current.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        SCAN_CONFIG,
         (decodedText: string) => {
           handleBarcodeScanned(decodedText)
         },
@@ -127,7 +152,7 @@ export default function BarcodeScanner() {
       try {
         await scannerRef.current.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
+          SCAN_CONFIG,
           (decodedText: string) => {
             handleBarcodeScanned(decodedText)
           },
