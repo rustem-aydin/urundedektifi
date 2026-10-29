@@ -54,3 +54,6 @@ scripts/.off-cache/
 
 # Prod seed betiklerinin indirdiği ürün fotoğrafları
 /.seed-images/
+
+# Medya denetimi çıktısı
+/.orphan-media.json

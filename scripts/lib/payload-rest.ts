@@ -20,6 +20,8 @@ export type FindParams = {
   depth?: number
   sort?: string
   page?: number
+  /** Yalnız gereken alanları iste (denetim betiklerinde yanıt boyutunu küçültür). */
+  select?: Record<string, boolean>
 }
 
 export type PayloadClient = {
@@ -82,6 +84,12 @@ export function createPayloadClient(options: {
     if (params.where) search.set('where', JSON.stringify(params.where))
     if (params.sort) search.set('sort', params.sort)
     if (params.page) search.set('page', String(params.page))
+    if (params.select) {
+      // Payload REST `select` alanını `select[alan]=true` biçiminde bekler.
+      for (const [field, enabled] of Object.entries(params.select)) {
+        if (enabled) search.set(`select[${field}]`, 'true')
+      }
+    }
 
     const res = await fetch(`${api}/${collection}?${search.toString()}`, {
       headers: authHeaders(),
