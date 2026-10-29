@@ -69,22 +69,32 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
         const stored = await loadDraft()
         if (!active) return
         setProviderReady(Boolean(readReadyProvider()))
+        const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
         if (stored) {
+          // Bağlantıdan gelen barkod kullanıcının az önce sorguladığı barkod: taslağı o belirler.
+          const incoming = Boolean(digits && digits !== stored.draft.barcode)
           const badges: string[] = [`Yarım kalan taslak geri yüklendi: ${STEP_TITLES[stored.draft.step - 1]}.`]
           if (stored.missingPhotos) {
             badges.push(`${stored.missingPhotos} fotoğraf bulunamadı. Yeniden ekle.`)
           }
+          if (incoming) badges.push(`Barkod güncellendi: ${digits}.`)
           setNotice(badges.join(' '))
-          const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
-          const next =
-            digits && !stored.draft.barcode
+          setDraft(
+            incoming
               ? { ...stored.draft, barcode: digits, form: { ...stored.draft.form, barcode: digits } }
-              : stored.draft
-          setDraft(next)
+              : stored.draft,
+          )
         } else {
           const empty = createEmptyDraft()
-          const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
           setDraft(digits ? { ...empty, barcode: digits, form: { ...empty.form, barcode: digits } } : empty)
+        }
+        // Hangi daldan gelinirse gelinsin: barkod kayıtlıysa sihirbaz açılmaz, dosyası açılır.
+        if (digits.length >= 8) {
+          findProductByBarcode(digits)
+            .then((existing) => {
+              if (active && existing) router.replace(`/urun/${digits}`)
+            })
+            .catch(() => undefined)
         }
       } catch {
         if (active) setDraft(createEmptyDraft())
@@ -164,21 +174,13 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
     try {
       const existing = await findProductByBarcode(digits)
       if (existing) {
-        await update({
-          ...draft,
-          mode: 'update',
-          productId: existing.id,
-          form: {
-            ...draft.form,
-            barcode: digits,
-            name: draft.form.name || existing.name || '',
-          },
-        })
-        setNotice('Bu barkod kayıtlı. Yalnız boş alanlar doldurulur; dolu alanlar korunur.')
-      } else {
-        await update({ ...draft, mode: 'create', productId: null })
-        setNotice('Bu barkod yeni. Kayıt oluşturulacak.')
+        // Kayıtlı barkod sihirbaza girmez: ürün dosyası açılır.
+        setNotice('Bu barkod kayıtlı — dosyası açılıyor.')
+        router.replace(`/urun/${digits}`)
+        return
       }
+      await update({ ...draft, mode: 'create', productId: null })
+      setNotice('Bu barkod yeni. Kayıt oluşturulacak.')
     } catch (error) {
       setFailure(describe(error))
     } finally {
@@ -405,7 +407,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
           <CaseCard className="flex flex-col gap-3 p-4">
             <EvidenceTag variant="stamp">BARKOD</EvidenceTag>
             <p className="text-sm text-muted-foreground">
-              Barkod kayıtlıysa ürün güncellenir; yeni ise dosya oluşturulur. Barkodu kamerayla
+              Barkod kayıtlıysa dosyası açılır; kayıtlı değilse yeni dosya oluşturulur. Barkodu kamerayla
               okutabilir ya da elle yazabilirsin.
             </p>
             <TextField

@@ -29,8 +29,8 @@ export function BarcodeLookupForm() {
         toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${digits}`)
       } else {
-        toast.error('Ürün bulunamadı — dosyasını sen aç.')
-        router.push(`/ekle/${digits}`)
+        toast.message('Ürün bulunamadı — dosyasını sen aç.')
+        router.push(`/ekle?barcode=${digits}`)
       }
     } catch {
       toast.error('Sorgu tamamlanamadı. Tekrar dene.')
