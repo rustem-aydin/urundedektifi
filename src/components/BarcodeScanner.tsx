@@ -37,6 +37,19 @@ export default function BarcodeScanner() {
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor…')
   const [isChecking, setIsChecking] = useState(false)
 
+  /**
+   * Tarayıcıyı durdurur. html5-qrcode zaten durmuş tarayıcı için hata fırlatır
+   * (bileşen kaldırılırken ve başarılı okumadan sonra iki kez çağrılabiliyor);
+   * temizlik yolunda bu hata konsola düşmemeli.
+   */
+  const stopScanner = async () => {
+    try {
+      await scannerRef.current?.stop()
+    } catch {
+      // tarayıcı zaten durmuş
+    }
+  }
+
   useEffect(() => {
     let Html5QrcodeModule: any
 
@@ -73,7 +86,7 @@ export default function BarcodeScanner() {
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error)
+        void stopScanner()
       }
     }
   }, [])
@@ -93,9 +106,7 @@ export default function BarcodeScanner() {
 
       const result = await getProduct(barcodeNumber)
 
-      if (scannerRef.current) {
-        await scannerRef.current.stop()
-      }
+      await stopScanner()
 
       if (result && result.docs && result.docs.length > 0) {
         setCameraStatus('Ürün bulundu.')
@@ -172,7 +183,7 @@ export default function BarcodeScanner() {
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(console.error)
+        void stopScanner()
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
