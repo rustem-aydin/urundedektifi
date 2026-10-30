@@ -53,15 +53,17 @@ export function ProductCard({
             Görsel yok
           </span>
         )}
+        {typeof verdictCount === 'number' && verdictCount > 0 && (
+          <div className="absolute bottom-2 left-2 z-10 rounded-[3px] bg-card/90 p-0.5 shadow-sm backdrop-blur-sm">
+            <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
+          </div>
+        )}
       </div>
       <CardHeader className="gap-1">
         <CardTitle className="line-clamp-2 text-base">{name}</CardTitle>
         {brandName && <p className="text-sm text-muted-foreground">{brandName}</p>}
       </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {typeof verdictCount === 'number' && verdictCount > 0 && (
-          <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
-        )}
+      <CardContent className="mt-auto flex flex-col gap-2">
         {typeof viewCount === 'number' && (
           <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
             <Eye className="size-3" aria-hidden="true" />
