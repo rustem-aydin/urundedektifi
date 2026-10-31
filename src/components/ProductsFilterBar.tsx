@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 
 import { BrandCombobox } from '@/components/BrandCombobox'
+import { FilterGroupSelect } from '@/components/FilterGroupSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -253,57 +254,31 @@ export function ProductsFilterBar({
       {open && (
         <div
           id="urun-filtre-paneli"
-          className="mt-3 flex flex-col gap-4 rounded-md border border-border bg-card p-3 sm:p-4"
+          className="mt-3 flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:p-4"
         >
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">Kategori</p>
-            <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
-              <Chip active={!state.category} onClick={() => apply({ category: '' })} label="Kategori: Tümü">
-                Tümü
-              </Chip>
-              {categories.map((option) => (
-                <Chip
-                  key={option.id}
-                  active={state.category === option.id}
-                  onClick={() => apply({ category: option.id })}
-                  label={`Kategori: ${option.name}`}
-                >
-                  {option.name}
-                </Chip>
-              ))}
-            </div>
-          </div>
+          <FilterGroupSelect
+            label="Kategori"
+            options={categories.map((option) => ({ value: option.id, label: option.name }))}
+            values={state.category ? [state.category] : []}
+            onChange={(next) => apply({ category: next[0] ?? '' })}
+          />
 
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">Marka</p>
-            <BrandCombobox
-              brand={state.brand}
-              brandName={brandLabel}
-              onChange={(id, name) => {
-                setBrandLabel(name)
-                apply({ brand: id })
-              }}
-            />
-          </div>
+          <BrandCombobox
+            brand={state.brand}
+            brandName={brandLabel}
+            onChange={(id, name) => {
+              setBrandLabel(name)
+              apply({ brand: id })
+            }}
+          />
 
-          <div className="flex flex-col gap-2">
-            <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">Etiket</p>
-            <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
-              <Chip active={state.labels.length === 0} onClick={() => apply({ labels: [] })} label="Etiket: Tümü">
-                Tümü
-              </Chip>
-              {LABEL_OPTIONS.map((option) => (
-                <Chip
-                  key={option.value}
-                  active={state.labels.includes(option.value)}
-                  onClick={() => toggleLabel(option.value)}
-                  label={`Etiket: ${option.label}`}
-                >
-                  {option.label}
-                </Chip>
-              ))}
-            </div>
-          </div>
+          <FilterGroupSelect
+            multiple
+            label="Etiket"
+            options={LABEL_OPTIONS}
+            values={state.labels}
+            onChange={(next) => apply({ labels: next })}
+          />
         </div>
       )}
     </div>

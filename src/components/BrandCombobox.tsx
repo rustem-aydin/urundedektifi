@@ -3,7 +3,6 @@
 import * as React from 'react'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
@@ -70,17 +69,21 @@ export function BrandCombobox({ brand, brandName, onChange }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="outline"
           role="combobox"
           aria-expanded={open}
           aria-label="Markaya göre filtrele"
-          className="h-10 w-full justify-between overflow-hidden border-2 border-foreground bg-card font-mono text-xs tracking-[0.1em] uppercase shadow-xs sm:w-44"
+          className="group flex w-full items-center justify-between gap-2 border-b border-border py-2 text-left font-mono text-[0.7rem] tracking-[0.14em] uppercase transition-colors hover:text-stamp focus-visible:outline-2 focus-visible:outline-ring"
         >
-          <span className="truncate">{label}</span>
-          <ChevronsUpDown aria-hidden="true" className="ml-2 size-3.5 shrink-0 opacity-60" />
-        </Button>
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="text-faded transition-colors group-hover:text-stamp">Marka</span>
+            <span className={cn('truncate tracking-normal normal-case', brand ? 'text-stamp' : 'text-muted-foreground')}>
+              {label}
+            </span>
+          </span>
+          <ChevronsUpDown aria-hidden="true" className="size-3.5 shrink-0 opacity-60" />
+        </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-2">
         <div className="relative">
