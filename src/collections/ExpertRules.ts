@@ -10,7 +10,6 @@ const RULE_TYPES = [
   { label: '⚠️ Belirli alerjen içeriyor', value: 'allergen' },
   { label: '🌍 Üretim ülkesi (ülke dropdown)', value: 'country' },
   { label: '🏷️ Marka (marka dropdown)', value: 'brand' },
-  { label: '🛑 Marka "Boykotlu" olarak işaretli', value: 'brand_boycotted' },
   { label: '📂 Ürün tipi (kategori dropdown)', value: 'category' },
   { label: '📈 Besin değeri eşik üstünde', value: 'nutrition_max' },
   { label: '📉 Besin değeri eşik altında', value: 'nutrition_min' },

@@ -53,46 +53,40 @@ export const SITE_SOURCE: SeedSource = {
 }
 
 /** Derece tanımları: sitedeki rozet rengi ve sırası korunur. */
-const RATING_DEFS: Record<SiteStatus, { color: string; order: number; boycotted: boolean; description: string }> = {
+const RATING_DEFS: Record<SiteStatus, { color: string; order: number; description: string }> = {
   Boykot: {
     color: '#ba191c',
     order: 0,
-    boycotted: true,
     description:
       'Doğrudan boykot: marka işgal, apartheid veya Gazze saldırılarıyla belgelenmiş biçimde ilişkilendirilmiştir. Boykot Dedektifi bu markayı kesin boykot listesinde tutar.',
   },
   'İkincil Boykot': {
     color: '#fc8405',
     order: 1,
-    boycotted: true,
     description:
       'İkincil boykot: marka doğrudan hedef değildir; boykotlu bir ana şirkete, gruba veya tedarik zincirine bağlı olduğu için listelenir.',
   },
   'Ahlaken Boykot': {
     color: '#00008c',
     order: 2,
-    boycotted: true,
     description:
       'Ahlaken boykot: belgelenmiş doğrudan suç ortaklığı yerine ahlaki gerekçelerle (siyasi destek, söylem, lobi faaliyeti) boykot önerilir.',
   },
   'Şüpheli': {
     color: '#fcd30c',
     order: 3,
-    boycotted: false,
     description:
       "Şüpheli: markanın boykotlu yapılarla bağlantısına dair ciddi emare vardır ancak bağlantı kesinleşmemiştir; 'Boykot' ile eşitlenmez.",
   },
   'Araştırılıyor': {
     color: '#465468',
     order: 4,
-    boycotted: false,
     description:
       'Araştırılıyor: marka hakkında ihbar/iddia bulunur, inceleme sürer. Henüz bir hüküm verilmemiştir.',
   },
   'Uygun': {
     color: '#267f78',
     order: 5,
-    boycotted: false,
     description:
       'Uygun: yapılan incelemede boykot gerekçesi oluşturacak bir bağlantı bulunmamıştır.',
   },
@@ -160,8 +154,6 @@ export type BrandSeedData = {
   slug: string
   country?: string
   description: string
-  isBoycotted: boolean
-  boycottReason: string | null
 }
 
 export type SeedBrand = { name: string; data: BrandSeedData }
@@ -198,10 +190,6 @@ export function buildSeedPlan(): SeedPlan {
       name: record.name,
       slug: record.siteSlug,
       description: buildBrandDescription(record),
-      isBoycotted: rating.boycotted,
-      boycottReason: rating.boycotted
-        ? buildBrandReason(record)
-        : null,
     }
     if (record.country) data.country = record.country
     brands.push({ name: record.name, data })
@@ -257,16 +245,6 @@ function buildBrandDescription(record: SiteBrandRecord): string {
   parts.push(`Kaynak: ${SITE}/b/${record.siteSlug}`)
 
   return parts.join(' ')
-}
-
-function buildBrandReason(record: SiteBrandRecord): string {
-  return [
-    `Boykot Dedektifi değerlendirmesi: ${record.status}.`,
-    clean(record.verdict) || clean(record.about),
-    `Kaynak: ${SITE}/b/${record.siteSlug}`,
-  ]
-    .filter(Boolean)
-    .join('\n\n')
 }
 
 function buildRuleDescription(record: SiteBrandRecord): string {
@@ -494,7 +472,7 @@ async function ensureAvatar(
 /**
  * Eski elle derlenmiş veri setinden (ADR öncesi 104 markalık liste) kalan ve yeni planda
  * YER ALMAYAN markalar. Ürünü, kuralı ya da bağlı markası yoksa silinir: aksi halde
- * `isBoycotted` işaretli hayalet kayıt, marka kuralı olmadan "boykotlu" damgası üretirdi.
+ * kimsenin değerlendirmediği hayalet marka kayıtları kalırdı.
  */
 export const LEGACY_BRANDS = new Set<string>([
   'Chevron',

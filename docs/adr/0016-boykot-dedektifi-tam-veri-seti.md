@@ -1,8 +1,9 @@
 # ADR 0016 — Boykot Dedektifi veri setinin tamamının uzman kuralı olarak alınması
 
-- Durum: Kabul edildi
+- Durum: Kabul edildi; `isBoycotted` ile ilgili bölümleri ADR 0023 tarafından geçersiz kılındı
 - Tarih: 2026-10-27
-- İlgili: ADR 0009 (ürün dosyası), `src/lib/seed/boykotDedektifi.ts`,
+- İlgili: ADR 0009 (ürün dosyası), ADR 0023 (marka boykot bayrağının kaldırılması),
+  `src/lib/seed/boykotDedektifi.ts`,
   `src/lib/seed/data/boykot-dedektifi-brands.json`, `scripts/seed-boykot-dedektifi.ts`,
   `scripts/seed-boykot-prod.ts`, `src/lib/verdictEngine.ts`
 

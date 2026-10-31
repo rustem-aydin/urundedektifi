@@ -406,7 +406,7 @@ export interface Topic {
   createdAt: string;
 }
 /**
- * Ürün markaları. Boykotlu olarak işaretlenirse, kural motoru bu markanın TÜM ürünlerini otomatik boykot eder.
+ * Ürün markaları. Marka hakkındaki hükümler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "brands".
@@ -445,14 +445,6 @@ export interface Brand {
     hasNextPage?: boolean;
     totalDocs?: number;
   };
-  /**
-   * Bu marka genel olarak boykot ediliyor mu? İşaretlenirse, kural motorunda "Marka boykotlu" kuralı bu markaya otomatik uygulanır.
-   */
-  isBoycotted?: boolean | null;
-  /**
-   * Bu marka neden boykot ediliyor? Kullanıcılara gösterilecek açıklama (Örn: "İsrail-Filistin sorunu sebebiyle uluslararası BDS hareketi tarafından boykot edilmektedir.").
-   */
-  boycottReason?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -982,7 +974,6 @@ export interface ExpertRule {
     | 'allergen'
     | 'country'
     | 'brand'
-    | 'brand_boycotted'
     | 'category'
     | 'nutrition_max'
     | 'nutrition_min'
@@ -1671,8 +1662,6 @@ export interface BrandsSelect<T extends boolean = true> {
   country?: T;
   website?: T;
   products?: T;
-  isBoycotted?: T;
-  boycottReason?: T;
   updatedAt?: T;
   createdAt?: T;
 }

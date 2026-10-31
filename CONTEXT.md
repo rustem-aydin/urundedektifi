@@ -56,12 +56,9 @@ _Avoid_: content, nutrition (bunlar diski karıştırır)
 `products.nutrition` — `{ per: '100g'|'100ml'|'serving', items: [{ nutrient, amount, unit }] }`. Gerçek gıda değerleri tablosu.
 _Avoid_: besinler (bununla karıştırma)
 
-**Boykotlu**:
-Bir markanın `isBoycotted` flag'tir işaretli olması. Ürün Dosyasında üst seviye damga olarak gösterilir.
-
 **Boykot Durumu**:
-"Boykot Dedektifi" uzmanının altı seviyeli ölçeği: **Boykot** · **İkincil Boykot** · **Ahlaken Boykot** · **Şüpheli** · **Araştırılıyor** · **Uygun** (renk/sıra `rating-scales`). Her marka kendi durumuyla bir Uzman Kuralı olarak kayıtlıdır (ADR 0016); `isBoycotted` yalnız ilk üç durumda işaretlenir.
-_Avoid_: skor, puan, "İsrail malı" (ölçek adı değildir)
+"Boykot Dedektifi" uzmanının altı seviyeli ölçeği: **Boykot** · **İkincil Boykot** · **Ahlaken Boykot** · **Şüpheli** · **Araştırılıyor** · **Uygun** (renk/sıra `rating-scales`). Her marka kendi durumuyla bir Uzman Kuralı olarak kayıtlıdır (ADR 0016); marka hakkındaki boykot hükmünün **tek kaynağı** bu kuraldır — markada ayrı bir boykot bayrağı yoktur (ADR 0023).
+_Avoid_: skor, puan, "İsrail malı" (ölçek adı değildir), "boykotlu marka bayrağı"
 
 ### Tüketici Hesabı, Takip ve Yazılar
 

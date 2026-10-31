@@ -10,6 +10,7 @@ import * as migration_20261028_204639_additives_code_optional from './20261028_2
 import * as migration_20261029_193000_drop_media_image_sizes from './20261029_193000_drop_media_image_sizes';
 import * as migration_20261029_210000_add_profiles_and_contributions from './20261029_210000_add_profiles_and_contributions';
 import * as migration_20261031_090000_ai_settings from './20261031_090000_ai_settings';
+import * as migration_20261031_120000_drop_brand_boycott_fields from './20261031_120000_drop_brand_boycott_fields';
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20261031_090000_ai_settings.up,
     down: migration_20261031_090000_ai_settings.down,
     name: '20261031_090000_ai_settings',
+  },
+  {
+    up: migration_20261031_120000_drop_brand_boycott_fields.up,
+    down: migration_20261031_120000_drop_brand_boycott_fields.down,
+    name: '20261031_120000_drop_brand_boycott_fields',
   },
 ];

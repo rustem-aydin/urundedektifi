@@ -6,7 +6,6 @@ const RULE_TYPE_LABELS: Record<string, string> = {
   allergen: 'Alerjen',
   country: 'Ülke',
   brand: 'Marka',
-  brand_boycotted: 'Marka boykotlu',
   category: 'Kategori',
   nutrition_max: 'Besin değeri üstünde',
   nutrition_min: 'Besin değeri altında',

@@ -41,7 +41,7 @@ export type ProductCase = {
   slug: string | null
   description: string | null
   usage: string | null
-  brand: { id: string; name: string; isBoycotted?: boolean } | null
+  brand: { id: string; name: string } | null
   category: { id: string; name: string } | null
   country: { id: string; name: string } | null
   manufacturer: string | null
@@ -227,9 +227,7 @@ export function toProductCase(product: any, rules: any[]): ProductCase {
     slug: product.slug ?? null,
     description: product.description ?? null,
     usage: product.usage ?? null,
-    brand: brand
-      ? { id: String(brand.id), name: brand.name, isBoycotted: brand.isBoycotted }
-      : null,
+    brand: brand ? { id: String(brand.id), name: brand.name } : null,
     category: category ? { id: String(category.id), name: category.name } : null,
     country: country ? { id: String(country.id), name: country.name } : null,
     manufacturer: product.manufacturer ?? null,
@@ -482,7 +480,6 @@ const SCAN_FIELDS_BY_RULE_TYPE: Record<string, Record<string, unknown>> = {
   allergen: { allergens: true },
   country: { country: true },
   brand: { brand: true },
-  brand_boycotted: { brand: true },
   category: { category: true },
   nutrition_max: { nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } } },
   nutrition_min: { nutrition: { per: true, items: { nutrient: true, amount: true, unit: true } } },

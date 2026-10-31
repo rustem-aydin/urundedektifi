@@ -17,7 +17,6 @@ import {
   FeedbackCommentsSection,
   ProductFeedbackProvider,
 } from '@/components/ProductFeedback'
-import { VerdictStamp } from '@/components/VerdictStamp'
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
 import { ProductGallery } from '@/components/ProductGallery'
@@ -130,7 +129,6 @@ export default async function ProductDetailPage({
         <CaseCard className="flex flex-col gap-4 p-5 sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <EvidenceTag variant="evidence">ÜRÜN DOSYASI</EvidenceTag>
-            {product.brand?.isBoycotted && <VerdictStamp variant="danger">Boykotlu marka</VerdictStamp>}
             <MatchedStamp />
           </div>
 

@@ -187,15 +187,6 @@ export function evaluateRule(
       }
       return { matched: false }
     }
-    case 'brand_boycotted': {
-      if (product.brand?.isBoycotted) {
-        return {
-          matched: true,
-          matchedValue: `Boykotlu marka: ${product.brand.name}`,
-        }
-      }
-      return { matched: false }
-    }
     case 'category': {
       const productType = getRelObj(rule.productType)
       if (!productType) return { matched: false }

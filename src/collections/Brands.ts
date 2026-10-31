@@ -10,10 +10,10 @@ export const Brands: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'country', 'isBoycotted'],
+    defaultColumns: ['name', 'country'],
     group: 'Katalog',
     description:
-      'Ürün markaları. Boykotlu olarak işaretlenirse, kural motoru bu markanın TÜM ürünlerini otomatik boykot eder.',
+      'Ürün markaları. Marka hakkındaki hükümler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.',
   },
   access: {
     read: () => true,
@@ -99,27 +99,6 @@ export const Brands: CollectionConfig = {
         allowCreate: true,
         description:
           'Bu markaya bağlı ürünler. Ürün adının yanındaki kalem simgesine tıklayarak ürünü panelde açabilir, "Yeni" ile marka önceden seçili şekilde ürün ekleyebilirsiniz.',
-      },
-    },
-    {
-      name: 'isBoycotted',
-      type: 'checkbox',
-      label: 'Genel Olarak Boykotlu Marka',
-      defaultValue: false,
-      admin: {
-        description:
-          'Bu marka genel olarak boykot ediliyor mu? İşaretlenirse, kural motorunda "Marka boykotlu" kuralı bu markaya otomatik uygulanır.',
-        position: 'sidebar',
-      },
-    },
-    {
-      name: 'boycottReason',
-      type: 'textarea',
-      label: 'Boykot Gerekçesi',
-      admin: {
-        condition: (data) => data?.isBoycotted,
-        description:
-          'Bu marka neden boykot ediliyor? Kullanıcılara gösterilecek açıklama (Örn: "İsrail-Filistin sorunu sebebiyle uluslararası BDS hareketi tarafından boykot edilmektedir.").',
       },
     },
   ],
