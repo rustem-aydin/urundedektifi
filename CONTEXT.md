@@ -56,6 +56,14 @@ _Avoid_: content, nutrition (bunlar diski karıştırır)
 `products.nutrition` — `{ per: '100g'|'100ml'|'serving', items: [{ nutrient, amount, unit }] }`. Gerçek gıda değerleri tablosu.
 _Avoid_: besinler (bununla karıştırma)
 
+**Katkı Maddesi**:
+`additives` master listesindeki tek kayıt: `code` (E-kodu, ör. `E330`; etikette yazmıyorsa boş — ADR 0019), `name` (Türkçe kimyasal ad, `Sitrik Asit`), `aliases[]` (İngilizce/OFF adları), `function`, `riskLevel`, `halalStatus`, `isVegan`, `description`, `sources[]`. Panel başlığı `title` alanıdır ve kancayla türetilir: `E330 · Sitrik Asit`. Liste 675 kayıttır (673 E-kodlu + 2 kodsuz grup); veri `src/lib/seed/data/additives-world.json`, yazıcı `scripts/seed-additives-prod.ts` (ADR 0025).
+_Avoid_: katkı (bu sözcük Tüketici Hesabının ürüne yaptığı iş için ayrılmıştır), içindekiler (o `ingredients`), E-numarası kaydı, katkı kodu
+
+**Katkı Grubu**:
+E-kodu olmayan ortak katkı kaydı (`additives.code = null`), ör. **Modifiye Nişastalar** (E1400–E1452 ailesi) ve **Sodyum Hidrojen Karbonat ve Disodyum Difosfat**. Etikette grup adı geçtiğinde ürün bu kayda bağlanır; alt türler ayrı E-kodlu kayıtlardır.
+_Avoid_: kategorik katkı, aile kaydı, sahte E-kodu (`E14XX` gibi uydurma kod yazılmaz)
+
 **Boykot Durumu**:
 "Boykot Dedektifi" uzmanının altı seviyeli ölçeği: **Boykot** · **İkincil Boykot** · **Ahlaken Boykot** · **Şüpheli** · **Araştırılıyor** · **Uygun** (renk/sıra `rating-scales`). Her marka kendi durumuyla bir Uzman Kuralı olarak kayıtlıdır (ADR 0016); marka hakkındaki boykot hükmünün **tek kaynağı** bu kuraldır — markada ayrı bir boykot bayrağı yoktur (ADR 0023).
 _Avoid_: skor, puan, "İsrail malı" (ölçek adı değildir), "boykotlu marka bayrağı"
