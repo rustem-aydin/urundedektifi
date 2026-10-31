@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, ScanBarcode, X } from 'lucide-react'
+import { Menu, ScanBarcode, UserRound, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
@@ -21,8 +21,9 @@ const NAV_ITEMS = [
 export function SiteHeader() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const { user, canAddProduct } = useSession()
-  const accountLabel = user ? (canAddProduct ? 'Yetkili' : 'Hesap') : 'Giriş'
+  const { user } = useSession()
+  const profileHref = user ? `/profil/${user.id}` : '/giris'
+  const accountLabel = user ? 'Profilim' : 'Giriş'
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -58,19 +59,26 @@ export function SiteHeader() {
             )
           })}
           <Link
-            href={user ? `/profil/${user.id}` : '/giris'}
-            className={cn(
-              'ml-1 rounded-md border border-border px-2.5 py-1 font-mono text-[0.65rem] tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
-              (canAddProduct || user) && 'border-stamp/50 text-stamp',
-            )}
+            href={profileHref}
+            aria-label={accountLabel}
+            title={accountLabel}
+            className="ml-1 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
           >
-            {accountLabel}
+            <UserRound className="size-4" aria-hidden="true" />
           </Link>
           <ThemeToggle />
         </nav>
 
         <div className="flex items-center gap-1 md:hidden">
           <ThemeToggle />
+          <Link
+            href={profileHref}
+            aria-label={accountLabel}
+            title={accountLabel}
+            className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <UserRound className="size-5" aria-hidden="true" />
+          </Link>
           <button
             type="button"
             aria-expanded={open}
@@ -109,15 +117,6 @@ export function SiteHeader() {
                 </li>
               )
             })}
-            <li>
-              <Link
-                href={user ? `/profil/${user.id}` : '/giris'}
-                onClick={() => setOpen(false)}
-                className="flex min-h-11 items-center rounded-md px-3 font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-              >
-                {accountLabel}
-              </Link>
-            </li>
           </ul>
         </nav>
       )}

@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { CORPORATE_ROLES, useSession } from '@/components/session-provider'
+import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { TextField, WizardIntro } from '@/components/wizard/controls'
 import { ApiError } from '@/lib/wizard/api'
@@ -15,13 +15,12 @@ import { ApiError } from '@/lib/wizard/api'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, busy, restoring, canAddProduct, signIn, signOut } = useSession()
+  const { user, busy, restoring, signIn } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
 
   const next = searchParams.get('next') || '/'
-  const corporate = Boolean(user && CORPORATE_ROLES.includes(user.role))
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -44,36 +43,17 @@ export function LoginForm() {
 
   if (user) {
     return (
-      <div className="flex flex-col gap-4">
-        <CaseCard className="flex flex-col gap-2 p-5">
-          <EvidenceTag variant="evidence">OTURUM</EvidenceTag>
-          <p className="font-display text-xl">{user.name}</p>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-          <div className="flex flex-wrap gap-2">
-            <EvidenceTag variant={corporate ? 'stamp' : 'default'}>{user.role}</EvidenceTag>
-            {corporate ? <EvidenceTag variant="tape">Ürün ekleyebilir</EvidenceTag> : null}
-          </div>
-        </CaseCard>
-
-        {corporate ? (
-          <>
-            <Button asChild className="w-fit">
-              <Link href="/ekle">Ekle ekranına git</Link>
-            </Button>
-            <Button variant="outline" asChild className="w-fit">
-              <Link href="/saglayici">Yapay zekâ sağlayıcısı</Link>
-            </Button>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Bu rolle ürün eklenemez; okuma yüzeyleri açık kalır.
-          </p>
-        )}
-
-        <Button variant="ghost" className="w-fit" onClick={() => signOut()}>
-          Çıkış yap
+      <CaseCard className="flex flex-col gap-2 p-5">
+        <EvidenceTag variant="evidence">OTURUM</EvidenceTag>
+        <p className="font-display text-xl">{user.name}</p>
+        <p className="text-sm text-muted-foreground">
+          Zaten giriş yapmış durumdasın. Hesap işlemleri (çıkış, kurumsal kısayollar) kendi
+          profilinde.
+        </p>
+        <Button asChild variant="outline" className="w-fit">
+          <Link href={`/profil/${user.id}`}>Profilime git</Link>
         </Button>
-      </div>
+      </CaseCard>
     )
   }
 

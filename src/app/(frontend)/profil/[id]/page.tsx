@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { AccountActions } from '@/components/AccountActions'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProfileEditor } from '@/components/ProfileEditor'
@@ -92,6 +93,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             bio={profile.bio}
             avatarUrl={profile.avatarUrl}
           />
+          <AccountActions profileId={profile.id} />
         </div>
       </header>
 
