@@ -1,4 +1,4 @@
-import { getPayload } from 'payload'
+import { getPayload, type Where } from 'payload'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -12,6 +12,7 @@ import { EvidenceTag } from '@/components/EvidenceTag'
 import { ExpertTabs } from '@/components/ExpertTabs'
 import { FollowButton } from '@/components/FollowButton'
 import { ProductCard } from '@/components/ProductCard'
+import { RatingFilterBar } from '@/components/RatingFilterBar'
 import { VerdictStamp } from '@/components/VerdictStamp'
 
 export const metadata: Metadata = {
@@ -38,18 +39,32 @@ function formatDate(value?: string | null) {
 }
 
 const RULE_PAGE_SIZE = 20
-/** Sekmede gösterilen ürün kartı: 5 sütunda iki tam satır. */
-const PRODUCT_CARD_LIMIT = 10
+/** Sekmede gösterilen ürün kartı: 4 sütunda iki tam satır. */
+const PRODUCT_CARD_LIMIT = 8
+
+/** Kuralın derecesinin kimliği (ilişki derinliği 1'de nesne, aksi halde ham kimlik gelir). */
+function ruleRatingId(rule: any): string | null {
+  const rating = rule?.rating
+  if (rating == null) return null
+  return String(typeof rating === 'object' ? rating.id : rating)
+}
 
 export default async function ExpertDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ kuralSayfa?: string; sekme?: string }>
+  searchParams: Promise<{
+    kuralSayfa?: string
+    sekme?: string
+    /** "Hüküm verdiği ürünler" sekmesinin derece süzgeci. */
+    urunDerece?: string
+    /** "Aktif kurallar" sekmesinin derece süzgeci. */
+    kuralDerece?: string
+  }>
 }) {
   const { slug } = await params
-  const { kuralSayfa, sekme } = await searchParams
+  const { kuralSayfa, sekme, urunDerece, kuralDerece } = await searchParams
   const rulePage = Math.max(1, Number(kuralSayfa) || 1)
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -66,22 +81,41 @@ export default async function ExpertDetailPage({
   const expert = result.docs[0]
   if (!expert) notFound()
 
-  const [rules, ratings, posts, followers, matched] = await Promise.all([
+  // Ölçek önce okunur: iki sekmenin süzgeci bu listeden doğrulanır, geçersiz parametre yok sayılır.
+  const ratings = await payload.find({
+    collection: 'rating-scales',
+    where: { expert: { equals: expert.id } },
+    sort: 'order',
+    depth: 0,
+  })
+  const ratingOptions = ratings.docs.map((rating: any) => ({
+    id: rating.id as string | number,
+    name: rating.name as string,
+    color: rating.color as string | null,
+    description: rating.description as string | null,
+  }))
+  const activeProductRating =
+    ratingOptions.find((rating) => String(rating.id) === urunDerece) ?? null
+  const activeRuleRating = ratingOptions.find((rating) => String(rating.id) === kuralDerece) ?? null
+
+  const ruleWhere: Where[] = [
+    { expert: { equals: expert.id } },
+    { isActive: { equals: true } },
+  ]
+  if (activeRuleRating) ruleWhere.push({ rating: { equals: activeRuleRating.id } })
+
+  const [rules, totalRules, posts, followers, allRules] = await Promise.all([
     payload.find({
       collection: 'expert-rules',
-      where: {
-        and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }],
-      },
+      where: { and: ruleWhere },
       sort: '-createdAt',
       limit: RULE_PAGE_SIZE,
       page: rulePage,
       depth: 1,
     }),
-    payload.find({
-      collection: 'rating-scales',
-      where: { expert: { equals: expert.id } },
-      sort: 'order',
-      depth: 0,
+    payload.count({
+      collection: 'expert-rules',
+      where: { and: [{ expert: { equals: expert.id } }, { isActive: { equals: true } }] },
     }),
     payload.find({
       collection: 'posts',
@@ -97,13 +131,27 @@ export default async function ExpertDetailPage({
     }),
     // Ürün eşleşmesi TÜM kurallarla hesaplanır; kart için yalnız gösterilecek kadar Dosya kurulur.
     // Kurallar istekler arası önbellekten gelir (3.900+ satır her açılışta okunmaz).
-    expertRules(payload, expert.id).then((allRules) =>
-      listProductsForRules(payload, allRules, { limit: PRODUCT_CARD_LIMIT }),
-    ),
+    expertRules(payload, expert.id),
   ])
 
-  const matchedProducts = matched.products
+  // Sekme varlığı süzgeçsiz kümeden; sayaç ve kartlar seçili derecenin kural kümesinden gelir.
+  const matched = await listProductsForRules(payload, allRules, { limit: PRODUCT_CARD_LIMIT })
+  const ratedRules = activeProductRating
+    ? allRules.filter((rule) => ruleRatingId(rule) === String(activeProductRating.id))
+    : null
+  const rated = ratedRules
+    ? await listProductsForRules(payload, ratedRules, { limit: PRODUCT_CARD_LIMIT })
+    : null
+  const matchedProducts = rated ? rated.products : matched.products
   const matchedTotal = matched.total
+  const matchedShownTotal = rated ? rated.total : matched.total
+
+  // Kural sayfalaması süzgeci korur (derece değişince sayfa 1'e döner, çünkü çipler kuralSayfa taşımaz).
+  const rulesPageHref = (page: number) => {
+    const params = new URLSearchParams({ sekme: 'kurallar', kuralSayfa: String(page) })
+    if (activeRuleRating) params.set('kuralDerece', String(activeRuleRating.id))
+    return `/uzmanlar/${expert.slug}?${params}`
+  }
 
   const cover = typeof expert.cover === 'object' ? expert.cover : null
   const socials = Object.entries(expert.socialLinks ?? {}).filter(
@@ -154,7 +202,7 @@ export default async function ExpertDetailPage({
                 {expert.verified ? <VerdictStamp variant="safe">Doğrulandı</VerdictStamp> : null}
                 <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
                   {followers.totalDocs > 0 ? `${followers.totalDocs} takipçi · ` : ''}
-                  {rules.totalDocs} aktif kural
+                  {totalRules.totalDocs} aktif kural
                 </span>
               </div>
             </div>
@@ -289,21 +337,37 @@ export default async function ExpertDetailPage({
                 {
                   value: 'urunler',
                   label: 'Hüküm verdiği ürünler',
-                  meta: `${matchedTotal} dosya`,
+                  meta: `${matchedShownTotal} dosya`,
                   content: (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      {matchedProducts.map((product) => (
-                        <ProductCard
-                          key={product.id}
-                          href={product.barcode ? `/urun/${product.barcode}` : null}
-                          name={product.name}
-                          brandName={product.brand?.name ?? null}
-                          categoryName={product.category?.name ?? null}
-                          imageUrl={product.gallery[0]?.url ?? null}
-                          imageAlt={product.gallery[0]?.alt ?? product.name}
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <RatingFilterBar
+                        label="Derece:"
+                        options={ratingOptions}
+                        activeId={activeProductRating ? String(activeProductRating.id) : null}
+                        basePath={`/uzmanlar/${expert.slug}`}
+                        param="urunDerece"
+                        extra={{ sekme: 'urunler' }}
+                      />
+                      {matchedProducts.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Bu derecede hüküm verdiği ürün yok.
+                        </p>
+                      ) : (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                          {matchedProducts.map((product) => (
+                            <ProductCard
+                              key={product.id}
+                              href={product.barcode ? `/urun/${product.barcode}` : null}
+                              name={product.name}
+                              brandName={product.brand?.name ?? null}
+                              categoryName={product.category?.name ?? null}
+                              imageUrl={product.gallery[0]?.url ?? null}
+                              imageAlt={product.gallery[0]?.alt ?? product.name}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
                   ),
                 },
               ]
@@ -311,11 +375,25 @@ export default async function ExpertDetailPage({
           {
             value: 'kurallar',
             label: 'Aktif kurallar',
-            meta: `${rules.totalDocs} kural`,
+            meta: `${activeRuleRating ? rules.totalDocs : totalRules.totalDocs} kural`,
             content: (
               <>
+                <RatingFilterBar
+                  label="Derece:"
+                  options={ratingOptions}
+                  activeId={activeRuleRating ? String(activeRuleRating.id) : null}
+                  basePath={`/uzmanlar/${expert.slug}`}
+                  param="kuralDerece"
+                  extra={{ sekme: 'kurallar' }}
+                />
                 {rules.docs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Henüz aktif kural yok.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {rules.totalDocs > 0
+                      ? 'Bu sayfada kural yok.'
+                      : activeRuleRating
+                        ? 'Bu derecede aktif kural yok.'
+                        : 'Henüz aktif kural yok.'}
+                  </p>
                 ) : (
                   <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {rules.docs.map((r: any, i: number) => (
@@ -373,7 +451,7 @@ export default async function ExpertDetailPage({
                   >
                     {rulePage > 1 ? (
                       <Link
-                        href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage - 1}&sekme=kurallar`}
+                        href={rulesPageHref(rulePage - 1)}
                         className="underline-offset-4 hover:underline"
                       >
                         ← Önceki
@@ -386,7 +464,7 @@ export default async function ExpertDetailPage({
                     </span>
                     {rulePage < rules.totalPages ? (
                       <Link
-                        href={`/uzmanlar/${expert.slug}?kuralSayfa=${rulePage + 1}&sekme=kurallar`}
+                        href={rulesPageHref(rulePage + 1)}
                         className="underline-offset-4 hover:underline"
                       >
                         Sonraki →
