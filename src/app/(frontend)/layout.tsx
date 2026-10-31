@@ -48,7 +48,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       className={`${inter.variable} ${specialElite.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex min-h-svh flex-col font-sans">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SessionProvider>
             <SiteHeader />
             <main className="flex-1">{children}</main>
