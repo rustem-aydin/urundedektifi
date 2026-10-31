@@ -110,7 +110,7 @@ export default async function HomePage() {
           </div>
           <div className="mt-6">
             <ProductGrid
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+              className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4"
               products={(latestProducts.docs as any[]).map((p: any) => {
                 const frontImage = typeof p.frontImage === 'object' ? p.frontImage : null
                 return {

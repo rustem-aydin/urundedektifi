@@ -21,6 +21,12 @@ type ProductCardProps = {
 
 const viewFormat = new Intl.NumberFormat('tr-TR')
 
+/**
+ * Ürün kartı.
+ *
+ * Mobilde (taban kırılım) kart bir liste satırıdır: solda küçük kare görsel, sağda ad /
+ * marka / sayaçlar. `sm` ve üzerinde dikey kart düzenine döner.
+ */
 export function ProductCard({
   href,
   name,
@@ -32,50 +38,64 @@ export function ProductCard({
   viewCount,
   className,
 }: ProductCardProps) {
+  const hasVerdicts = typeof verdictCount === 'number' && verdictCount > 0
+
   const card = (
     <CaseCard
       className={cn(
-        'h-full overflow-hidden transition-shadow',
+        'h-full overflow-hidden py-0 transition-shadow sm:py-(--card-spacing)',
         href && 'group-hover:shadow-md',
         className,
       )}
     >
-      <div className="relative aspect-[4/3] overflow-hidden border-b border-border bg-muted/50">
-        {imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={imageUrl}
-            alt={imageAlt || name}
-            className="absolute inset-0 size-full p-4 object-contain"
-          />
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-            Görsel yok
-          </span>
-        )}
-        {typeof verdictCount === 'number' && verdictCount > 0 && (
-          <div className="absolute bottom-2 left-2 z-10 rounded-[3px] bg-card/90 p-0.5 shadow-sm backdrop-blur-sm">
-            <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
-          </div>
-        )}
+      <div className="flex h-full gap-3 p-3 sm:flex-col sm:gap-4 sm:p-0">
+        <div className="relative w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/50 sm:aspect-[4/3] sm:w-auto sm:rounded-none sm:border-0 sm:border-b">
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt={imageAlt || name}
+              className="absolute inset-0 size-full object-contain p-2 sm:p-4"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center p-1 text-center font-mono text-[0.6rem] leading-tight tracking-[0.1em] text-faded uppercase sm:text-[0.65rem] sm:tracking-[0.2em]">
+              Görsel yok
+            </span>
+          )}
+          {hasVerdicts && (
+            <div className="absolute right-1 bottom-1 left-1 z-10 hidden justify-center sm:flex">
+              <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-none sm:gap-0">
+          <CardHeader className="gap-1 px-0 sm:px-(--card-spacing)">
+            <CardTitle className="line-clamp-2 text-sm sm:text-base">{name}</CardTitle>
+            {brandName && (
+              <p className="truncate text-xs text-muted-foreground sm:text-sm">{brandName}</p>
+            )}
+          </CardHeader>
+          <CardContent className="mt-auto flex flex-col gap-1.5 px-0 sm:gap-2 sm:px-(--card-spacing)">
+            {hasVerdicts && (
+              <div className="sm:hidden">
+                <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
+              </div>
+            )}
+            {typeof viewCount === 'number' && (
+              <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                <Eye className="size-3" aria-hidden="true" />
+                {viewFormat.format(Math.max(0, Math.trunc(viewCount)))} görüntülenme
+              </p>
+            )}
+            {categoryName && (
+              <p className="mt-auto truncate border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                {categoryName}
+              </p>
+            )}
+          </CardContent>
+        </div>
       </div>
-      <CardHeader className="gap-1">
-        <CardTitle className="line-clamp-2 text-base">{name}</CardTitle>
-        {brandName && <p className="text-sm text-muted-foreground">{brandName}</p>}
-      </CardHeader>
-      <CardContent className="mt-auto flex flex-col gap-2">
-        {typeof viewCount === 'number' && (
-          <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-            <Eye className="size-3" aria-hidden="true" />
-            {viewFormat.format(Math.max(0, Math.trunc(viewCount)))} görüntülenme
-          </p>
-        )}
-        {categoryName && (
-          <p className="mt-auto truncate border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-            {categoryName}
-          </p>
-        )}
-      </CardContent>
     </CaseCard>
   )
 

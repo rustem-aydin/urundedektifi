@@ -123,7 +123,7 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
             Bu kurala takılan yayında ürün yok.
           </p>
         ) : (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {products.map((product) => {
               const frontImage = product.gallery[0] ?? null
               return (

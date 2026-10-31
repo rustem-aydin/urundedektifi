@@ -126,7 +126,7 @@ export default async function IngredientDetailPage({
             Yayında bu içeriği taşıyan ürün yok.
           </p>
         ) : (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {products.docs.map((product) => {
               const image = product.frontImage && typeof product.frontImage === 'object' ? product.frontImage : null
               return (
