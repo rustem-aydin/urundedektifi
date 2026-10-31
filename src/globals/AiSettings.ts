@@ -22,7 +22,11 @@ import type { User } from '@/payload-types'
 /** Ürün ekleyen roller: vekil uçları ve durum okuması bunlara açık. */
 const AI_ROLES: User['role'][] = ['admin', 'editor']
 
-const CHAT_TIMEOUT_MS = 175_000
+/**
+ * Yalnızca **yanıt başlığına** kadar geçen süreyi sınırlar: `fetch` çözülünce sayaç durur, akış
+ * kesilmez. Analiz yanıtı akış halinde geldiği için toplam süre istemcide sınırlanır.
+ */
+const CHAT_TIMEOUT_MS = 120_000
 const MODELS_TIMEOUT_MS = 20_000
 
 function canUseAi(req: PayloadRequest): boolean {
@@ -51,13 +55,29 @@ async function readProviderConfig(req: PayloadRequest): Promise<ProviderConfig |
   return { baseUrl, apiKey, model }
 }
 
-/** Sağlayıcı yanıtını olduğu gibi istemciye geçirir (durum kodu + gövde + içerik türü). */
+/**
+ * Sağlayıcı yanıtını istemciye geçirir (durum kodu + gövde + içerik türü).
+ *
+ * Analiz yanıtı `text/event-stream` gelir: gövde tamponlanmaz, parça parça akıtılır. Aksi halde
+ * model yanıtı bitene kadar (dakikalar) tek bayt gitmez ve araya giren proxy 524/timeout verir.
+ */
 async function relayProviderResponse(response: Response): Promise<Response> {
+  const contentType = response.headers.get('content-type') ?? 'application/json'
+  if (contentType.includes('text/event-stream') && response.body) {
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        'content-type': contentType,
+        'cache-control': 'no-store',
+        'x-accel-buffering': 'no',
+      },
+    })
+  }
   const body = await response.text()
   return new Response(body, {
     status: response.status,
     headers: {
-      'content-type': response.headers.get('content-type') ?? 'application/json',
+      'content-type': contentType,
       'cache-control': 'no-store',
     },
   })

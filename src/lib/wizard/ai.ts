@@ -13,8 +13,16 @@ import { API_BASE } from './api'
 
 const CHAT_PROXY_URL = `${API_BASE}/globals/ai-settings/chat`
 
-const ANALYSIS_TIMEOUT_MS = 120_000
-const MODEL_TIMEOUT_MS = 20_000
+/**
+ * Yanıt akış halinde okunur (SSE). Sağlayıcı düşünen (reasoning) model olduğunda tek parça
+ * 100 saniyeyi aşabiliyor; araya giren vekil/proxy boş bağlantıyı kesiyordu. Bu yüzden iki
+ * ayrı sınır var: parçalar arası sessizlik ve toplam süre.
+ */
+const ANALYSIS_STALL_MS = 60_000
+const ANALYSIS_TOTAL_MS = 240_000
+
+/** Sağlayıcıya özel ipucu: düşünme (reasoning) kapalı — analiz süresini ~4 kat kısaltır. */
+const PROVIDER_HINTS: Record<string, unknown> = { chat_template_kwargs: { enable_thinking: false } }
 
 export const PHOTO_ROLES = ['front', 'ingredients', 'nutrition', 'recycling', 'additional', 'unknown'] as const
 export type PhotoRole = (typeof PHOTO_ROLES)[number]
@@ -201,21 +209,117 @@ type ChatResponse = {
 
 /* ---------------------------- HTTP katmanı --------------------------- */
 
-async function postChat(
+type ChatRequest = {
+  messages: ChatMessage[]
+  responseFormat: Record<string, unknown>
+  /** Sağlayıcıya özel alanlar (ör. düşünmeyi kapatma); 400 alınırsa bir kez çıkarılıp denenir. */
+  hints?: Record<string, unknown>
+}
+
+/** Tek parçanın gelmesini beklerken sınırı aşarsa akışı keser (`null` = süre doldu). */
+function readWithDeadline(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  ms: number,
+): Promise<ReadableStreamReadResult<Uint8Array> | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), ms)
+  })
+  return Promise.race([reader.read(), timeout]).finally(() => clearTimeout(timer))
+}
+
+/** SSE gövdesini `ChatResponse`a indirger: parça parça birleşen içerik + son kullanım bilgisi. */
+async function readChatStream(
+  response: Response,
+  controller: AbortController,
+  what: string,
+): Promise<ChatResponse> {
+  const reader = response.body?.getReader()
+  if (!reader) throw new AiError('format', 200, 'Sağlayıcı boş yanıt döndü. Tekrar dene.')
+
+  const decoder = new TextDecoder()
+  const deadline = Date.now() + ANALYSIS_TOTAL_MS
+  let buffer = ''
+  let content = ''
+  let model: string | undefined
+  let usage: ChatResponse['usage']
+
+  const consume = (line: string) => {
+    if (!line.startsWith('data:')) return
+    const data = line.slice(5).trim()
+    if (!data || data === '[DONE]') return
+    let event: {
+      model?: string
+      choices?: { delta?: { content?: string | null } }[]
+      usage?: ChatResponse['usage']
+      error?: { message?: string }
+    }
+    try {
+      event = JSON.parse(data)
+    } catch {
+      return
+    }
+    if (event.error?.message) throw new AiError('request', 200, event.error.message)
+    if (typeof event.model === 'string') model = event.model
+    const delta = event.choices?.[0]?.delta?.content
+    if (typeof delta === 'string') content += delta
+    if (event.usage) usage = event.usage
+  }
+
+  try {
+    for (;;) {
+      const remaining = deadline - Date.now()
+      if (remaining <= 0) {
+        controller.abort()
+        throw new AiError(
+          'network',
+          0,
+          `${what} ${Math.round(ANALYSIS_TOTAL_MS / 1000)} saniyede bitmedi. Fotoğraf sayısını azaltıp tekrar dene.`,
+        )
+      }
+      const chunk = await readWithDeadline(reader, Math.min(remaining, ANALYSIS_STALL_MS))
+      if (!chunk) {
+        controller.abort()
+        throw new AiError(
+          'network',
+          0,
+          `${what} ${Math.round(ANALYSIS_STALL_MS / 1000)} saniye boyunca yanıt vermedi. Fotoğraf sayısını azaltıp tekrar dene.`,
+        )
+      }
+      if (chunk.done) break
+      buffer += decoder.decode(chunk.value, { stream: true })
+      let cut = buffer.indexOf('\n')
+      while (cut >= 0) {
+        consume(buffer.slice(0, cut).trim())
+        buffer = buffer.slice(cut + 1)
+        cut = buffer.indexOf('\n')
+      }
+    }
+    if (buffer.trim()) consume(buffer.trim())
+  } finally {
+    void reader.cancel().catch(() => undefined)
+  }
+
+  if (!content.trim()) throw new AiError('format', 200, 'Sağlayıcı boş yanıt döndü. Tekrar dene.')
+  return { model, choices: [{ message: { content } }], usage }
+}
+
+async function postChatOnce(
   input: AnalyzeInput,
-  messages: ChatMessage[],
-  responseFormat: Record<string, unknown>,
-  timeoutMs: number,
-): Promise<{ payload: ChatResponse; degraded: boolean }> {
+  request: ChatRequest,
+): Promise<{ payload: ChatResponse; rejected: boolean }> {
   // Modeli sunucu koyar: istemci model adı ya da anahtar göndermez.
-  const body = {
+  const body: Record<string, unknown> = {
     temperature: 0.1,
-    messages,
-    response_format: responseFormat,
+    messages: request.messages,
+    response_format: request.responseFormat,
+    stream: true,
+    stream_options: { include_usage: true },
+    ...request.hints,
   }
 
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  const timer = setTimeout(() => controller.abort(), ANALYSIS_TOTAL_MS)
   let response: Response
   try {
     response = await fetch(CHAT_PROXY_URL, {
@@ -223,6 +327,7 @@ async function postChat(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `JWT ${input.token}`,
+        Accept: 'text/event-stream',
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -232,30 +337,72 @@ async function postChat(
       throw new AiError(
         'network',
         0,
-        `Analiz ${Math.round(timeoutMs / 1000)} saniyede bitmedi. Fotoğraf sayısını azaltıp tekrar dene.`,
+        `Analiz ${Math.round(ANALYSIS_TOTAL_MS / 1000)} saniyede bitmedi. Fotoğraf sayısını azaltıp tekrar dene.`,
       )
     }
     throw new AiError('network', 0, 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
+  }
+
+  try {
+    if (response.status === 401 || response.status === 403) {
+      throw new AiError('auth', response.status, 'Oturumun sona ermiş ya da bu işlem için yetkin yok.')
+    }
+    if (response.status === 400) {
+      // Şemayı (ve ipuçlarını) reddetti: çağıran katman sadeleştirilmiş istekle tekrar dener.
+      return { payload: { choices: [] }, rejected: true }
+    }
+    if (!response.ok) {
+      const detail = await bodyError(response)
+      throw new AiError(
+        'request',
+        response.status,
+        detail || `Sağlayıcı hata verdi (kod ${response.status}). Tekrar dene.`,
+      )
+    }
+
+    const type = response.headers.get('content-type') ?? ''
+    if (type.includes('text/event-stream')) {
+      return { payload: await readChatStream(response, controller, 'Analiz'), rejected: false }
+    }
+    // Vekil/sağlayıcı akışı desteklemiyorsa gövde tek JSON olarak gelir.
+    return { payload: (await response.json()) as ChatResponse, rejected: false }
   } finally {
     clearTimeout(timer)
   }
+}
 
-  if (response.status === 401 || response.status === 403) {
-    throw new AiError('auth', response.status, 'Oturumun sona ermiş ya da bu işlem için yetkin yok.')
-  }
-  if (response.status === 400 && responseFormat.type === 'json_schema') {
-    return { payload: { choices: [] }, degraded: true }
-  }
-  if (!response.ok) {
-    const detail = await bodyError(response)
-    throw new AiError(
-      'request',
-      response.status,
-      detail || `Sağlayıcı hata verdi (kod ${response.status}). Tekrar dene.`,
-    )
+/**
+ * Şemalı istek: düşünme ipucuyla akış. Sağlayıcı ipucunu/şemayı reddederse (400) önce ipuçsuz,
+ * ardından şemasız (`json_object`) tekrar dener.
+ */
+async function postChat(
+  input: AnalyzeInput,
+  messages: ChatMessage[],
+  responseFormat: Record<string, unknown>,
+  hints: Record<string, unknown> | undefined,
+  fallbackMessages: ChatMessage[] = messages,
+): Promise<{ payload: ChatResponse; degraded: boolean }> {
+  const attempts: { hints?: Record<string, unknown>; format: Record<string, unknown>; messages: ChatMessage[] }[] = [
+    { hints, format: responseFormat, messages },
+    { hints: undefined, format: responseFormat, messages },
+  ]
+  if (responseFormat.type === 'json_schema') {
+    attempts.push({ hints: undefined, format: { type: 'json_object' }, messages: fallbackMessages })
   }
 
-  return { payload: (await response.json()) as ChatResponse, degraded: false }
+  let degraded = false
+  for (const [index, attempt] of attempts.entries()) {
+    const result = await postChatOnce(input, {
+      messages: attempt.messages,
+      responseFormat: attempt.format,
+      hints: attempt.hints,
+    })
+    if (!result.rejected) return { payload: result.payload, degraded }
+    // 400: bu varyantı sağlayıcı reddetti. Sonraki (daha sade) varyantı dene.
+    degraded = true
+    if (index === attempts.length - 1) break
+  }
+  throw new AiError('format', 200, 'Sağlayıcı şemalı yanıtı desteklemiyor. Tekrar dene.')
 }
 
 /** Vekil ve sağlayıcı hata gövdelerinde tek anlaşılır cümle arar (`{ error }` / `{ message }`). */
@@ -328,9 +475,21 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content },
   ]
+  /** `json_object`a düşülürse şema promptta taşınır (sağlayıcı şemayı reddettiğinde). */
+  const plainMessages: ChatMessage[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `${buildUserText(input)}\n\nJSON şeması:\n${JSON.stringify(EXTRACTION_JSON_SCHEMA)}`,
+        },
+        ...content.slice(1),
+      ],
+    },
+  ]
 
-  let degraded = false
-  let payload: ChatResponse
   const strict = await postChat(
     input,
     messages,
@@ -338,32 +497,11 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
       type: 'json_schema',
       json_schema: { name: 'product_extraction', strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
-    ANALYSIS_TIMEOUT_MS,
+    PROVIDER_HINTS,
+    plainMessages,
   )
-  if (strict.degraded) {
-    degraded = true
-    const fallback = await postChat(
-      input,
-      [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `${buildUserText(input)}\n\nJSON şeması:\n${JSON.stringify(EXTRACTION_JSON_SCHEMA)}`,
-            },
-            ...content.slice(1),
-          ],
-        },
-      ],
-      { type: 'json_object' },
-      ANALYSIS_TIMEOUT_MS,
-    )
-    payload = fallback.payload
-  } else {
-    payload = strict.payload
-  }
+  const degraded = strict.degraded
+  let payload = strict.payload
 
   let raw = contentOf(payload)
   let parsed = extractionSchema.safeParse(safeJson(raw))
@@ -375,27 +513,25 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
       .slice(0, 12)
       .map((issue) => `${issue.path.join('.') || 'kök'}: ${issue.message}`)
       .join('\n')
+    const repairTurn: ChatMessage[] = [
+      ...(degraded ? plainMessages : messages),
+      { role: 'assistant', content: raw },
+      {
+        role: 'user',
+        content: `JSON şemaya uymuyor. Hatalar:\n${issues}\nYalnızca düzeltilmiş, geçerli JSON döndür.`,
+      },
+    ]
     const repairPayload = await postChat(
       input,
-      [
-        ...messages,
-        { role: 'assistant', content: raw },
-        {
-          role: 'user',
-          content: `JSON şemaya uymuyor. Hatalar:\n${issues}\nYalnızca düzeltilmiş, geçerli JSON döndür.`,
-        },
-      ],
+      repairTurn,
       degraded
         ? { type: 'json_object' }
         : {
             type: 'json_schema',
             json_schema: { name: 'product_extraction', strict: true, schema: EXTRACTION_JSON_SCHEMA },
           },
-      ANALYSIS_TIMEOUT_MS,
+      PROVIDER_HINTS,
     )
-    if (repairPayload.degraded) {
-      throw new AiError('format', 200, 'Sağlayıcı şemalı yanıtı desteklemiyor. Tekrar dene.')
-    }
     payload = repairPayload.payload
     raw = contentOf(payload)
     parsed = extractionSchema.safeParse(safeJson(raw))
