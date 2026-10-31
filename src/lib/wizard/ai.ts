@@ -1,13 +1,17 @@
 import { z } from 'zod'
 
-import type { ProviderSettings } from './provider'
-import { chatCompletionsUrl, modelsUrl } from './providerUrls'
+import { API_BASE } from './api'
 
 /**
  * OpenAI uyumlu vision istemcisi (ADR 0008, web uyarlaması).
  * Tek çağrı + katı JSON şeması; şema tutmazsa tek onarım turu. Sağlayıcı `json_schema`
  * desteklemiyorsa `json_object` ile aynı şema prompt içinde gönderilir.
+ *
+ * Sağlayıcı ayarı tek merkezde (Payload global `ai-settings`): istek doğrudan sağlayıcıya
+ * değil, sunucudaki `/api/globals/ai-settings/chat` vekiline gider. API anahtarı tarayıcıya hiç inmez.
  */
+
+const CHAT_PROXY_URL = `${API_BASE}/globals/ai-settings/chat`
 
 const ANALYSIS_TIMEOUT_MS = 120_000
 const MODEL_TIMEOUT_MS = 20_000
@@ -106,8 +110,8 @@ export type AnalysisUsage = {
 }
 
 export type AnalyzeInput = {
-  settings: ProviderSettings
-  apiKey: string
+  /** Kullanıcının Payload jetonu: vekil uç ürün ekleyen roller için açıktır. */
+  token: string
   /** Fotoğraflar, gönderim sırasıyla; `index` photoRoles ve requests için kimlik. */
   images: { index: number; base64: string }[]
   /** Önceki turun çıktısı: aynı alanlar 0'dan okunmasın. */
@@ -203,8 +207,8 @@ async function postChat(
   responseFormat: Record<string, unknown>,
   timeoutMs: number,
 ): Promise<{ payload: ChatResponse; degraded: boolean }> {
+  // Modeli sunucu koyar: istemci model adı ya da anahtar göndermez.
   const body = {
-    model: input.settings.model,
     temperature: 0.1,
     messages,
     response_format: responseFormat,
@@ -214,36 +218,70 @@ async function postChat(
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   let response: Response
   try {
-    response = await fetch(chatCompletionsUrl(input.settings.baseUrl), {
+    response = await fetch(CHAT_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${input.apiKey}`,
+        Authorization: `JWT ${input.token}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
     })
   } catch {
-    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
+    if (controller.signal.aborted) {
+      throw new AiError(
+        'network',
+        0,
+        `Analiz ${Math.round(timeoutMs / 1000)} saniyede bitmedi. Fotoğraf sayısını azaltıp tekrar dene.`,
+      )
+    }
+    throw new AiError('network', 0, 'Sunucuya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
   } finally {
     clearTimeout(timer)
   }
 
   if (response.status === 401 || response.status === 403) {
-    throw new AiError('auth', response.status, 'API anahtarı reddedildi. Sağlayıcı ayarlarını kontrol et.')
+    throw new AiError('auth', response.status, 'Oturumun sona ermiş ya da bu işlem için yetkin yok.')
   }
   if (response.status === 400 && responseFormat.type === 'json_schema') {
     return { payload: { choices: [] }, degraded: true }
   }
   if (!response.ok) {
+    const detail = await bodyError(response)
     throw new AiError(
       'request',
       response.status,
-      `Sağlayıcı hata verdi (kod ${response.status}). Model adını ve API anahtarını kontrol edip tekrar dene.`,
+      detail || `Sağlayıcı hata verdi (kod ${response.status}). Tekrar dene.`,
     )
   }
 
   return { payload: (await response.json()) as ChatResponse, degraded: false }
+}
+
+/** Vekil ve sağlayıcı hata gövdelerinde tek anlaşılır cümle arar (`{ error }` / `{ message }`). */
+async function bodyError(response: Response): Promise<string> {
+  const text = await response.text().catch(() => '')
+  if (!text.trim()) return ''
+  try {
+    const parsed: unknown = JSON.parse(text)
+    if (parsed && typeof parsed === 'object') {
+      if ('error' in parsed) {
+        const error = parsed.error
+        if (typeof error === 'string' && error.trim()) return error.trim()
+        if (error && typeof error === 'object' && 'message' in error) {
+          const message = (error as { message?: unknown }).message
+          if (typeof message === 'string' && message.trim()) return message.trim()
+        }
+      }
+      if ('message' in parsed && typeof (parsed as { message?: unknown }).message === 'string') {
+        return String((parsed as { message: string }).message).trim()
+      }
+    }
+  } catch {
+    // JSON değil: ham metnin ilk satırı yeter.
+  }
+  const flat = text.replace(/\s+/g, ' ').trim()
+  return flat.length > 200 ? `${flat.slice(0, 200)}…` : flat
 }
 
 function contentOf(payload: ChatResponse): string {
@@ -280,33 +318,6 @@ function safeJson(text: string): unknown {
 }
 
 /* ------------------------------- API -------------------------------- */
-
-export async function listModels(settings: ProviderSettings, apiKey: string): Promise<string[]> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS)
-  let response: Response
-  try {
-    response = await fetch(modelsUrl(settings.baseUrl), {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      signal: controller.signal,
-    })
-  } catch {
-    throw new AiError('network', 0, 'Sağlayıcıya ulaşılamadı. Bağlantını kontrol edip tekrar dene.')
-  } finally {
-    clearTimeout(timer)
-  }
-  if (response.status === 401 || response.status === 403) {
-    throw new AiError('auth', response.status, 'API anahtarı reddedildi. Sağlayıcı ayarlarını kontrol et.')
-  }
-  if (!response.ok) {
-    throw new AiError('request', response.status, `Model listesi alınamadı (kod ${response.status}).`)
-  }
-  const payload = (await response.json()) as { data?: { id?: unknown }[] }
-  const ids = (payload.data ?? [])
-    .map((row) => (typeof row.id === 'string' ? row.id : null))
-    .filter((id): id is string => Boolean(id))
-  return ids.sort((a, b) => a.localeCompare(b))
-}
 
 export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult> {
   const content: ContentPart[] = [{ type: 'text', text: buildUserText(input) }]
@@ -397,7 +408,7 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
   return {
     data: parsed.data,
     usage: usageOf(payload),
-    model: typeof payload.model === 'string' ? payload.model : input.settings.model,
+    model: typeof payload.model === 'string' ? payload.model : 'bilinmiyor',
     repaired,
     degraded,
   }

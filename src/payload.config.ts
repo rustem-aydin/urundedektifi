@@ -29,6 +29,7 @@ import { Countries } from './collections/Countries'
 import { migrations } from './migrations'
 import { Nutrients } from './collections/Nutrients'
 import { Allergens } from './collections/Allergens'
+import { AiSettings } from './globals/AiSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -77,6 +78,7 @@ export default buildConfig({
     Countries,
   ],
   editor: lexicalEditor(),
+  globals: [AiSettings],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

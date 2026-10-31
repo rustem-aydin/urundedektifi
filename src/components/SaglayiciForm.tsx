@@ -1,104 +1,44 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
-import { Chip, TextField, WizardIntro } from '@/components/wizard/controls'
-import { AiError, listModels } from '@/lib/wizard/ai'
-import {
-  readApiKey,
-  readProviderSettings,
-  writeApiKey,
-  writeProviderSettings,
-} from '@/lib/wizard/provider'
-
-function maskKey(key: string): string {
-  if (key.length <= 8) return '••••'
-  return `${key.slice(0, 4)}…${key.slice(-4)}`
-}
-
-function describe(error: unknown): string {
-  if (error instanceof AiError) return error.message
-  return error instanceof Error ? error.message : 'Bilinmeyen hata.'
-}
+import { WizardIntro } from '@/components/wizard/controls'
+import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
 
 /**
- * Yapay zekâ sağlayıcısı (ADR 0008): OpenAI uyumlu base URL + API anahtarı + model.
- * Anahtar `sessionStorage`'da tutulur (sekme kapanınca silinir) ve bir daha gösterilmez.
+ * Yapay zekâ sağlayıcısı (ADR 0008/0021): ayar tek merkezde, Payload panelindeki
+ * `ai-settings` global'inde. Bu ekran yalnız durumu gösterir — anahtar tarayıcıya inmez,
+ * model seçimi buradan yapılmaz.
  */
 export function SaglayiciForm() {
-  const { canAddProduct, restoring } = useSession()
-  const [baseUrl, setBaseUrl] = useState('')
-  const [apiKey, setApiKey] = useState('')
-  const [storedKey, setStoredKey] = useState<string | null>(null)
-  const [model, setModel] = useState('')
-  const [models, setModels] = useState<string[] | null>(null)
-  const [manualModel, setManualModel] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
-  const [loaded, setLoaded] = useState(false)
+  const { token, canAddProduct, restoring } = useSession()
+  const [status, setStatus] = useState<ProviderStatus | null>(null)
 
   useEffect(() => {
-    const settings = readProviderSettings()
-    if (settings) {
-      setBaseUrl(settings.baseUrl)
-      setModel(settings.model)
+    if (!token) {
+      setStatus({ configured: false, baseUrl: null, model: null })
+      return
     }
-    setStoredKey(readApiKey())
-    setLoaded(true)
-  }, [])
-
-  const effectiveKey = apiKey.trim() || storedKey || ''
-  const canConnect = baseUrl.trim().length > 0 && effectiveKey.length > 0
-  const canSave = canConnect && model.trim().length > 0
-
-  const maskedKey = useMemo(() => (storedKey ? maskKey(storedKey) : null), [storedKey])
-
-  async function fetchModels() {
-    setFailure(null)
-    setNotice(null)
-    setBusy(true)
-    try {
-      const found = await listModels({ baseUrl, model }, effectiveKey)
-      setModels(found)
-      setManualModel(false)
-      if (!found.length) {
-        setNotice('Sağlayıcı model listesi döndürmedi. Model adını elle yaz.')
-      } else if (!found.includes(model)) {
-        setModel(found[0])
-      }
-    } catch (error) {
-      setModels(null)
-      setManualModel(true)
-      setFailure('Model listesi alınamadı. Model adını elle yazabilirsin.')
-    } finally {
-      setBusy(false)
+    let active = true
+    fetchProviderStatus(token)
+      .then((next) => {
+        if (active) setStatus(next)
+      })
+      .catch(() => {
+        if (active) setStatus({ configured: false, baseUrl: null, model: null })
+      })
+    return () => {
+      active = false
     }
-  }
+  }, [token])
 
-  function save() {
-    setFailure(null)
-    setNotice(null)
-    try {
-      if (apiKey.trim()) {
-        writeApiKey(apiKey)
-        setStoredKey(apiKey.trim())
-        setApiKey('')
-      }
-      writeProviderSettings({ baseUrl, model })
-      setNotice('Sağlayıcı kaydedildi. Ekle ekranındaki analiz artık bu sağlayıcıyı kullanıyor.')
-    } catch (error) {
-      setFailure(describe(error))
-    }
-  }
-
-  if (restoring) {
-    return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Oturum okunuyor…</p>
+  if (restoring || status === null) {
+    return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
   }
 
   if (!canAddProduct) {
@@ -116,71 +56,49 @@ export function SaglayiciForm() {
     )
   }
 
-  if (!loaded) {
-    return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
-  }
-
   return (
     <div className="flex flex-col gap-5">
       <CaseCard className="flex flex-col gap-2 p-4">
-        <EvidenceTag variant="evidence">YAPAY ZEKÂ</EvidenceTag>
-        <WizardIntro eyebrow="SAĞLAYICI" title="OpenAI uyumlu servis">
-          Ürün fotoğrafları bu adrese gönderilir. Adresi tam yaz (örn.
-          https://api.openai.com/v1). Anahtar yalnız bu sekmede saklanır; sunucuya gitmez.
+        <EvidenceTag variant={status.configured ? 'evidence' : 'stamp'}>YAPAY ZEKÂ</EvidenceTag>
+        <WizardIntro
+          eyebrow="SAĞLAYICI"
+          title={status.configured ? 'Sağlayıcı hazır' : 'Sağlayıcı ayarlanmadı'}
+        >
+          {status.configured
+            ? 'Ürün fotoğrafları sunucu üzerinden bu sağlayıcıya gönderilir. API anahtarı yalnız sunucuda tutulur.'
+            : 'Ekle sihirbazının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
         </WizardIntro>
       </CaseCard>
 
-      <TextField
-        label="Servis adresi"
-        value={baseUrl}
-        placeholder="https://api.openai.com/v1"
-        onChange={setBaseUrl}
-      />
-      <TextField
-        label={maskedKey ? `API anahtarı (kayıtlı: ${maskedKey})` : 'API anahtarı'}
-        type="password"
-        value={apiKey}
-        placeholder={maskedKey ? 'Yeni anahtar yazarsan eskisinin yerine geçer' : 'sk-…'}
-        onChange={(value) => setApiKey(value.trim())}
-      />
+      {status.configured ? (
+        <dl className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1">
+            <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">
+              SERVİS ADRESİ
+            </dt>
+            <dd className="break-all text-sm">{status.baseUrl}</dd>
+          </div>
+          <div className="flex flex-col gap-1">
+            <dt className="font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase">MODEL</dt>
+            <dd className="break-all text-sm">{status.model}</dd>
+          </div>
+        </dl>
+      ) : (
+        <CaseCard className="flex flex-col gap-3 p-4">
+          <p className="text-sm text-muted-foreground">
+            Yönetici panelinde <strong className="text-foreground">Sistem → Yapay zekâ sağlayıcısı</strong>{' '}
+            bölümünü doldur: servis adresi, API anahtarı ve model. Ayar tüm istemciler (web + mobil)
+            için geçerli olur.
+          </p>
+          <Button asChild className="w-fit">
+            <a href="/admin/globals/ai-settings">Yönetim panelini aç</a>
+          </Button>
+        </CaseCard>
+      )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" disabled={busy || !canConnect} onClick={() => void fetchModels()}>
-          {busy ? 'Bağlanıyor…' : 'Modelleri getir'}
-        </Button>
-        {models === null && !manualModel ? (
-          <Chip label="Modeli elle yaz" onClick={() => setManualModel(true)} />
-        ) : null}
-      </div>
-
-      {models?.length ? (
-        <div className="flex flex-wrap gap-1.5">
-          {models.slice(0, 30).map((id) => (
-            <Chip key={id} label={id} selected={id === model} onClick={() => setModel(id)} />
-          ))}
-        </div>
-      ) : null}
-
-      {manualModel || !models?.length ? (
-        <TextField
-          label="Model"
-          value={model}
-          placeholder="gpt-4.1-mini, gemini-2.0-flash…"
-          onChange={(value) => setModel(value.trim())}
-        />
-      ) : null}
-
-      {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
-      {notice ? <p className="text-sm text-evidence-green">{notice}</p> : null}
-
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={!canSave} onClick={save}>
-          Kaydet
-        </Button>
-        <Button variant="ghost" asChild>
-          <Link href="/ekle">Ekle ekranına dön</Link>
-        </Button>
-      </div>
+      <Button variant="ghost" asChild className="w-fit">
+        <Link href="/ekle">Ekle ekranına dön</Link>
+      </Button>
     </div>
   )
 }

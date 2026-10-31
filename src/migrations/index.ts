@@ -9,6 +9,7 @@ import * as migration_20261025_173424_add_goruntulenme from './20261025_173424_a
 import * as migration_20261028_204639_additives_code_optional from './20261028_204639_additives_code_optional';
 import * as migration_20261029_193000_drop_media_image_sizes from './20261029_193000_drop_media_image_sizes';
 import * as migration_20261029_210000_add_profiles_and_contributions from './20261029_210000_add_profiles_and_contributions';
+import * as migration_20261031_090000_ai_settings from './20261031_090000_ai_settings';
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20261029_210000_add_profiles_and_contributions.up,
     down: migration_20261029_210000_add_profiles_and_contributions.down,
     name: '20261029_210000_add_profiles_and_contributions',
+  },
+  {
+    up: migration_20261031_090000_ai_settings.up,
+    down: migration_20261031_090000_ai_settings.down,
+    name: '20261031_090000_ai_settings',
   },
 ];

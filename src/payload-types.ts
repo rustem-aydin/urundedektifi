@@ -126,8 +126,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'ai-settings': AiSetting;
+  };
+  globalsSelect: {
+    'ai-settings': AiSettingsSelect<false> | AiSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -2151,6 +2155,41 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Ekle sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama aynı ayarı okur; API anahtarı yalnız sunucuda kalır, istemcilere gönderilmez.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-settings".
+ */
+export interface AiSetting {
+  id: number;
+  /**
+   * OpenAI uyumlu servis adresi. `.../v1` ekini kendin yaz; adresin sonundaki eğik çizgiler temizlenir.
+   */
+  baseUrl: string;
+  /**
+   * Yalnız sunucuda kullanılır ve yalnız admin görebilir. İstemcilere (web/mobil) hiçbir zaman gönderilmez.
+   */
+  apiKey: string;
+  /**
+   * Görsel (vision) destekli, JSON şeması kabul eden bir model seç.
+   */
+  model: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-settings_select".
+ */
+export interface AiSettingsSelect<T extends boolean = true> {
+  baseUrl?: T;
+  apiKey?: T;
+  model?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

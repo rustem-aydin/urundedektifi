@@ -1,69 +1,33 @@
-import { normalizeBaseUrl } from './providerUrls'
+import { API_BASE } from './api'
 
 /**
- * Yapay zekâ sağlayıcısı ayarları (ADR 0008, web uyarlaması).
+ * Yapay zekâ sağlayıcısı durumu (ADR 0008/0021).
  *
- * Mobilde anahtar cihaz kasasında (expo-secure-store) tutulur. Tarayıcıda eşdeğeri yok:
- * API anahtarı `sessionStorage`'da (sekme kapanınca silinir), base URL + model `localStorage`'da
- * saklanır. Anahtar hiçbir zaman sunucumuza gönderilmez, doğrudan sağlayıcıya gider.
+ * Sağlayıcı adresi, model ve API anahtarı tek merkezde — Payload panelindeki `ai-settings`
+ * global'i — tutulur. Tarayıcıda anahtar saklanmaz; istemci yalnız "hazır mı, hangi model"
+ * bilgisini sunucudan okur ve analiz isteğini sunucu vekiline gönderir.
  */
 
-const KEY_STORAGE = 'seffafurun.ai.key'
-const SETTINGS_STORAGE = 'seffafurun.ai.provider'
-
-export type ProviderSettings = {
-  baseUrl: string
-  model: string
+export type ProviderStatus = {
+  configured: boolean
+  baseUrl: string | null
+  model: string | null
 }
 
-function browser(): boolean {
-  return typeof window !== 'undefined'
-}
+const UNSET: ProviderStatus = { configured: false, baseUrl: null, model: null }
 
-export function readApiKey(): string | null {
-  if (!browser()) return null
-  return window.sessionStorage.getItem(KEY_STORAGE)
-}
-
-export function writeApiKey(apiKey: string): void {
-  if (!browser()) return
-  window.sessionStorage.setItem(KEY_STORAGE, apiKey.trim())
-}
-
-export function readProviderSettings(): ProviderSettings | null {
-  if (!browser()) return null
-  const raw = window.localStorage.getItem(SETTINGS_STORAGE)
-  if (!raw) return null
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (
-      parsed &&
-      typeof parsed === 'object' &&
-      'baseUrl' in parsed &&
-      'model' in parsed &&
-      typeof parsed.baseUrl === 'string' &&
-      typeof parsed.model === 'string'
-    ) {
-      return { baseUrl: parsed.baseUrl, model: parsed.model }
-    }
-    return null
-  } catch {
-    return null
+/** Durum ucu anahtar döndürmez. Oturum yoksa/rol yetmiyorsa hazır sayılmaz. */
+export async function fetchProviderStatus(token: string | null): Promise<ProviderStatus> {
+  if (!token) return UNSET
+  const response = await fetch(`${API_BASE}/globals/ai-settings/status`, {
+    headers: { Accept: 'application/json', Authorization: `JWT ${token}` },
+    cache: 'no-store',
+  })
+  if (!response.ok) return UNSET
+  const body = (await response.json()) as Partial<ProviderStatus>
+  return {
+    configured: body.configured === true,
+    baseUrl: typeof body.baseUrl === 'string' ? body.baseUrl : null,
+    model: typeof body.model === 'string' ? body.model : null,
   }
-}
-
-export function writeProviderSettings(settings: ProviderSettings): void {
-  if (!browser()) return
-  window.localStorage.setItem(
-    SETTINGS_STORAGE,
-    JSON.stringify({ baseUrl: normalizeBaseUrl(settings.baseUrl), model: settings.model.trim() }),
-  )
-}
-
-/** Ayarlar tam mı: sihirbazın analiz adımı bunu arar. */
-export function readReadyProvider(): { apiKey: string; settings: ProviderSettings } | null {
-  const apiKey = readApiKey()
-  const settings = readProviderSettings()
-  if (!apiKey || !settings?.baseUrl || !settings.model) return null
-  return { apiKey, settings }
 }

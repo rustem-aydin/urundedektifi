@@ -29,7 +29,7 @@ import {
   type DraftPhoto,
   type ProductForm,
 } from '@/lib/wizard/productDraft'
-import { readReadyProvider } from '@/lib/wizard/provider'
+import { fetchProviderStatus } from '@/lib/wizard/provider'
 import {
   preparePhoto,
   resolveCreatedMasters,
@@ -68,7 +68,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       try {
         const stored = await loadDraft()
         if (!active) return
-        setProviderReady(Boolean(readReadyProvider()))
+        setProviderReady((await fetchProviderStatus(token)).configured)
         const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
         if (stored) {
           // Bağlantıdan gelen barkod kullanıcının az önce sorguladığı barkod: taslağı o belirler.
@@ -192,10 +192,10 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
     if (!draft) return
     setFailure(null)
     setNotice(null)
-    const ready = readReadyProvider()
-    if (!ready) {
-      setProviderReady(false)
-      setFailure('Önce yapay zekâ sağlayıcısını ayarla.')
+    const status = await fetchProviderStatus(token)
+    setProviderReady(status.configured)
+    if (!status.configured) {
+      setFailure('Yapay zekâ sağlayıcısı ayarlanmamış. Yönetici panelinden tanımlanmalı.')
       return
     }
     if (!draft.photos.length) {
@@ -227,8 +227,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
 
       const hints = draft.extraction?.requests.map((request) => request.need) ?? []
       const result = await analyzeProduct({
-        settings: ready.settings,
-        apiKey: ready.apiKey,
+        token: token ?? '',
         images,
         previous: draft.extraction,
         hints,
@@ -437,10 +436,11 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
             <CaseCard className="flex flex-col gap-2 p-4">
               <EvidenceTag variant="stamp">SAĞLAYICI</EvidenceTag>
               <WizardIntro eyebrow="YAPAY ZEKÂ" title="Sağlayıcı ayarlanmadı">
-                Fotoğrafı analiz etmek için servis adresi, API anahtarı ve model gerekiyor.
+                Fotoğraf analizi için yönetici sağlayıcıyı tanımlamalı (servis adresi, API
+                anahtarı, model).
               </WizardIntro>
               <Button asChild className="w-fit">
-                <Link href="/saglayici">Sağlayıcıyı ayarla</Link>
+                <Link href="/saglayici">Durumu gör</Link>
               </Button>
             </CaseCard>
           ) : null}
