@@ -27,6 +27,8 @@ export type FindParams = {
 export type PayloadClient = {
   readonly api: string
   login(): Promise<void>
+  /** Giriş jetonu (yanıt gövdesinde `doc` dışı alanlara gerektiğinde erişim için). */
+  getToken(): string
   find(collection: string, params?: FindParams): Promise<{ docs: IdDoc[]; totalDocs: number }>
   findAll(collection: string, params?: FindParams): Promise<IdDoc[]>
   findOne(collection: string, where: Record<string, unknown>): Promise<IdDoc | undefined>
@@ -172,5 +174,17 @@ export function createPayloadClient(options: {
     return DocEnvelope.parse(await readJson(res, `upload ${collection}`)).doc
   }
 
-  return { api, login, find, findAll, findOne, create, update, upsert, remove, upload }
+  return {
+    api,
+    login,
+    getToken: () => token,
+    find,
+    findAll,
+    findOne,
+    create,
+    update,
+    upsert,
+    remove,
+    upload,
+  }
 }
