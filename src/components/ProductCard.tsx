@@ -63,25 +63,25 @@ export function ProductCard({
             </span>
           )}
           {hasVerdicts && (
-            <div className="absolute right-1 bottom-1 left-1 z-10 hidden justify-center sm:flex">
+            <div className="absolute right-1 bottom-1 left-1 z-10 hidden justify-start sm:flex">
               <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
             </div>
           )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-none sm:gap-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-0">
           <CardHeader className="gap-1 px-0 sm:px-(--card-spacing)">
             <CardTitle className="line-clamp-2 text-sm sm:text-base">{name}</CardTitle>
             {brandName && (
               <p className="truncate text-xs text-muted-foreground sm:text-sm">{brandName}</p>
             )}
           </CardHeader>
-          <CardContent className="mt-auto flex flex-col gap-1.5 px-0 sm:gap-2 sm:px-(--card-spacing)">
-            {hasVerdicts && (
-              <div className="sm:hidden">
-                <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
-              </div>
-            )}
+          {hasVerdicts && (
+            <div className="sm:hidden">
+              <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
+            </div>
+          )}
+          <CardContent className="mt-auto flex flex-col gap-1.5 px-0 pt-1.5 sm:gap-2 sm:px-(--card-spacing)">
             {typeof viewCount === 'number' && (
               <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
                 <Eye className="size-3" aria-hidden="true" />
@@ -89,7 +89,7 @@ export function ProductCard({
               </p>
             )}
             {categoryName && (
-              <p className="mt-auto truncate border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+              <p className="truncate border-t border-dashed border-border pt-2 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
                 {categoryName}
               </p>
             )}

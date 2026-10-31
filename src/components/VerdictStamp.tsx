@@ -9,7 +9,7 @@ const stampVariants = cva(
     variants: {
       variant: {
         safe: 'text-evidence-green bg-evidence-green/10',
-        warn: 'border-current text-foreground bg-tape-yellow/20',
+        warn: 'border-current text-foreground bg-tape-yellow',
         danger: 'text-stamp bg-stamp/10',
         neutral: 'text-faded bg-muted',
       },
