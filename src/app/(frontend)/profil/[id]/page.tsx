@@ -128,6 +128,47 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       </dl>
 
       <div className="mt-10 flex flex-col gap-10">
+        {/* TAKİP ETTİKLERİ */}
+        <CaseSection
+          id="takip"
+          eyebrow="Takip"
+          title={`Takip ettikleri (${profile.following.length})`}
+          hasData={profile.following.length > 0}
+          emptyMessage="Henüz uzman takip etmiyor. Takip edilen uzmanların hükümleri ürün dosyalarında kişiselleşir."
+        >
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {profile.following.map((expert) => (
+              <li key={expert.id}>
+                <Link
+                  href={`/uzmanlar/${expert.slug}`}
+                  className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 transition-colors hover:border-foreground/30 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  {expert.avatarUrl ? (
+                    <img
+                      src={expert.avatarUrl}
+                      alt={expert.avatarAlt || expert.name}
+                      className="size-8 rounded-full border border-border object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="flex size-8 items-center justify-center rounded-full border border-border bg-muted font-mono text-[0.6rem] uppercase text-faded"
+                    >
+                      {expert.name.slice(0, 2)}
+                    </span>
+                  )}
+                  <span className="flex flex-col">
+                    <span className="text-sm font-medium">{expert.name}</span>
+                    {expert.title ? (
+                      <span className="text-xs text-muted-foreground">{expert.title}</span>
+                    ) : null}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </CaseSection>
+
         {/* KATKI SAĞLADIĞI ÜRÜNLER */}
         <CaseSection
           id="katki-urunleri"
@@ -183,47 +224,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
               {numberFormat.format(profile.stats.productCount)}
             </p>
           ) : null}
-        </CaseSection>
-
-        {/* TAKİP ETTİKLERİ */}
-        <CaseSection
-          id="takip"
-          eyebrow="Takip"
-          title={`Takip ettikleri (${profile.following.length})`}
-          hasData={profile.following.length > 0}
-          emptyMessage="Henüz uzman takip etmiyor. Takip edilen uzmanların hükümleri ürün dosyalarında kişiselleşir."
-        >
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {profile.following.map((expert) => (
-              <li key={expert.id}>
-                <Link
-                  href={`/uzmanlar/${expert.slug}`}
-                  className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 transition-colors hover:border-foreground/30 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                >
-                  {expert.avatarUrl ? (
-                    <img
-                      src={expert.avatarUrl}
-                      alt={expert.avatarAlt || expert.name}
-                      className="size-8 rounded-full border border-border object-cover"
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="flex size-8 items-center justify-center rounded-full border border-border bg-muted font-mono text-[0.6rem] uppercase text-faded"
-                    >
-                      {expert.name.slice(0, 2)}
-                    </span>
-                  )}
-                  <span className="flex flex-col">
-                    <span className="text-sm font-medium">{expert.name}</span>
-                    {expert.title ? (
-                      <span className="text-xs text-muted-foreground">{expert.title}</span>
-                    ) : null}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
         </CaseSection>
       </div>
     </div>
