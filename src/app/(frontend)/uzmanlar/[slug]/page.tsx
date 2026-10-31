@@ -291,7 +291,7 @@ export default async function ExpertDetailPage({
                   label: 'Hüküm verdiği ürünler',
                   meta: `${matchedTotal} dosya`,
                   content: (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       {matchedProducts.map((product) => (
                         <ProductCard
                           key={product.id}
@@ -317,7 +317,7 @@ export default async function ExpertDetailPage({
                 {rules.docs.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Henüz aktif kural yok.</p>
                 ) : (
-                  <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                  <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {rules.docs.map((r: any, i: number) => (
                       <li key={r.id}>
                         <CaseCard tape={i === 0} className="h-full gap-3">
