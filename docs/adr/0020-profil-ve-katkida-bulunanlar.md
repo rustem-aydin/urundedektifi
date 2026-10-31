@@ -34,6 +34,10 @@ toplamı) hiç yoktu.
 - **Görüntülenme toplamı.** Profildeki "toplam görüntülenme", katkı verdiği **yayındaki**
   ürünlerin `goruntulenme` sayaçlarının toplamıdır (ürün başına bir kez). Tekil ziyaretçi
   takibi yoktur: mevcut ham sayaç kullanılır.
+- **Liste sınırı ve tek toplama sorgusu.** Bir kullanıcı 9.000+ ürüne katkı verebiliyor; hepsini
+  basmak profili 22 MB / 22 sn yapıyordu. Profil yalnız **en çok görüntülenen 30 ürünü** listeler
+  (kırpma notu gösterilir), sayılar (`productCount`, `viewTotal`, `contributionCount`) tek bir
+  SQL toplama sorgusundan gelir.
 - **Profil düzenleme.** Ad, kısa tanıtım (`bio`) ve avatar kullanıcının kendisinde. Avatar
   önce `/api/media`'ya yüklenir, sonra kullanıcı dokümanına bağlanır. Rol alanı zaten admin'e
   kilitli olduğu için profilden yetki yükseltilemez.

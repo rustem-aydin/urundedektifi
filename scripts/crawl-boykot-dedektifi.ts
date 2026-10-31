@@ -58,7 +58,7 @@ function clean(value: string | null | undefined, maxLength?: number): string | n
 async function fetchText(url: string, tries = 3): Promise<string | null> {
   for (let attempt = 0; attempt < tries; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': 'urundedektifi-seed/1.0' } })
+      const res = await fetch(url, { headers: { 'User-Agent': 'seffafurun-seed/1.0' } })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.text()
     } catch {

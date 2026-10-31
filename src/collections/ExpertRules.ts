@@ -95,7 +95,7 @@ export const ExpertRules: CollectionConfig = {
           name: 'topic',
           type: 'relationship',
           relationTo: 'topics',
-          label: 'Konu (Hangi Dedektif?)',
+          label: 'Konu (Hangi Uzman?)',
           required: true,
           admin: {
             width: '50%',

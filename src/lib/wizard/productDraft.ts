@@ -8,7 +8,7 @@ import type { ProductDoc, RelationRef } from './types'
  * `url` yalnız bellekte yaşayan object URL'dir; diske yazılmaz.
  */
 
-const DRAFT_STORAGE = 'urundedektifi.ekle.draft'
+const DRAFT_STORAGE = 'seffafurun.ekle.draft'
 
 export type DraftPhoto = {
   id: string

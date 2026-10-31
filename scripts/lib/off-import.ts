@@ -19,7 +19,7 @@ import type { PayloadClient } from './payload-rest'
  */
 
 export const OFF_HEADERS = {
-  'User-Agent': 'urundedektifi-import/1.0 (admin@admin.com)',
+  'User-Agent': 'seffafurun-import/1.0 (admin@admin.com)',
 }
 
 /**
@@ -361,7 +361,7 @@ const NUTRIENT_MAP: Array<{ off: string; slug: string; unit: 'kcal' | 'g' | 'mg'
   { off: 'sodium_100g', slug: 'sodium', unit: 'mg' },
 ]
 
-export const tmpDir = path.join(os.tmpdir(), 'urundedektifi-seed')
+export const tmpDir = path.join(os.tmpdir(), 'seffafurun-seed')
 
 export async function fetchWithRetry(url: string, attempts = 5): Promise<unknown> {
   for (let attempt = 1; attempt <= attempts; attempt++) {

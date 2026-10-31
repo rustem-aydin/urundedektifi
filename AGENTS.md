@@ -1,4 +1,4 @@
-# urundedektifi
+# Şeffaf Ürün
 
 ## Agent skills
 

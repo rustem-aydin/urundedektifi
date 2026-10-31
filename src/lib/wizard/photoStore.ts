@@ -7,7 +7,7 @@
  * kaldığı yerden devam eder.
  */
 
-const DB_NAME = 'urundedektifi.wizard'
+const DB_NAME = 'seffafurun.wizard'
 const STORE = 'photos'
 const VERSION = 1
 

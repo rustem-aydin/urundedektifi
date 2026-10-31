@@ -8,8 +8,8 @@ import { normalizeBaseUrl } from './providerUrls'
  * saklanır. Anahtar hiçbir zaman sunucumuza gönderilmez, doğrudan sağlayıcıya gider.
  */
 
-const KEY_STORAGE = 'urundedektifi.ai.key'
-const SETTINGS_STORAGE = 'urundedektifi.ai.provider'
+const KEY_STORAGE = 'seffafurun.ai.key'
+const SETTINGS_STORAGE = 'seffafurun.ai.provider'
 
 export type ProviderSettings = {
   baseUrl: string
