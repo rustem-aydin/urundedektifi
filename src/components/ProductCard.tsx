@@ -73,7 +73,9 @@ export function ProductCard({
           <CardHeader className="gap-1 px-0 sm:px-(--card-spacing)">
             <CardTitle className="line-clamp-2 text-sm sm:text-base">{name}</CardTitle>
             {brandName && (
-              <p className="truncate text-xs text-muted-foreground sm:text-sm">{brandName}</p>
+              <p className="line-clamp-2 text-xs break-words text-muted-foreground sm:text-sm">
+                {brandName}
+              </p>
             )}
           </CardHeader>
           {hasVerdicts && (

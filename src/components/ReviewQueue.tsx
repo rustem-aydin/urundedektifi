@@ -198,7 +198,9 @@ export function ReviewQueue() {
                   <EvidenceTag>{item.barcode ?? '—'}</EvidenceTag>
                   {item.seen ? <EvidenceTag variant="tape">BAKILDI</EvidenceTag> : <EvidenceTag variant="stamp">YENİ</EvidenceTag>}
                 </div>
-                <p className="text-sm font-medium">{item.name?.trim() || 'İsimsiz katkı'}</p>
+                <p className="line-clamp-2 text-sm font-medium break-words">
+                  {item.name?.trim() || 'İsimsiz katkı'}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {item.submitterName ?? 'Bilinmeyen kullanıcı'} · {item.photoCount} fotoğraf
                   {item.createdAt ? ` · ${dateFormat.format(new Date(item.createdAt))}` : ''}
