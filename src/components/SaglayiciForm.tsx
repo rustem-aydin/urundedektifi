@@ -16,7 +16,7 @@ import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
  * model seçimi buradan yapılmaz.
  */
 export function SaglayiciForm() {
-  const { token, canAddProduct, restoring } = useSession()
+  const { token, isPanel, restoring } = useSession()
   const [status, setStatus] = useState<ProviderStatus | null>(null)
 
   useEffect(() => {
@@ -41,13 +41,12 @@ export function SaglayiciForm() {
     return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
   }
 
-  if (!canAddProduct) {
+  if (!isPanel) {
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
         <WizardIntro eyebrow="SAĞLAYICI" title="Bu ekran rolüne kapalı">
-          Admin ya da editör hesabıyla giriş yap; sağlayıcı ayarı yalnız ürün ekleyen roller için
-          gerekir.
+          Admin ya da editör hesabıyla giriş yap; sağlayıcı ayarı inceleme yapan roller için gerekir.
         </WizardIntro>
         <Button asChild className="w-fit">
           <Link href={`/giris?next=${encodeURIComponent('/saglayici')}`}>Giriş ekranına git</Link>
@@ -66,7 +65,7 @@ export function SaglayiciForm() {
         >
           {status.configured
             ? 'Ürün fotoğrafları sunucu üzerinden bu sağlayıcıya gönderilir. API anahtarı yalnız sunucuda tutulur.'
-            : 'Ekle sihirbazının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
+            : 'İnceleme sihirbazının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
         </WizardIntro>
       </CaseCard>
 
@@ -97,7 +96,7 @@ export function SaglayiciForm() {
       )}
 
       <Button variant="ghost" asChild className="w-fit">
-        <Link href="/ekle">Ekle ekranına dön</Link>
+        <Link href="/inceleme">İnceleme kuyruğuna dön</Link>
       </Button>
     </div>
   )

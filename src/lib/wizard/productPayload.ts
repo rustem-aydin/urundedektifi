@@ -56,7 +56,7 @@ export type BuildOutcome = { data: ProductWriteData; dropped: string[] }
 /**
  * Formu Payload gövdesine çevirir. Eşlenmemiş satırlar ürüne bağlanmaz, `dropped`'a düşer.
  * `complete` (Düzenle, ADR 0009): temizlenen alanlar da gövdeye girer — boş dizi `null` değeriyle
- * alanın üzerine yazılır. Ekle'de alanlar yalnız doldurulduğu için `complete` kapalıdır.
+ * alanın üzerine yazılır. İnceleme akışında alanlar yalnız doldurulduğu için `complete` kapalıdır.
  */
 export function buildProductData(
   draft: Draft,

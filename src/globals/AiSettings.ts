@@ -6,7 +6,7 @@ import type { User } from '@/payload-types'
  * Yapay zekâ sağlayıcısı — tek merkez (web + mobil).
  *
  * Sağlayıcı adresi, model ve API anahtarı yalnız burada tutulur. İstemciler anahtarı hiç
- * görmez: Ekle sihirbazının etiket okuma çağrısı sunucudaki `/api/ai-settings/chat`
+ * görmez: İnceleme sihirbazının etiket okuma çağrısı sunucudaki `/api/ai-settings/chat`
  * vekilinden geçer, anahtar burada kalır. Böylece yönetici tek yerden sağlayıcıyı değiştirir,
  * her istemci (tarayıcı, telefon) aynı sağlayıcıyı kullanır — cihaz başına anahtar gerekmez.
  *
@@ -15,11 +15,11 @@ import type { User } from '@/payload-types'
  * - `GET  /api/globals/ai-settings/models` → sağlayıcının model listesi (vekil)
  * - `POST /api/globals/ai-settings/chat`   → chat/completions vekili (yalnız yanıt gövdesi geçer)
  *
- * Yetki: ürün ekleyen roller (admin, editör). Tüketici hesabı vekili kullanamaz; aksi hâlde
+ * Yetki: inceleme yapan roller (admin, editör). Tüketici hesabı vekili kullanamaz; aksi hâlde
  * ücretsiz bir LLM geçidi olurdu.
  */
 
-/** Ürün ekleyen roller: vekil uçları ve durum okuması bunlara açık. */
+/** İnceleme yapan roller: vekil uçları ve durum okuması bunlara açık. */
 const AI_ROLES: User['role'][] = ['admin', 'editor']
 
 /**
@@ -142,7 +142,7 @@ export const AiSettings: GlobalConfig = {
   admin: {
     group: 'Sistem',
     description:
-      'Ekle sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama ' +
+      'İnceleme sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama ' +
       'aynı ayarı okur; API anahtarı yalnız sunucuda kalır, istemcilere gönderilmez.',
   },
   access: {

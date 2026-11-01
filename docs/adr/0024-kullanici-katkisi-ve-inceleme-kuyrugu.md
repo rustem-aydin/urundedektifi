@@ -1,9 +1,9 @@
 # ADR 0024 — Kullanıcı katkısı: fotoğrafla taslak açma ve inceleme kuyruğu
 
-- Durum: Kabul edildi
+- Durum: Kabul edildi — **giriş noktaları ve sihirbazın rol ayrımı ADR 0026 ile yürürlükten kalktı**
 - Tarih: 2026-10-31
 - İlgili: ADR 0002 (ürün ekleme yetkisi), ADR 0008 (Ekle sihirbazı), ADR 0009 (Düzenle),
-  ADR 0020 (profil ve katkıda bulunanlar), `src/lib/contributionFlow.ts`,
+  ADR 0020 (profil ve katkıda bulunanlar), ADR 0026 (tek katkı kapısı), `src/lib/contributionFlow.ts`,
   `src/components/ContributionForm.tsx`, `src/components/ReviewQueue.tsx`
 
 ## Bağlam

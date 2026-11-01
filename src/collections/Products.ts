@@ -357,6 +357,30 @@ export const Products: CollectionConfig = {
       },
     },
     {
+      // İnceleme rozeti: panel gezinmesinde bekleyen/işaretlenmemiş taslak sayısı (ADR 0026).
+      path: '/review/count',
+      method: 'get',
+      handler: async (req) => {
+        const role = (req.user as User | null)?.role
+        if (role !== 'admin' && role !== 'editor') {
+          return Response.json({ error: 'Yetkiniz yok' }, { status: 403 })
+        }
+        const query = {
+          collection: 'products' as const,
+          overrideAccess: true,
+          req,
+        }
+        const [total, seen] = await Promise.all([
+          req.payload.count({ ...query, where: { status: { equals: 'draft' } } }),
+          req.payload.count({
+            ...query,
+            where: { status: { equals: 'draft' }, is_submit: { equals: true } },
+          }),
+        ])
+        return Response.json({ total: total.totalDocs, unseen: total.totalDocs - seen.totalDocs })
+      },
+    },
+    {
       // Görüntülenme sayacı: ürün dosyası açıldığında web/mobil istemci oturum başına bir kez çağırır.
       // Tek atomik UPDATE — okuyup yazmak eşzamanlı görüntülemelerde sayı kaybettirir.
       // Alan düzeyi erişimi kapalı olduğu için sayaç bu uç dışında artırılamaz.

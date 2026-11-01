@@ -14,11 +14,11 @@ import { ApiError, deleteProduct } from '@/lib/wizard/api'
  */
 export function ProductAdminActions({ id, name }: { id: string; name: string }) {
   const router = useRouter()
-  const { canAddProduct, token } = useSession()
+  const { isPanel, token } = useSession()
   const [deleting, setDeleting] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
 
-  if (!canAddProduct) return null
+  if (!isPanel) return null
 
   async function remove() {
     if (!token) return

@@ -29,7 +29,7 @@ type SessionValue = {
   /** Jeton okunana kadar true: bu sırada kapı kararı vermeyiz. */
   restoring: boolean
   busy: boolean
-  canAddProduct: boolean
+  isPanel: boolean
   /** Takip edilen uzman kimlikleri (oturum sahibinin `users.following` alanı). */
   followingIds: string[]
   signIn: (email: string, password: string) => Promise<void>
@@ -173,7 +173,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       token,
       restoring,
       busy,
-      canAddProduct: Boolean(user && CORPORATE_ROLES.includes(user.role)),
+      isPanel: Boolean(user && CORPORATE_ROLES.includes(user.role)),
       followingIds,
       signIn,
       signUp,

@@ -27,7 +27,7 @@ export function LoginForm() {
     setFailure(null)
     try {
       await signIn(email.trim(), password)
-      router.replace(next.startsWith('/') ? next : '/ekle')
+      router.replace(next.startsWith('/') ? next : '/tara')
     } catch (error) {
       setFailure(
         error instanceof ApiError && error.kind === 'unauthorized'

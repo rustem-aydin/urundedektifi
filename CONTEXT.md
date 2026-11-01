@@ -143,18 +143,24 @@ _Avoid_: erişim, izlenme toplamı, tekil ziyaretçi
 ### Tarama, Katkı ve İnceleme
 
 **Katkı Akışı**:
-Taramada yayında dosyası olmayan barkod için son kullanıcının fotoğraf gönderip Ürün açtığı akış (`/katki/[barcode]`, mobil `katki/[barcode]`). Ürün `status: draft` açılır, `submittedBy` katkı sahibini tutar. Aynı barkodda ikinci katkı açılmaz; kullanıcı başına en fazla 50 açık Taslak Katkı vardır.
+Taramada yayında dosyası olmayan barkod için **her rolün** (admin, editör, son kullanıcı) fotoğraf gönderip Ürün açtığı tek akış (`/katki/[barcode]`, mobil `katki/[barcode]`). Ürün `status: draft` açılır, `submittedBy` katkı sahibini tutar. Aynı barkodda ikinci katkı açılmaz; kullanıcı başına en fazla 50 açık Taslak Katkı vardır.
 _Avoid_: ürün önerisi, talep, bildirim
 
-Katkı akışının üç kapısı vardır: `/katki` (barkod elle girişi), tarama/sorguda "ürün yok" dalı ve `/ekle` (panel dışı kullanıcıyı sihirbaz yerine katkıya yönlendirir). Menüde panel rollerine `Ekle`/`İnceleme`, diğerlerine `Katkı` görünür.
+Katkı akışının iki kapısı vardır: `/katki` (barkod elle girişi) ve tarama/sorgudaki "ürün yok" dalı. İkisi de rol ayrımı yapmaz; panel rolleri için ayrı bir ekleme ekranı yoktur (ADR 0026).
+
+Mobil aynı akışı birebir taşır: `katki` (barkod elle girişi + kamera) ve ürün ekranının "DOSYA YOK" dalında gömülü form. Fotoğraf ekleme yüzeyi iki tarafta tek bileşendir (web `ContributionForm`, mobil `components/katki/ContributionForm`): 1–6 fotoğraf, kamera + galeri, sıralama (ilk kare ön yüz), tek tek silme, sayaç ve "İNCELEMEDE" bitiş durumu.
 
 **Taslak Katkı**:
 İnceleme bekleyen Ürün: `status: draft` + `submittedBy` dolu. Taramada "yok" sayılır (`products.read` yalnız yayındakini herkese açar); yalnız sahibi ve panel rollerine görünür.
 _Avoid_: bekleyen ürün, aday kayıt
 
 **İnceleme Kuyruğu**:
-Editör/yöneticinin Taslak Katkıları gördüğü yüzey (`/inceleme`, mobil İnceleme). Görülmemişler önce ve eski önce gelir; "Baktım" işareti `products.is_submit` alanıdır. "Analiz et" Ekle sihirbazını inceleme modunda açar (mevcut fotoğraflar hazır); yayınlama oradan yapılır.
+Editör/yöneticinin Taslak Katkıları gördüğü yüzey (`/inceleme`, mobil İnceleme). Görülmemişler önce ve eski önce gelir; "Baktım" işareti `products.is_submit` alanıdır. Menüdeki girdi bekleyen (görülmemiş) taslak sayısını rozet olarak taşır (`GET /api/products/review/count`). "Analiz et" **İnceleme Sihirbazı**nı açar (`/inceleme/[id]`, mobil `inceleme/[id]`; mevcut fotoğraflar hazır) ve yayınlama oradan yapılır; kaydettikten sonra otomatik olarak sıradaki incelenmemiş taslağa geçilir. Kendi katkısı da kuyrukta "senin katkın" etiketiyle görünür ve aynı kişi tarafından incelenebilir. Kuyruk tüm taslak ürünleri gösterir (katkı sahibi olmayan panel taslakları dahil).
 _Avoid_: moderasyon paneli, onay listesi, görev kuyruğu
+
+**İnceleme Sihirbazı**:
+Panel rolünün Katkı Akışından gelen taslağı alanlara dönüştürdüğü yüzey (`/inceleme/[id]`, mobil `inceleme/[id]`). Adımlar: fotoğraf → onay → eşleme → kayıt; "Analiz et" yapay zekâyla etiketi okur. Yeni ürün açan bir modu yoktur — ürün yalnız Katkı Akışından doğar.
+_Avoid_: Ekle sihirbazı, ürün ekleme ekranı
 
 **Katkı Reddi**:
 Kabul edilmeyen Taslak Katkı silinir; katkı satırları da silinir, dolayısıyla katkı sahibinin profilinde hiç görünmez. Ayrı "reddedildi" durumu ve ret notu yoktur.

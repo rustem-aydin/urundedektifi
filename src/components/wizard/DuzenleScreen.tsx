@@ -41,7 +41,7 @@ function describe(error: unknown): string {
  */
 export function DuzenleScreen({ productId }: { productId: string }) {
   const router = useRouter()
-  const { user, token, canAddProduct, restoring } = useSession()
+  const { user, token, isPanel, restoring } = useSession()
 
   const [draft, setDraft] = useState<Draft | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -53,7 +53,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
   const [originalBarcode, setOriginalBarcode] = useState('')
 
   useEffect(() => {
-    if (!canAddProduct || !productId || !token) return
+    if (!isPanel || !productId || !token) return
     let active = true
     fetchProductDoc(productId, token)
       .then((doc) => {
@@ -72,7 +72,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     return () => {
       active = false
     }
-  }, [canAddProduct, productId, token])
+  }, [isPanel, productId, token])
 
   const editForm = useCallback((form: ProductForm, field?: string) => {
     setDraft((current) => {
@@ -169,7 +169,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     }
   }
 
-  if (restoring || (canAddProduct && !draft && !loadError)) {
+  if (restoring || (isPanel && !draft && !loadError)) {
     return (
       <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">
         Ürün ve oturum hazırlanıyor…
@@ -177,7 +177,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     )
   }
 
-  if (!canAddProduct) {
+  if (!isPanel) {
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
@@ -255,8 +255,8 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         <EvidenceTag variant="stamp">KAYITLI ÜRÜN</EvidenceTag>
         <p className="font-display text-xl">{draft.form.name || 'İsimsiz ürün'}</p>
         <p className="text-sm text-muted-foreground">
-          Kaydettiğinde formdaki değerler ürünün üzerine yazılır (Ekle’deki “yalnız boş alan” kuralı
-          burada geçerli değil). Yeni fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur.
+          Kaydettiğinde formdaki değerler ürünün üzerine yazılır; boş alanlar da temizlenir. Yeni
+          fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur.
         </p>
         <TextField
           label="Barkod (8–14 hane)"

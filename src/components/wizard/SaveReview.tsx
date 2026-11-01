@@ -180,7 +180,7 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
       {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
 
       <Button type="button" disabled={!canSave} onClick={onSave}>
-        {busy ? 'Kaydediliyor…' : draft.mode === 'update' ? 'Boş alanları doldur' : 'Ürünü kaydet'}
+        {busy ? 'Kaydediliyor…' : 'İncelemeyi kaydet'}
       </Button>
 
       <WizardIntro eyebrow="ADIM 4" title="Kayıt">

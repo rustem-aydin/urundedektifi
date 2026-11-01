@@ -1,24 +1,20 @@
 import type { Extraction, PhotoRole } from './ai'
-import { clearPhotoBlobs, deletePhotoBlob, getPhotoBlob } from './photoStore'
+import { deletePhotoBlob } from './photoStore'
 import type { ProductDoc, RelationRef } from './types'
 
 /**
- * Ekle sihirbazının taslağı (ADR 0008, web uyarlaması).
- * Fotoğraf blob'ları IndexedDB'de (photoStore), taslağın kendisi `localStorage`'da tutulur.
- * `url` yalnız bellekte yaşayan object URL'dir; diske yazılmaz.
+ * İnceleme sihirbazının taslağı (ADR 0026, web uyarlaması).
+ * Taslak bellekte yaşar; yalnız fotoğraf blob'ları IndexedDB'de (photoStore) tutulur.
+ * `url` yalnız bellekte yaşayan object URL'dir, kalıcı tutulmaz.
  */
-
-const DRAFT_STORAGE = 'seffafurun.ekle.draft'
 
 export type DraftPhoto = {
   id: string
   role: PhotoRole
   source: 'camera' | 'library'
-  /** Bellege bağlı görüntü adresi; `saveDraft` bunu yazmaz. */
+  /** Bellege bağlı görüntü adresi; kalıcı tutulmaz. */
   url?: string
 }
-
-type StoredPhoto = Omit<DraftPhoto, 'url'>
 
 /** Master listeye eşleme kararı. */
 export type Resolution = {
@@ -78,52 +74,8 @@ export type Draft = {
   updatedAt: string
 }
 
-export type LoadedDraft = { draft: Draft; missingPhotos: number }
-
 export function emptyResolution(name = ''): Resolution {
   return { kind: 'pending', name, id: null, suggestion: null }
-}
-
-export function emptyForm(): ProductForm {
-  return {
-    barcode: '',
-    name: '',
-    brand: emptyResolution(),
-    category: emptyResolution(),
-    manufacturer: '',
-    size: '',
-    packaging: '',
-    description: '',
-    usage: '',
-    storage: '',
-    nutriscore: '',
-    labels: [],
-    ingredients: [],
-    additives: [],
-    allergens: [],
-    nutrition: { per: '100g', items: [] },
-    warnings: [],
-    specifications: [],
-    isPublished: false,
-    price: null,
-  }
-}
-
-export function createEmptyDraft(): Draft {
-  return {
-    version: 1,
-    step: 1,
-    barcode: '',
-    mode: 'create',
-    productId: null,
-    photos: [],
-    extraction: null,
-    form: emptyForm(),
-    touched: [],
-    analysisRounds: 0,
-    usage: null,
-    updatedAt: new Date().toISOString(),
-  }
 }
 
 /* ----------------------------- eşleme ------------------------------ */
@@ -372,57 +324,7 @@ export function draftFromProduct(doc: ProductDoc): Draft {
   }
 }
 
-/* -------------------------- kalıcılık ------------------------------ */
-
-function browser(): boolean {
-  return typeof window !== 'undefined'
-}
-
-export async function loadDraft(): Promise<LoadedDraft | null> {
-  if (!browser()) return null
-  const raw = window.localStorage.getItem(DRAFT_STORAGE)
-  if (!raw) return null
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return null
-  }
-  if (!parsed || typeof parsed !== 'object' || !('version' in parsed) || parsed.version !== 1) {
-    return null
-  }
-  const stored = parsed as Draft
-  const photos: DraftPhoto[] = []
-  let missingPhotos = 0
-  for (const photo of stored.photos) {
-    try {
-      const blob = await getPhotoBlob(photo.id)
-      if (!blob) {
-        missingPhotos += 1
-        continue
-      }
-      photos.push({ ...photo, url: URL.createObjectURL(blob) })
-    } catch {
-      missingPhotos += 1
-    }
-  }
-  return { draft: { ...stored, photos }, missingPhotos }
-}
-
-export async function saveDraft(draft: Draft): Promise<void> {
-  if (!browser()) return
-  const photos: StoredPhoto[] = draft.photos.map(({ url: _url, ...rest }) => rest)
-  window.localStorage.setItem(
-    DRAFT_STORAGE,
-    JSON.stringify({ ...draft, photos, updatedAt: new Date().toISOString() }),
-  )
-}
-
-export async function clearDraft(): Promise<void> {
-  if (!browser()) return
-  window.localStorage.removeItem(DRAFT_STORAGE)
-  await clearPhotoBlobs().catch(() => undefined)
-}
+/* -------------------------- fotoğraf belleği ----------------------- */
 
 /** Tek fotoğrafı diskten ve bellekten düşürür. */
 export async function forgetPhoto(photo: DraftPhoto): Promise<void> {
@@ -461,7 +363,7 @@ export function productPhotoRefs(doc: ProductDoc): ExistingPhoto[] {
 }
 
 /**
- * İnceleme modu taslağı (ADR 0024): katkıyla açılmış taslak ürün, Ekle sihirbazının
+ * İnceleme modu taslağı (ADR 0024/0026): katkıyla açılmış taslak ürün, inceleme sihirbazının
  * 1. adımında fotoğrafları hazır hâlde açılır. Kaydetme `update` modunda çalışır; böylece
  * analiz sonrası ürün yayına alınabilir.
  */

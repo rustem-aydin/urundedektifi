@@ -19,7 +19,7 @@ import type { ExpertVerdict } from '@/lib/verdictEngine'
 import { normalizeText } from './match'
 
 /**
- * Ekle/Düzenle yazma yolu (ADR 0008/0009). Web, Payload ile aynı kaynakta çalışır; bu yüzden
+ * İnceleme/Düzenle yazma yolu (ADR 0008/0009/0026). Web, Payload ile aynı kaynakta çalışır; bu yüzden
  * taban yol görelidir (`/api`) ve CORS gerekmez. Tüm yazma çağrıları JWT ister.
  */
 
@@ -514,6 +514,11 @@ export async function fetchMyContributions(
 export async function fetchReviewQueue(token: string): Promise<ReviewItem[]> {
   const result = await request<{ items?: ReviewItem[] }>('/products/review', {}, token)
   return result.items ?? []
+}
+
+/** Panel rozeti: bekleyen taslak ve işaretlenmemiş sayısı (ADR 0026). */
+export async function fetchReviewCount(token: string): Promise<{ total: number; unseen: number }> {
+  return request<{ total: number; unseen: number }>('/products/review/count', {}, token)
 }
 
 /** Kuyrukta "baktım" işareti (mevcut `is_submit` alanı). */

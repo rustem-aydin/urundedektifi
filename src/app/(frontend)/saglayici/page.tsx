@@ -13,7 +13,7 @@ export default function SaglayiciPage() {
       <EvidenceTag variant="stamp">SİSTEM</EvidenceTag>
       <h1 className="mt-2 font-display text-2xl sm:text-3xl">Sağlayıcı</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Ekle sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır.
+        İnceleme sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır.
       </p>
       <div className="mt-8">
         <SaglayiciForm />

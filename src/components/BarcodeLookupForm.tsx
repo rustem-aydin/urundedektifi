@@ -7,13 +7,11 @@ import { ScanBarcode, Search } from 'lucide-react'
 import Link from 'next/link'
 
 import { getProduct } from '@/actions/product'
-import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export function BarcodeLookupForm() {
   const router = useRouter()
-  const { user, canAddProduct } = useSession()
   const [code, setCode] = useState('')
   const [isChecking, setIsChecking] = useState(false)
 
@@ -31,9 +29,9 @@ export function BarcodeLookupForm() {
         toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${digits}`)
       } else {
-        // Panel rolleri sihirbazla açar; son kullanıcı fotoğrafla katkı verir (ADR 0024).
+        // Tek yol her rol için aynı: ürün fotoğrafla katkı olarak açılır (ADR 0026).
         toast.message('Ürün bulunamadı — dosyasını sen aç.')
-        router.push(canAddProduct ? `/ekle?barcode=${digits}` : `/katki/${digits}`)
+        router.push(`/katki/${digits}`)
       }
     } catch {
       toast.error('Sorgu tamamlanamadı. Tekrar dene.')

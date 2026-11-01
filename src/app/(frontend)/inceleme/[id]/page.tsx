@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
-import { EkleWizard } from '@/components/wizard/EkleWizard'
+import { ReviewWizard } from '@/components/wizard/ReviewWizard'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +30,7 @@ export default async function IncelemeDetayPage({
       </div>
 
       <div className="mt-8">
-        <EkleWizard reviewProductId={id} />
+        <ReviewWizard productId={id} />
       </div>
     </div>
   )

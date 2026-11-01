@@ -1,5 +1,5 @@
 /**
- * Ekle/Düzenle yüzeylerinin ihtiyaç duyduğu Payload tipleri.
+ * İnceleme/Düzenle yüzeylerinin ihtiyaç duyduğu Payload tipleri.
  * Mobil uygulamadaki `src/lib/types.ts` ile aynı sözleşme (ADR 0008/0009).
  */
 

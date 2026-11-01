@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, ScanBarcode, UserRound, X } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Menu, ScanBarcode, UserRound, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/components/session-provider'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { fetchReviewCount } from '@/lib/wizard/api'
 
 const NAV_ITEMS = [
   { href: '/tara', label: 'Tara' },
@@ -18,22 +19,51 @@ const NAV_ITEMS = [
 ]
 
 /**
- * Panel rolleri sihirbaza (`/ekle`), son kullanıcı fotoğraflı katkıya (`/katki`) gider (ADR 0024).
- * Menü etiketi de buna göre değişir: "Ekle" / "Katkı".
+ * Katkı her role açıktır: ürün önce fotoğrafla açılır, yayına alma inceleme kuyruğunda olur
+ * (ADR 0026). "İnceleme" yalnız admin/editör menüsünde, bekleyen taslak sayısıyla görünür.
  */
-function navItemsFor(canAddProduct: boolean) {
-  return canAddProduct
-    ? [...NAV_ITEMS, { href: '/ekle', label: 'Ekle' }, { href: '/inceleme', label: 'İnceleme' }]
-    : [...NAV_ITEMS, { href: '/katki', label: 'Katkı' }]
+function navItemsFor(isPanel: boolean) {
+  const items = [...NAV_ITEMS, { href: '/katki', label: 'Katkı' }]
+  return isPanel ? [...items, { href: '/inceleme', label: 'İnceleme' }] : items
 }
 
 export function SiteHeader() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const { user, canAddProduct } = useSession()
+  const [pending, setPending] = useState(0)
+  const { user, token, isPanel } = useSession()
   const profileHref = user ? `/profil/${user.id}` : '/giris'
   const accountLabel = user ? 'Profilim' : 'Giriş'
-  const navItems = navItemsFor(canAddProduct)
+  const navItems = navItemsFor(isPanel)
+
+  /** Menü etiketi: inceleme girdisinde bekleyen taslak sayısı rozet olarak eklenir. */
+  function labelOf(item: { href: string; label: string }) {
+    if (item.href !== '/inceleme' || pending === 0) return item.label
+    return (
+      <span className="inline-flex items-center gap-1">
+        {item.label}
+        <span className="rounded-sm bg-foreground/10 px-1 font-mono text-[0.6rem] leading-4">
+          {pending}
+        </span>
+      </span>
+    )
+  }
+
+  useEffect(() => {
+    if (!isPanel || !token) {
+      setPending(0)
+      return
+    }
+    let active = true
+    fetchReviewCount(token)
+      .then((count) => {
+        if (active) setPending(count.unseen)
+      })
+      .catch(() => undefined)
+    return () => {
+      active = false
+    }
+  }, [isPanel, token, pathname])
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -64,7 +94,7 @@ export function SiteHeader() {
                   active && 'bg-muted text-foreground',
                 )}
               >
-                {item.label}
+                {labelOf(item)}
               </Link>
             )
           })}
@@ -122,7 +152,7 @@ export function SiteHeader() {
                       active && 'bg-muted text-foreground',
                     )}
                   >
-                    {item.label}
+                    {labelOf(item)}
                   </Link>
                 </li>
               )

@@ -7,23 +7,21 @@ import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 
 /**
- * Kendi profilindeki hesap işlemleri: kurumsal kısayollar + çıkış.
+ * Kendi profilindeki hesap işlemleri: katkı kısayolu + çıkış (ADR 0026 — her rol katkı verir).
  * Yalnız profil sahibine görünür; başkasının profilinde null döner.
  * Çıkış sonrası giriş sayfasına yönlendirilir.
  */
 export function AccountActions({ profileId }: { profileId: string }) {
   const router = useRouter()
-  const { user, canAddProduct, signOut } = useSession()
+  const { user, signOut } = useSession()
 
   if (!user || String(user.id) !== profileId) return null
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {canAddProduct ? (
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/ekle">Ekle ekranına git</Link>
-        </Button>
-      ) : null}
+      <Button variant="outline" size="sm" asChild>
+        <Link href="/katki">Katkı yap</Link>
+      </Button>
       <Button
         variant="ghost"
         size="sm"

@@ -31,8 +31,8 @@ function describe(error: unknown): string {
 }
 
 /**
- * İnceleme kuyruğu (ADR 0024): taslak ürünler, görülmemişler önce.
- * "Analiz et" mevcut sihirbazı `productId` modunda açar; yayınlama oradan yapılır.
+ * İnceleme kuyruğu (ADR 0024/0026): taslak ürünler, görülmemişler önce.
+ * "Analiz et" inceleme sihirbazını açar; yayınlama oradan yapılır.
  * Reddedilen katkı silinir — katkı sahibinin profiline düşmez.
  */
 export function ReviewQueue() {
@@ -196,6 +196,9 @@ export function ReviewQueue() {
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <EvidenceTag>{item.barcode ?? '—'}</EvidenceTag>
+                  {user && item.submitterId && String(user.id) === item.submitterId ? (
+                    <EvidenceTag variant="tape">SENİN KATKIN</EvidenceTag>
+                  ) : null}
                   {item.seen ? <EvidenceTag variant="tape">BAKILDI</EvidenceTag> : <EvidenceTag variant="stamp">YENİ</EvidenceTag>}
                 </div>
                 <p className="line-clamp-2 text-sm font-medium break-words">
