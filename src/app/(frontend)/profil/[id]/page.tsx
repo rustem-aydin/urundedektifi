@@ -9,9 +9,8 @@ import config from '@/payload.config'
 import { AccountActions } from '@/components/AccountActions'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { ProfileContributions } from '@/components/ProfileContributions'
 import { ProfileEditor } from '@/components/ProfileEditor'
-import { MyContributions } from '@/components/MyContributions'
-import { CONTRIBUTION_LABELS } from '@/lib/contributionLabels'
 import { buildPublicProfile } from '@/lib/productContributions'
 
 const ROLE_LABELS: Record<string, string> = {
@@ -172,65 +171,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           </ul>
         </CaseSection>
 
-        {/* KATKI SAĞLADIĞI ÜRÜNLER */}
-        <CaseSection
-          id="katki-urunleri"
-          eyebrow="Dosya"
-          title={`Katkı sağladığı ürünler (${profile.stats.productCount})`}
-          hasData={profile.products.length > 0}
-          emptyMessage="Bu kullanıcının yayında ürün katkısı yok. Katkı sağladıkça burada listelenir."
-        >
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {profile.products.map((product) => (
-              <li key={product.id}>
-                <Link
-                  href={product.barcode ? `/urun/${product.barcode}` : '/urunler'}
-                  className="flex h-full gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-foreground/30 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                >
-                  {product.frontImageUrl ? (
-                    <img
-                      src={product.frontImageUrl}
-                      alt={product.frontImageAlt || product.name}
-                      className="size-16 shrink-0 rounded-md border border-border object-cover"
-                    />
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="flex size-16 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted font-mono text-[0.6rem] uppercase text-faded"
-                    >
-                      KARE YOK
-                    </span>
-                  )}
-                  <span className="flex min-w-0 flex-col gap-1.5">
-                    <span className="line-clamp-2 text-sm font-medium">{product.name}</span>
-                    <span className="font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-                      {numberFormat.format(product.goruntulenme)} görüntülenme
-                    </span>
-                    <span className="flex flex-wrap gap-1">
-                      {product.roles.map((role) => (
-                        <EvidenceTag
-                          key={role}
-                          variant={role === 'create' ? 'evidence' : 'stamp'}
-                        >
-                          {CONTRIBUTION_LABELS[role]}
-                        </EvidenceTag>
-                      ))}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          {profile.products.length < profile.stats.productCount ? (
-            <p className="mt-3 font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-              En çok görüntülenen {profile.products.length} ürün gösteriliyor · toplam{' '}
-              {numberFormat.format(profile.stats.productCount)}
-            </p>
-          ) : null}
-        </CaseSection>
-
-        {/* KENDİ KATKILARI — yalnız profil sahibi giriş yaptığında görünür (ADR 0024). */}
-        <MyContributions profileId={profile.id} />
+        {/* KATKILAR — yayındaki ürünler + (profil sahibine) incelemedeki katkılar; tek bölüm. */}
+        <ProfileContributions
+          profileId={profile.id}
+          productCount={profile.stats.productCount}
+          products={profile.products.map((product) => ({
+            id: product.id,
+            name: product.name,
+            barcode: product.barcode,
+            frontImageUrl: product.frontImageUrl,
+            frontImageAlt: product.frontImageAlt,
+            views: product.goruntulenme,
+            roles: product.roles,
+          }))}
+        />
       </div>
     </div>
   )

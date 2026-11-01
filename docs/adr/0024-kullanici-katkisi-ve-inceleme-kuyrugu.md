@@ -63,11 +63,15 @@ Barkod bağlantıdaysa (`/ekle?barcode=…`) doğrudan `/katki/<barkod>`'a taş�
 - İnceleme modunda kayıt editörün kendi Ekle taslağını silmez; `media-*` kimlikli fotoğraflar
   yeniden yüklenmez (medya zaten ürüne bağlı).
 
-### 4. Profilde "Katkılarım"
+### 4. Profilde katkı bölümü
 
-`GET /api/products/mine` oturum sahibinin katkılarını (`incelemede` / `yayında`) döner.
-Web `/profil/[id]` ve mobil `profil` ekranında yalnız profil sahibi giriş yaptığında görünür.
-Katkı sahibi ürün sayfasında ifşa edilmez; kimlik ayrı bir ürün alanı değil, mevcut
+Profilde tek bölüm vardır (`#katkilarim`, `ProfileContributions`): ziyaretçi yayındaki katkı
+ürünlerini en çok görüntülenen sırasıyla görür; profil sahibi giriş yaptığında başlık
+"Katkılarım" olur ve `GET /api/products/mine` ile gelen incelemedeki katkılar listenin başına
+eklenir ("bekleyen / 50" sayacıyla). Ayrı "Katkı sağladığı ürünler" bölümü kaldırıldı; aynı
+ürün iki listede tekrar etmiyor. Bölüm **en fazla 30 kayıt** gösterir: önce taslaklar, kalan
+yer `PROFILE_PRODUCT_LIMIT` (30) yayındaki ürünle dolar; toplam sayı başlıkta ve alt notta
+verilir. Katkı sahibi ürün sayfasında ifşa edilmez; kimlik ayrı bir ürün alanı değil, mevcut
 `submittedBy` + `product-contributions` çiftidir.
 
 ### 5. Gizlilik: yüklenen fotoğraflar

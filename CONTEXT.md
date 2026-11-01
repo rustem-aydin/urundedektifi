@@ -161,5 +161,5 @@ Kabul edilmeyen Taslak Katkı silinir; katkı satırları da silinir, dolayısı
 _Avoid_: red, veto, arşivleme
 
 **Katkılarım**:
-Katkı Profilinde yalnız profil sahibi giriş yaptığında görünen bölüm (`GET /api/products/mine`): katkıların durumu (İncelemede / Yayında), fotoğraf sayısı, tarih ve yayındaysa dosya bağlantısı; ayrıca "bekleyen / 50" sayacı.
-_Avoid_: katkı geçmişi, önerilerim
+Katkı Profilindeki tek katkı bölümü (`#katkilarim`). Herkese açık ziyaretçi başlığı "Katkı sağladığı ürünler"dir ve yayındaki katkı ürünlerini en çok görüntülenen sırasıyla gösterir; profil sahibi giriş yaptığında başlık "Katkılarım" olur, `GET /api/products/mine` ile gelen incelemedeki katkılar listenin başına eklenir ve "bekleyen / 50" sayacı görünür. Bölüm en fazla 30 kayıt gösterir; taslaklar önce gelir, kalan yer yayındaki ürünlerle dolar.
+_Avoid_: katkı geçmişi, önerilerim, katkı sağladığı ürünler (ayrı bölüm)

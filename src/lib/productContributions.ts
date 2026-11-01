@@ -2,7 +2,12 @@ import type { Payload, PayloadRequest } from 'payload'
 import { sql } from '@payloadcms/db-postgres'
 
 import { findAllDocs } from './findAllDocs'
-import { CONTRIBUTION_KINDS, CONTRIBUTION_LABELS, type ContributionKind } from './contributionLabels'
+import {
+  CONTRIBUTION_KINDS,
+  CONTRIBUTION_LABELS,
+  PROFILE_VISIBLE_LIMIT,
+  type ContributionKind,
+} from './contributionLabels'
 
 /**
  * Ürün katkısı ("Katkıda Bulunanlar").
@@ -22,8 +27,9 @@ const KIND_ORDER: ContributionKind[] = ['create', 'update', 'verify']
 /**
  * Profilde listelenen ürün sayısı üst sınırı (en çok görüntülenenler önce).
  * Bir kullanıcı 9.000+ ürüne katkı verebiliyor: hepsini basmak sayfayı 22 MB'a çıkarıyordu.
+ * Tek bölüm kuralı: incelemedeki katkılar da bu sınıra dahildir (bkz. `PROFILE_VISIBLE_LIMIT`).
  */
-export const PROFILE_PRODUCT_LIMIT = 30
+export const PROFILE_PRODUCT_LIMIT = PROFILE_VISIBLE_LIMIT
 
 export type Contributor = {
   id: string
