@@ -302,7 +302,6 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         </span>
         <PhotoTray
           photos={draft.photos}
-          requests={[]}
           disabled={busy}
           onAdd={(files, source) => void addPhotos(files, source)}
           onRemove={(photoId) => {

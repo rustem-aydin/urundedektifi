@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { AnalysisSummary } from '@/components/wizard/AnalysisSummary'
 import { WizardIntro } from '@/components/wizard/controls'
 import { MasterResolver } from '@/components/wizard/MasterResolver'
+import { PhotoRequests } from '@/components/wizard/PhotoRequests'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { SaveReview } from '@/components/wizard/SaveReview'
 import { AiError, analyzeProduct, type PhotoRole } from '@/lib/wizard/ai'
@@ -359,19 +360,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
 
       {hasContent ? (
         <div className="flex flex-col gap-6">
-          {draft.extraction?.requests.length ? (
-            <CaseCard className="flex flex-col gap-1 p-4">
-              <EvidenceTag variant="stamp">EKSİK VERİ</EvidenceTag>
-              {draft.extraction.requests.map((request, index) => (
-                <p key={`${request.need}-${index}`} className="text-sm">
-                  • {request.need} — {request.hint}
-                </p>
-              ))}
-              <p className="text-sm text-muted-foreground">
-                Eksik alan için fotoğrafı alttaki çekmeceden ekleyip yeniden analiz et.
-              </p>
-            </CaseCard>
-          ) : null}
+          <PhotoRequests requests={draft.extraction?.requests ?? []} />
 
           <AnalysisSummary form={draft.form} touched={draft.touched} onEdit={editForm} />
 
@@ -405,7 +394,6 @@ export function ReviewWizard({ productId }: { productId: string }) {
               </span>
               <PhotoTray
                 photos={draft.photos}
-                requests={draft.extraction?.requests ?? []}
                 disabled={busy}
                 onAdd={(files, source) => void addPhotos(files, source)}
                 onRemove={(id) => void removePhoto(id)}

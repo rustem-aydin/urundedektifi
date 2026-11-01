@@ -32,9 +32,11 @@ belirliyordu. Editör/admin geri bildirimi:
    fotoğrafa bakmak için sayfa başına dönmek gerekmez.
 3. "Analiz et" / "Tekrar analiz et" düğmesi; analiz olmadan devam etmek isteyene
    "Analiz olmadan elle doldur" (yerel `manualEdit` bayrağı, taslakta saklanmaz).
-4. Analiz varsa (ya da elle doldurma açıldıysa) alt alta: eksik veri kartı, alan onayı
-   (`AnalysisSummary`), master eşleme (`MasterResolver`), eşleme özeti, kayıt (`SaveReview`).
-   Fotoğraf rolleri kayıt bölümünde tekrarlanmaz; tek yer çekmecedir.
+4. Analiz varsa (ya da elle doldurma açıldıysa) alt alta: YZ'nin eksik bulduğu fotoğraflar
+   (`PhotoRequests` — çekmecede değil, sayfa akışında), alan onayı (`AnalysisSummary`),
+   master eşleme (`MasterResolver`), eşleme özeti, kayıt (`SaveReview`).
+   Fotoğraf rolleri kayıt bölümünde tekrarlanmaz; tek yer çekmecedir. Çekmece yalnız fotoğraf
+   yönetir (ekle, rol, kaldır); "eksik kalan fotoğraflar" talebi orada tekrarlanmaz.
 
 "Eşlemeye geç", "Kayıt adımına geç", "Analizi atla, elle doldur" ve adım çipleri silindi.
 
