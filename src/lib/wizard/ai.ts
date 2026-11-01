@@ -14,6 +14,22 @@ import { API_BASE } from './api'
 const CHAT_PROXY_URL = `${API_BASE}/globals/ai-settings/chat`
 
 /**
+ * Analiz çağrısının gideceği yer. Tarayıcı vekile gider (jetonla); sunucu arka plan işi
+ * sağlayıcıya doğrudan gider (anahtar sunucuda). Tek fark bu; prompt/şema/ayrıştırma ortak.
+ */
+export type ChatEndpoint = {
+  url: string
+  headers: Record<string, string>
+  /** Vekil modeli kendisi koyar; doğrudan çağrıda modeli burada taşırız. */
+  model?: string
+}
+
+/** Tarayıcı varsayılanı: oturum jetonuyla vekil uç. */
+export function proxyChatEndpoint(token: string): ChatEndpoint {
+  return { url: CHAT_PROXY_URL, headers: { Authorization: `JWT ${token}` } }
+}
+
+/**
  * Yanıt akış halinde okunur (SSE). Sağlayıcı düşünen (reasoning) model olduğunda tek parça
  * 100 saniyeyi aşabiliyor; araya giren vekil/proxy boş bağlantıyı kesiyordu. Bu yüzden iki
  * ayrı sınır var: parçalar arası sessizlik ve toplam süre.
@@ -305,8 +321,8 @@ async function readChatStream(
 }
 
 async function postChatOnce(
-  input: AnalyzeInput,
   request: ChatRequest,
+  endpoint: ChatEndpoint,
 ): Promise<{ payload: ChatResponse; rejected: boolean }> {
   // Modeli sunucu koyar: istemci model adı ya da anahtar göndermez.
   const body: Record<string, unknown> = {
@@ -315,6 +331,7 @@ async function postChatOnce(
     response_format: request.responseFormat,
     stream: true,
     stream_options: { include_usage: true },
+    ...(endpoint.model ? { model: endpoint.model } : {}),
     ...request.hints,
   }
 
@@ -322,12 +339,12 @@ async function postChatOnce(
   const timer = setTimeout(() => controller.abort(), ANALYSIS_TOTAL_MS)
   let response: Response
   try {
-    response = await fetch(CHAT_PROXY_URL, {
+    response = await fetch(endpoint.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `JWT ${input.token}`,
         Accept: 'text/event-stream',
+        ...endpoint.headers,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -376,10 +393,10 @@ async function postChatOnce(
  * ardından şemasız (`json_object`) tekrar dener.
  */
 async function postChat(
-  input: AnalyzeInput,
   messages: ChatMessage[],
   responseFormat: Record<string, unknown>,
   hints: Record<string, unknown> | undefined,
+  endpoint: ChatEndpoint,
   fallbackMessages: ChatMessage[] = messages,
 ): Promise<{ payload: ChatResponse; degraded: boolean }> {
   const attempts: { hints?: Record<string, unknown>; format: Record<string, unknown>; messages: ChatMessage[] }[] = [
@@ -392,11 +409,10 @@ async function postChat(
 
   let degraded = false
   for (const [index, attempt] of attempts.entries()) {
-    const result = await postChatOnce(input, {
-      messages: attempt.messages,
-      responseFormat: attempt.format,
-      hints: attempt.hints,
-    })
+    const result = await postChatOnce(
+      { messages: attempt.messages, responseFormat: attempt.format, hints: attempt.hints },
+      endpoint,
+    )
     if (!result.rejected) return { payload: result.payload, degraded }
     // 400: bu varyantı sağlayıcı reddetti. Sonraki (daha sade) varyantı dene.
     degraded = true
@@ -466,7 +482,14 @@ function safeJson(text: string): unknown {
 
 /* ------------------------------- API -------------------------------- */
 
-export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult> {
+/**
+ * Etiket okuma. Varsayılan uç tarayıcı vekilidir (oturum jetonu); sunucu arka plan işi
+ * sağlayıcıya doğrudan giden bir uç verir — prompt, şema ve onarım turu aynı kalır.
+ */
+export async function analyzeProduct(
+  input: AnalyzeInput,
+  endpoint: ChatEndpoint = proxyChatEndpoint(input.token),
+): Promise<AnalyzeResult> {
   const content: ContentPart[] = [{ type: 'text', text: buildUserText(input) }]
   for (const image of input.images) {
     content.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${image.base64}` } })
@@ -491,13 +514,13 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
   ]
 
   const strict = await postChat(
-    input,
     messages,
     {
       type: 'json_schema',
       json_schema: { name: 'product_extraction', strict: true, schema: EXTRACTION_JSON_SCHEMA },
     },
     PROVIDER_HINTS,
+    endpoint,
     plainMessages,
   )
   const degraded = strict.degraded
@@ -522,7 +545,6 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
       },
     ]
     const repairPayload = await postChat(
-      input,
       repairTurn,
       degraded
         ? { type: 'json_object' }
@@ -531,6 +553,7 @@ export async function analyzeProduct(input: AnalyzeInput): Promise<AnalyzeResult
             json_schema: { name: 'product_extraction', strict: true, schema: EXTRACTION_JSON_SCHEMA },
           },
       PROVIDER_HINTS,
+      endpoint,
     )
     payload = repairPayload.payload
     raw = contentOf(payload)

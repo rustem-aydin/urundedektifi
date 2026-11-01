@@ -1,5 +1,7 @@
 import type { Payload } from 'payload'
 
+import { queueProductAnalysis } from '@/lib/aiAnalysis'
+
 import type { User } from '@/payload-types'
 
 /**
@@ -150,6 +152,10 @@ export async function submitContribution({
     overrideAccess: true,
     ...(req ? { req } : {}),
   })
+
+  // Arka plan analizi (ADR 0028): yanıt beklenmez. İnceleme ekranı açıldığında etiket okuması
+  // ya bitmiştir ya da sürüyordur; ne katkı sahibi ne panel rolü analiz düğmesine basar.
+  queueProductAnalysis(payload, String(created.id))
 
   return { id: String(created.id), barcode: code, state: 'pending' }
 }

@@ -11,6 +11,7 @@ import * as migration_20261029_193000_drop_media_image_sizes from './20261029_19
 import * as migration_20261029_210000_add_profiles_and_contributions from './20261029_210000_add_profiles_and_contributions';
 import * as migration_20261031_090000_ai_settings from './20261031_090000_ai_settings';
 import * as migration_20261031_120000_drop_brand_boycott_fields from './20261031_120000_drop_brand_boycott_fields';
+import * as migration_20261101_140000_product_ai_analysis from './20261101_140000_product_ai_analysis';
 
 export const migrations = [
   {
@@ -77,5 +78,10 @@ export const migrations = [
     up: migration_20261031_120000_drop_brand_boycott_fields.up,
     down: migration_20261031_120000_drop_brand_boycott_fields.down,
     name: '20261031_120000_drop_brand_boycott_fields',
+  },
+  {
+    up: migration_20261101_140000_product_ai_analysis.up,
+    down: migration_20261101_140000_product_ai_analysis.down,
+    name: '20261101_140000_product_ai_analysis',
   },
 ];

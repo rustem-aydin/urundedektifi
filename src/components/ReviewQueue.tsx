@@ -32,7 +32,7 @@ function describe(error: unknown): string {
 
 /**
  * İnceleme kuyruğu (ADR 0024/0026): taslak ürünler, görülmemişler önce.
- * "Analiz et" tek ekranlı inceleme sayfasını açar; eşleme ve yayınlama oradan yapılır.
+ * "İncele" tek ekranlı inceleme sayfasını açar; analiz katkı anında arka planda hazırlanır.
  * Reddedilen katkı silinir — katkı sahibinin profiline düşmez.
  */
 export function ReviewQueue() {
@@ -214,7 +214,7 @@ export function ReviewQueue() {
                     size="sm"
                     onClick={() => router.push(`/inceleme/${item.id}`)}
                   >
-                    Analiz et
+                    İncele
                   </Button>
                   <Button
                     type="button"

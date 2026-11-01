@@ -143,6 +143,9 @@ export type ProductDoc = {
   nutritionImage?: MediaRef | string | number | null
   recyclingImage?: MediaRef | string | number | null
   additionalImages?: { image?: MediaRef | string | number | null; caption?: string | null }[] | null
+  /** Arka plan etiket okumasının durumu (ADR 0028) ve ham çıktısı. */
+  aiStatus?: string | null
+  aiAnalysis?: unknown | null
 }
 
 /** Master listelerin eşleme bölümünde kullandığı hafif satır. */

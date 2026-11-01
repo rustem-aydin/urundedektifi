@@ -684,6 +684,22 @@ export interface Product {
    * Ürün dosyasının kaç kez açıldığı. Web ve mobil detay sayfaları otomatik artırır; elle düzenlenemez.
    */
   goruntulenme?: number | null;
+  /**
+   * Etiket okumasının arka plan durumu. Katkı oluşturulunca otomatik başlar; elle değiştirilemez.
+   */
+  aiStatus?: ('none' | 'running' | 'done' | 'failed') | null;
+  /**
+   * Ham analiz çıktısı. Sunucu yazar, istemci yalnız okur.
+   */
+  aiAnalysis?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1756,6 +1772,8 @@ export interface ProductsSelect<T extends boolean = true> {
   submittedBy?: T;
   is_submit?: T;
   goruntulenme?: T;
+  aiStatus?: T;
+  aiAnalysis?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2146,7 +2164,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
- * Ekle sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama aynı ayarı okur; API anahtarı yalnız sunucuda kalır, istemcilere gönderilmez.
+ * İnceleme ekranının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama aynı ayarı okur; API anahtarı yalnız sunucuda kalır, istemcilere gönderilmez.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ai-settings".

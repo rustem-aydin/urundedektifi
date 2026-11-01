@@ -1,4 +1,5 @@
 import type { Extraction, PhotoRole } from './ai'
+import { extractionSchema } from './ai'
 import { deletePhotoBlob } from './photoStore'
 import type { ProductDoc, RelationRef } from './types'
 
@@ -361,11 +362,31 @@ export function productPhotoRefs(doc: ProductDoc): ExistingPhoto[] {
 }
 
 /**
- * İnceleme modu taslağı (ADR 0024/0026): katkıyla açılmış taslak ürün, fotoğrafları hazır
- * hâlde inceleme ekranında açılır. Kaydetme `update` modunda çalışır; böylece
- * analiz sonrası ürün yayına alınabilir.
+ * Arka plan analizinin (ADR 0028) saklanmış çıktısı. JSON alanı olduğu için şemayla doğrulanır:
+ * bozuk/eski biçim sessizce yok sayılır, ekran elle doldurmaya düşer.
+ */
+export function analysisExtraction(doc: ProductDoc): Extraction | null {
+  const analysis = doc.aiAnalysis as { extraction?: unknown } | null | undefined
+  if (!analysis || typeof analysis !== 'object') return null
+  const parsed = extractionSchema.safeParse(analysis.extraction)
+  return parsed.success ? parsed.data : null
+}
+
+/** Arka plan analizi hatası (varsa): inceleme ekranı "yeniden başlat" gerekçesini gösterir. */
+export function analysisError(doc: ProductDoc): string | null {
+  const analysis = doc.aiAnalysis as { error?: unknown } | null | undefined
+  if (!analysis || typeof analysis !== 'object') return null
+  return typeof analysis.error === 'string' && analysis.error.trim() ? analysis.error : null
+}
+
+/**
+ * İnceleme modu taslağı (ADR 0024/0026/0028): katkıyla açılmış taslak ürün, fotoğrafları ve
+ * arka planda hazırlanmış analiz çıktısıyla açılır. Kaydetme `update` modunda çalışır; böylece
+ * yayına alınabilir.
  */
 export function reviewDraftFromProduct(doc: ProductDoc, photos: DraftPhoto[]): Draft {
   const draft = draftFromProduct(doc)
-  return { ...draft, photos, form: { ...draft.form, isPublished: false } }
+  const extraction = analysisExtraction(doc)
+  const base: Draft = { ...draft, photos, form: { ...draft.form, isPublished: false } }
+  return extraction ? mergeExtraction(base, extraction) : base
 }

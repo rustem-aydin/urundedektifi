@@ -14,11 +14,18 @@ import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoRequests } from '@/components/wizard/PhotoRequests'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { SaveReview } from '@/components/wizard/SaveReview'
-import { AiError, analyzeProduct, type PhotoRole } from '@/lib/wizard/ai'
-import { ApiError, fetchProductDoc, fetchReviewQueue } from '@/lib/wizard/api'
+import { AiError, type PhotoRole } from '@/lib/wizard/ai'
+import {
+  ApiError,
+  fetchProductDoc,
+  fetchReviewQueue,
+  restartAnalysis,
+} from '@/lib/wizard/api'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import { getPhotoBlob, putPhotoBlob } from '@/lib/wizard/photoStore'
 import {
+  analysisError,
+  analysisExtraction,
   forgetPhoto,
   mergeExtraction,
   productPhotoRefs,
@@ -28,7 +35,6 @@ import {
   type DraftPhoto,
   type ProductForm,
 } from '@/lib/wizard/productDraft'
-import { fetchProviderStatus } from '@/lib/wizard/provider'
 import {
   preparePhoto,
   resolveCreatedMasters,
@@ -54,7 +60,9 @@ export function ReviewWizard({ productId }: { productId: string }) {
 
   const [draft, setDraft] = useState<Draft | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const [providerReady, setProviderReady] = useState<boolean | null>(null)
+  /** Arka plan analizinin durumu (ADR 0028): ürün üzerinde saklanır, burada yalnız okunur. */
+  const [aiStatus, setAiStatus] = useState<string>('none')
+  const [aiProblem, setAiProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -69,7 +77,6 @@ export function ReviewWizard({ productId }: { productId: string }) {
     let active = true
     ;(async () => {
       try {
-        setProviderReady((await fetchProviderStatus(token)).configured)
         const doc = await fetchProductDoc(productId, token)
         if (!doc) {
           if (active) setFailure('Bu taslak bulunamadı. Silinmiş olabilir.')
@@ -85,14 +92,21 @@ export function ReviewWizard({ productId }: { productId: string }) {
             await putPhotoBlob(id, blob)
             photos.push({ id, role: ref.role, source: 'library', url: URL.createObjectURL(blob) })
           } catch {
-            // Görsel okunamadı: analiz kalan fotoğraflarla yapılır.
+            // Görsel okunamadı: analiz kalan fotoğraflarla hazırlanmış olabilir.
           }
         }
         if (!active) return
+        const status = doc.aiStatus ?? 'none'
+        setAiStatus(status)
+        setAiProblem(analysisError(doc))
         setNotice(
-          photos.length
-            ? `Katkı taslağı açıldı: ${photos.length} fotoğraf hazır. "Analiz et" ile devam et.`
-            : 'Katkı taslağı açıldı ama fotoğraflar okunamadı. Editör panelinden kontrol et.',
+          status === 'running'
+            ? 'Katkı taslağı açıldı. Etiket okuması arka planda sürüyor; bittiğinde alanlar kendiliğinden dolar.'
+            : analysisExtraction(doc)
+              ? 'Katkı taslağı açıldı: etiket okuması hazır, alanlar dolu geldi.'
+              : photos.length
+                ? 'Katkı taslağı açıldı: fotoğraflar hazır ama etiket okuması yok.'
+                : 'Katkı taslağı açıldı ama fotoğraflar okunamadı. Editör panelinden kontrol et.',
         )
         setDraft(reviewDraftFromProduct(doc, photos))
       } catch (error) {
@@ -105,6 +119,47 @@ export function ReviewWizard({ productId }: { productId: string }) {
       active = false
     }
   }, [isPanel, productId, token])
+
+  /**
+   * Analiz sürerken ürünü yoklar: bitince taslak, kullanıcı hiçbir alanı elle değiştirmediyse
+   * analizle tazelenir; değiştirdiyse yazılanlar korunur ve yalnız bildirim gösterilir.
+   */
+  useEffect(() => {
+    if (!token || aiStatus !== 'running') return
+    let active = true
+    const timer = setInterval(() => {
+      void (async () => {
+        try {
+          const doc = await fetchProductDoc(productId, token)
+          if (!active || !doc) return
+          const status = doc.aiStatus ?? 'none'
+          if (status === 'running') return
+          setAiStatus(status)
+          setAiProblem(analysisError(doc))
+          const extraction = analysisExtraction(doc)
+          if (status === 'done' && extraction) {
+            setDraft((current) => {
+              if (!current) return current
+              if (current.touched.length) {
+                setNotice('Etiket okuması bitti. Değiştirdiğin alanlar korunuyor; tümünü almak için sayfayı yenile.')
+                return current
+              }
+              return mergeExtraction(current, extraction)
+            })
+            setNotice('Etiket okuması bitti: alanlar analizden dolduruldu.')
+          } else if (status === 'failed') {
+            setFailure('Arka plan analizi tamamlanamadı. "Analizi yeniden başlat" ile tekrar dene.')
+          }
+        } catch {
+          // Ağ hatası: sonraki turda yeniden denenir.
+        }
+      })()
+    }, 4000)
+    return () => {
+      active = false
+      clearInterval(timer)
+    }
+  }, [aiStatus, productId, token])
 
   const update = useCallback(async (next: Draft) => {
     setDraft(next)
@@ -155,76 +210,25 @@ export function ReviewWizard({ productId }: { productId: string }) {
     })
   }
 
-  async function analyze() {
-    if (!draft) return
+  /**
+   * Analizi elle yeniden başlatır (ADR 0028): normalde katkı anında arka planda başlar. Bu yol
+   * yalnız başarısız ya da analizsiz eski taslaklar için.
+   */
+  async function restart() {
+    if (!draft || !token) return
     setFailure(null)
-    setNotice(null)
-    const status = await fetchProviderStatus(token)
-    setProviderReady(status.configured)
-    if (!status.configured) {
-      setFailure('Yapay zekâ sağlayıcısı ayarlanmamış. Yönetici panelinden tanımlanmalı.')
-      return
-    }
-    if (!draft.photos.length) {
-      setFailure('Analiz için en az bir fotoğraf gerekiyor.')
-      return
-    }
-
     setBusy(true)
     try {
-      const images: { index: number; base64: string }[] = []
-      const stale: string[] = []
-      for (const [index, photo] of draft.photos.entries()) {
-        try {
-          const blob = await getPhotoBlob(photo.id)
-          if (!blob) {
-            stale.push(`Fotoğraf ${index + 1}`)
-            continue
-          }
-          const prepared = await preparePhoto(new File([blob], `${photo.id}.jpg`, { type: 'image/jpeg' }))
-          images.push({ index, base64: prepared.base64 })
-        } catch {
-          stale.push(`Fotoğraf ${index + 1}`)
-        }
-      }
-      if (stale.length) {
-        setFailure(`${stale.join(', ')} okunamadı. Fotoğrafı kaldırıp yeniden ekle.`)
-        return
-      }
-
-      const hints = draft.extraction?.requests.map((request) => request.need) ?? []
-      const result = await analyzeProduct({
-        token: token ?? '',
-        images,
-        previous: draft.extraction,
-        hints,
-      })
-
-      const merged = mergeExtraction(
-        {
-          ...draft,
-          analysisRounds: draft.analysisRounds + 1,
-          usage: {
-            prompt: result.usage?.promptTokens ?? null,
-            completion: result.usage?.completionTokens ?? null,
-          },
-        },
-        result.data,
-      )
-      await update(merged)
-      const tokenNote = result.usage?.totalTokens ? ` · ${result.usage.totalTokens} token` : ''
-      setNotice(
-        result.data.requests.length
-          ? `${result.data.requests.length} eksik alan için yeni fotoğraf isteniyor.${tokenNote}`
-          : `Analiz tamamlandı.${tokenNote}`,
-      )
+      await restartAnalysis(productId, token)
+      setAiStatus('running')
+      setAiProblem(null)
+      setNotice('Analiz yeniden başlatıldı. Bitince alanlar kendiliğinden dolar.')
     } catch (error) {
       setFailure(describe(error))
     } finally {
       setBusy(false)
     }
   }
-
   /** Sıradaki incelenmemiş taslağa geçer; kuyruk boşsa listeye döner. */
   async function advance() {
     if (!token) {
@@ -309,50 +313,52 @@ export function ReviewWizard({ productId }: { productId: string }) {
   }
 
   const counts = resolutionCounts(draft)
-  /** Tek ekran: analiz yapılmadıysa alanlar gizli kalır, elle doldurma ile açılabilir. */
-  const hasContent = manualEdit || draft.analysisRounds > 0 || draft.extraction !== null
+  /** Tek ekran: analiz yoksa alanlar gizli kalır, elle doldurma ile açılabilir. */
+  const hasContent = manualEdit || draft.extraction !== null
+  const statusTag =
+    aiStatus === 'running'
+      ? { variant: 'tape' as const, label: 'ETİKET OKUNUYOR' }
+      : aiStatus === 'done'
+        ? { variant: 'evidence' as const, label: 'ANALİZ HAZIR' }
+        : aiStatus === 'failed'
+          ? { variant: 'stamp' as const, label: 'ANALİZ BAŞARISIZ' }
+          : { variant: 'stamp' as const, label: 'ANALİZ YOK' }
 
   return (
     <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center gap-2">
         <EvidenceTag variant="tape">{draft.barcode}</EvidenceTag>
+        <EvidenceTag variant={statusTag.variant}>{statusTag.label}</EvidenceTag>
         <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
           {draft.photos.length} FOTOĞRAF
-          {draft.analysisRounds ? ` · ${draft.analysisRounds} ANALİZ` : ''}
         </span>
       </div>
 
       {notice ? <p className="text-sm text-evidence-green">{notice}</p> : null}
       {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
+      {aiProblem ? <p className="text-sm text-stamp">Analiz notu: {aiProblem}</p> : null}
       {busy ? (
         <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">İşleniyor…</p>
       ) : null}
 
-      {providerReady === false ? (
-        <CaseCard className="flex flex-col gap-2 p-4">
-          <EvidenceTag variant="stamp">SAĞLAYICI</EvidenceTag>
-          <WizardIntro eyebrow="YAPAY ZEKÂ" title="Sağlayıcı ayarlanmadı">
-            Fotoğraf analizi için yönetici sağlayıcıyı tanımlamalı (servis adresi, API anahtarı,
-            model).
-          </WizardIntro>
-          <Button asChild className="w-fit">
-            <Link href="/saglayici">Durumu gör</Link>
-          </Button>
-        </CaseCard>
-      ) : null}
-
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" disabled={busy || draft.photos.length === 0} onClick={() => void analyze()}>
-          {draft.analysisRounds ? 'Tekrar analiz et' : 'Analiz et'}
-        </Button>
+        {aiStatus === 'running' ? (
+          <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
+            ETİKET OKUMASI SÜRÜYOR…
+          </span>
+        ) : aiStatus === 'done' ? null : (
+          <Button type="button" variant="outline" disabled={busy || !draft.photos.length} onClick={() => void restart()}>
+            {aiStatus === 'failed' ? 'Analizi yeniden başlat' : 'Analizi başlat'}
+          </Button>
+        )}
         {!hasContent ? (
-          <Button type="button" variant="outline" onClick={() => setManualEdit(true)}>
+          <Button type="button" variant="ghost" onClick={() => setManualEdit(true)}>
             Analiz olmadan elle doldur
           </Button>
         ) : null}
-        {draft.analysisRounds > 0 ? (
+        {draft.extraction ? (
           <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
-            {draft.analysisRounds} ANALİZ TURU
+            {draft.extraction.requests.length} FOTOĞRAF TALEBİ
             {draft.usage ? ` · ${draft.usage.prompt ?? 0}+${draft.usage.completion ?? 0} TOKEN` : ''}
           </span>
         ) : null}

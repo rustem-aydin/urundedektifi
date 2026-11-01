@@ -516,6 +516,14 @@ export async function fetchReviewQueue(token: string): Promise<ReviewItem[]> {
   return result.items ?? []
 }
 
+/**
+ * Arka plan etiket okumasını yeniden başlatır (ADR 0028). Normalde analiz katkı anında kendiliğinden
+ * başlar; bu yalnız başarısız/eski taslaklar için.
+ */
+export async function restartAnalysis(productId: string, token: string): Promise<void> {
+  await request<{ status?: string }>(`/products/${productId}/analyze`, { method: 'POST' }, token)
+}
+
 /** Panel rozeti: bekleyen taslak ve işaretlenmemiş sayısı (ADR 0026). */
 export async function fetchReviewCount(token: string): Promise<{ total: number; unseen: number }> {
   return request<{ total: number; unseen: number }>('/products/review/count', {}, token)
