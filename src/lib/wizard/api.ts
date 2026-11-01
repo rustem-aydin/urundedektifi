@@ -463,6 +463,8 @@ export type ContributionProduct = {
   createdAt: string | null
   frontImageUrl: string | null
   frontImageAlt: string | null
+  /** Ön yüz ilk sırada; tam boy görüntüleyici bunu kullanır. */
+  photos: { url: string; alt: string }[]
   photoCount: number
 }
 

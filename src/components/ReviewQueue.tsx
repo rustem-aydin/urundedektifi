@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { ImageLightbox, type LightboxImage } from '@/components/ImageLightbox'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,6 +42,7 @@ export function ReviewQueue() {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  const [viewer, setViewer] = useState<{ images: LightboxImage[]; index: number } | null>(null)
 
   const allowed = user?.role === 'admin' || user?.role === 'editor'
 
@@ -158,12 +160,34 @@ export function ReviewQueue() {
         {items.map((item) => (
           <li key={item.id}>
             <CaseCard className="flex h-full gap-3 p-3">
-              {item.frontImageUrl ? (
-                <img
-                  src={item.frontImageUrl}
-                  alt={item.frontImageAlt || item.barcode || 'Katkı fotoğrafı'}
-                  className="size-20 shrink-0 rounded-md border border-border object-cover"
-                />
+              {item.photos.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setViewer({
+                      index: 0,
+                      images: item.photos.map((photo, index) => ({
+                        url: photo.url,
+                        alt: photo.alt || item.barcode || 'Katkı fotoğrafı',
+                        label: index === 0 ? 'Ön yüz' : `Fotoğraf ${index + 1}`,
+                      })),
+                    })
+                  }
+                  aria-label={`${item.barcode ?? 'Katkı'} fotoğraflarını tam boyut aç`}
+                  className="group relative size-20 shrink-0 cursor-zoom-in overflow-hidden rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.photos[0].url}
+                    alt={item.frontImageAlt || item.barcode || 'Katkı fotoğrafı'}
+                    className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                  {item.photos.length > 1 ? (
+                    <span className="pointer-events-none absolute right-0 bottom-0 rounded-tl-sm bg-foreground/80 px-1 py-0.5 font-mono text-[0.6rem] text-background">
+                      {item.photos.length} foto
+                    </span>
+                  ) : null}
+                </button>
               ) : (
                 <span className="flex size-20 shrink-0 items-center justify-center rounded-md border border-dashed border-border bg-muted font-mono text-[0.6rem] uppercase text-faded">
                   KARE YOK
@@ -211,6 +235,18 @@ export function ReviewQueue() {
           </li>
         ))}
       </ul>
+
+      <ImageLightbox
+        images={viewer?.images ?? []}
+        index={viewer?.index ?? 0}
+        onIndexChange={(index) =>
+          setViewer((current) => (current ? { ...current, index } : current))
+        }
+        open={viewer !== null}
+        onOpenChange={(open) => {
+          if (!open) setViewer(null)
+        }}
+      />
     </div>
   )
 }

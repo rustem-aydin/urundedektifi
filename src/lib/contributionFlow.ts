@@ -154,6 +154,8 @@ export async function submitContribution({
   return { id: String(created.id), barcode: code, state: 'pending' }
 }
 
+export type ContributionPhoto = { url: string; alt: string }
+
 export type MyContribution = {
   id: string
   barcode: string | null
@@ -162,6 +164,8 @@ export type MyContribution = {
   createdAt: string | null
   frontImageUrl: string | null
   frontImageAlt: string | null
+  /** Ön yüz ilk sırada; tam boy görüntüleyici bunu kullanır. */
+  photos: ContributionPhoto[]
   photoCount: number
 }
 
@@ -183,6 +187,12 @@ type ProductRow = {
 
 function toMyContribution(doc: ProductRow): MyContribution {
   const image = mediaOf(doc.frontImage)
+  const photos: ContributionPhoto[] = []
+  if (image.url) photos.push({ url: image.url, alt: image.alt ?? '' })
+  for (const row of doc.additionalImages ?? []) {
+    const extra = mediaOf(row.image)
+    if (extra.url) photos.push({ url: extra.url, alt: extra.alt ?? '' })
+  }
   return {
     id: String(doc.id),
     barcode: doc.barcode ?? null,
@@ -191,6 +201,7 @@ function toMyContribution(doc: ProductRow): MyContribution {
     createdAt: doc.createdAt ?? null,
     frontImageUrl: image.url,
     frontImageAlt: image.alt,
+    photos,
     photoCount: (doc.additionalImages ?? []).length + (doc.frontImage ? 1 : 0),
   }
 }
