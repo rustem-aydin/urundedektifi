@@ -1,11 +1,12 @@
 'use client'
 
 import { ImagePlus, Trash2 } from 'lucide-react'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
+import { ImageLightbox } from '@/components/ImageLightbox'
 import type { Extraction, PhotoRole } from '@/lib/wizard/ai'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import type { DraftPhoto } from '@/lib/wizard/productDraft'
@@ -28,6 +29,10 @@ type Props = {
 export function PhotoTray({ photos, requests, disabled, onAdd, onRemove, onRole }: Props) {
   const cameraInput = useRef<HTMLInputElement>(null)
   const libraryInput = useRef<HTMLInputElement>(null)
+  // Tam boyut görüntüleyici: küçük önizlemeye tıklamak fotoğrafı ekran boyu açar.
+  const [viewerId, setViewerId] = useState<string | null>(null)
+  const zoomable = photos.filter((photo): photo is DraftPhoto & { url: string } => Boolean(photo.url))
+  const viewerIndex = viewerId ? zoomable.findIndex((photo) => photo.id === viewerId) : -1
 
   function take(input: React.RefObject<HTMLInputElement | null>, source: 'camera' | 'library') {
     return (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,11 +106,20 @@ export function PhotoTray({ photos, requests, disabled, onAdd, onRemove, onRole 
           className="flex flex-col gap-3 rounded-md border border-border bg-card p-3 sm:flex-row"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- object URL, next/image optimizasyonu anlamsız */}
-          <img
-            src={photo.url}
-            alt={`Fotoğraf ${index + 1}`}
-            className="size-20 shrink-0 rounded-sm bg-muted object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => {
+              if (photo.url) setViewerId(photo.id)
+            }}
+            aria-label={`Fotoğraf ${index + 1} görselini tam boyut aç`}
+            className="group size-20 shrink-0 cursor-zoom-in overflow-hidden rounded-sm bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <img
+              src={photo.url}
+              alt={`Fotoğraf ${index + 1}`}
+              className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+            />
+          </button>
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
               FOTOĞRAF {index + 1}
@@ -135,6 +149,20 @@ export function PhotoTray({ photos, requests, disabled, onAdd, onRemove, onRole 
           </div>
         </div>
       ))}
+
+      <ImageLightbox
+        images={zoomable.map((photo, index) => ({
+          url: photo.url,
+          alt: `Fotoğraf ${index + 1} · ${PHOTO_ROLE_NAMES[photo.role] ?? 'Fotoğraf'}`,
+          label: `Fotoğraf ${index + 1} · ${PHOTO_ROLE_NAMES[photo.role] ?? 'Bağlanmaz'}`,
+        }))}
+        index={viewerIndex >= 0 ? viewerIndex : 0}
+        onIndexChange={(index) => setViewerId(zoomable[index]?.id ?? null)}
+        open={viewerIndex >= 0}
+        onOpenChange={(open) => {
+          if (!open) setViewerId(null)
+        }}
+      />
     </div>
   )
 }
