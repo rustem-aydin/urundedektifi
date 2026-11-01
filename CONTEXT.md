@@ -139,3 +139,27 @@ _Avoid_: kullanıcı sayfası, hesap profili, üye profili
 **Toplam Görüntülenme**:
 Katkı Profilindeki sayı: katkı verilen **yayındaki** ürünlerin Görüntülenme Sayaçlarının ürün başına bir kez toplanması. Tekil ziyaretçi ölçümü yoktur; aynı ürüne üç kez katkı vermek sayıyı üçlemez.
 _Avoid_: erişim, izlenme toplamı, tekil ziyaretçi
+
+### Tarama, Katkı ve İnceleme
+
+**Katkı Akışı**:
+Taramada yayında dosyası olmayan barkod için son kullanıcının fotoğraf gönderip Ürün açtığı akış (`/katki/[barcode]`, mobil `katki/[barcode]`). Ürün `status: draft` açılır, `submittedBy` katkı sahibini tutar. Aynı barkodda ikinci katkı açılmaz; kullanıcı başına en fazla 50 açık Taslak Katkı vardır.
+_Avoid_: ürün önerisi, talep, bildirim
+
+Katkı akışının üç kapısı vardır: `/katki` (barkod elle girişi), tarama/sorguda "ürün yok" dalı ve `/ekle` (panel dışı kullanıcıyı sihirbaz yerine katkıya yönlendirir). Menüde panel rollerine `Ekle`/`İnceleme`, diğerlerine `Katkı` görünür.
+
+**Taslak Katkı**:
+İnceleme bekleyen Ürün: `status: draft` + `submittedBy` dolu. Taramada "yok" sayılır (`products.read` yalnız yayındakini herkese açar); yalnız sahibi ve panel rollerine görünür.
+_Avoid_: bekleyen ürün, aday kayıt
+
+**İnceleme Kuyruğu**:
+Editör/yöneticinin Taslak Katkıları gördüğü yüzey (`/inceleme`, mobil İnceleme). Görülmemişler önce ve eski önce gelir; "Baktım" işareti `products.is_submit` alanıdır. "Analiz et" Ekle sihirbazını inceleme modunda açar (mevcut fotoğraflar hazır); yayınlama oradan yapılır.
+_Avoid_: moderasyon paneli, onay listesi, görev kuyruğu
+
+**Katkı Reddi**:
+Kabul edilmeyen Taslak Katkı silinir; katkı satırları da silinir, dolayısıyla katkı sahibinin profilinde hiç görünmez. Ayrı "reddedildi" durumu ve ret notu yoktur.
+_Avoid_: red, veto, arşivleme
+
+**Katkılarım**:
+Katkı Profilinde yalnız profil sahibi giriş yaptığında görünen bölüm (`GET /api/products/mine`): katkıların durumu (İncelemede / Yayında), fotoğraf sayısı, tarih ve yayındaysa dosya bağlantısı; ayrıca "bekleyen / 50" sayacı.
+_Avoid_: katkı geçmişi, önerilerim

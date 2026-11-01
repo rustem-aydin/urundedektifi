@@ -14,7 +14,7 @@ import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { SaveReview } from '@/components/wizard/SaveReview'
 import { AiError, analyzeProduct, type PhotoRole } from '@/lib/wizard/ai'
-import { ApiError, findProductByBarcode } from '@/lib/wizard/api'
+import { ApiError, fetchProductDoc, findProductByBarcode } from '@/lib/wizard/api'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import { getPhotoBlob, putPhotoBlob } from '@/lib/wizard/photoStore'
 import {
@@ -23,7 +23,9 @@ import {
   forgetPhoto,
   loadDraft,
   mergeExtraction,
+  productPhotoRefs,
   resolutionCounts,
+  reviewDraftFromProduct,
   saveDraft,
   type Draft,
   type DraftPhoto,
@@ -48,7 +50,14 @@ function describe(error: unknown): string {
  * Ekle sihirbazı (ADR 0008, web uyarlaması): barkod → fotoğraflar → YZ analizi → onay →
  * master eşleme → kayıt. Taslak `localStorage`'da, fotoğraflar IndexedDB'de tutulur.
  */
-export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string }) {
+export function EkleWizard({
+  initialBarcode = '',
+  reviewProductId,
+}: {
+  initialBarcode?: string
+  /** İnceleme modu (ADR 0024): katkı taslağı mevcut ürün olarak açılır. */
+  reviewProductId?: string
+}) {
   const router = useRouter()
   const { user, token, canAddProduct, restoring } = useSession()
 
@@ -63,12 +72,43 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
 
   useEffect(() => {
     if (!canAddProduct) return
+    // İnceleme modu taslak dokümanı jetonla okur: oturum gelene kadar bekle.
+    if (reviewProductId && !token) return
     let active = true
     ;(async () => {
       try {
+        setProviderReady((await fetchProviderStatus(token)).configured)
+        if (reviewProductId) {
+          // İnceleme modu: katkı taslağı, fotoğrafları yüklenmiş hâlde sihirbaza girer.
+          const doc = await fetchProductDoc(reviewProductId, token)
+          if (!doc) {
+            if (active) setFailure('Bu taslak bulunamadı. Silinmiş olabilir.')
+            return
+          }
+          const photos: DraftPhoto[] = []
+          for (const ref of productPhotoRefs(doc)) {
+            if (!ref.url) continue
+            try {
+              const blob = await fetch(ref.url).then((response) => response.blob())
+              if (!blob.size) continue
+              const id = `media-${ref.mediaId}`
+              await putPhotoBlob(id, blob)
+              photos.push({ id, role: ref.role, source: 'library', url: URL.createObjectURL(blob) })
+            } catch {
+              // Görsel okunamadı: analiz kalan fotoğraflarla yapılır.
+            }
+          }
+          if (!active) return
+          setNotice(
+            photos.length
+              ? `Katkı taslağı açıldı: ${photos.length} fotoğraf hazır. "Analiz et" ile devam et.`
+              : 'Katkı taslağı açıldı ama fotoğraflar okunamadı. Editör panelinden kontrol et.',
+          )
+          setDraft(reviewDraftFromProduct(doc, photos))
+          return
+        }
         const stored = await loadDraft()
         if (!active) return
-        setProviderReady((await fetchProviderStatus(token)).configured)
         const digits = initialBarcode.replace(/\D/g, '').slice(0, 14)
         if (stored) {
           // Bağlantıdan gelen barkod kullanıcının az önce sorguladığı barkod: taslağı o belirler.
@@ -105,7 +145,7 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
     return () => {
       active = false
     }
-  }, [canAddProduct, initialBarcode])
+  }, [canAddProduct, initialBarcode, reviewProductId, token])
 
   const update = useCallback(async (next: Draft) => {
     setDraft(next)
@@ -271,7 +311,10 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       }
 
       const photos: UploadablePhoto[] = []
-      for (const photo of resolved.draft.photos.filter((item) => item.role !== 'unknown')) {
+      // `media-` kimlikli fotoğraflar ürüne zaten bağlı (katkıda yüklendi): yeniden yüklenmez.
+      for (const photo of resolved.draft.photos.filter(
+        (item) => item.role !== 'unknown' && !item.id.startsWith('media-'),
+      )) {
         const blob = await getPhotoBlob(photo.id)
         if (!blob) throw new Error('Bir fotoğraf okunamadı. Kaldırıp yeniden ekle.')
         photos.push({
@@ -286,8 +329,10 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
       setDropped(outcome.dropped)
       for (const photo of resolved.draft.photos) {
         if (photo.url) URL.revokeObjectURL(photo.url)
+        if (reviewProductId) await forgetPhoto(photo)
       }
-      await clearDraft()
+      // İnceleme kaydı editörün kendi Ekle taslağını silmemeli.
+      if (!reviewProductId) await clearDraft()
       setSaved({ barcode: resolved.draft.form.barcode, published: resolved.draft.form.isPublished })
       setDraft(null)
       router.refresh()
@@ -314,17 +359,28 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
   }
 
   if (!canAddProduct) {
+    // Panel rolleri dışındaki herkes ürünü fotoğrafla katkı olarak açabilir (ADR 0024).
+    const contributionHref = initialBarcode
+      ? `/katki/${initialBarcode.replace(/\D/g, '')}`
+      : '/katki'
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
-        <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
-        <WizardIntro eyebrow="ADIM 0" title="Bu ekran rolüne kapalı">
+        <EvidenceTag variant="stamp">KATKI</EvidenceTag>
+        <WizardIntro eyebrow="ADIM 0" title="Sihirbaz panel rollerine açık">
           {user
-            ? `${user.role} rolüyle ürün eklenemez. Admin ya da editör hesabıyla giriş yap.`
-            : 'Admin ya da editör hesabıyla giriş yapman gerekiyor.'}
+            ? `${user.role} rolüyle doğrudan ürün eklenemez; ama ürünün fotoğraflarını gönderip dosyayı incelemeye açabilirsin. Onaylanınca profilinizde gösterilir.`
+            : 'Sihirbaz admin ve editör hesabına açık. Fotoğrafla katkı vermek için giriş yapman yeterli.'}
         </WizardIntro>
-        <Button asChild className="w-fit">
-          <Link href={`/giris?next=${encodeURIComponent('/ekle')}`}>Giriş ekranına git</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild className="w-fit">
+            <Link href={user ? contributionHref : `/giris?next=${encodeURIComponent(contributionHref)}`}>
+              {user ? 'Fotoğrafla katkı ver' : 'Giriş yap ve katkı ver'}
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="w-fit">
+            <Link href="/tara">Kamerayla tara</Link>
+          </Button>
+        </div>
       </CaseCard>
     )
   }
@@ -359,9 +415,15 @@ export function EkleWizard({ initialBarcode = '' }: { initialBarcode?: string })
               <Link href={`/urun/${saved.barcode}`}>Ürün dosyasını aç</Link>
             </Button>
           ) : null}
-          <Button variant="outline" onClick={() => setSaved(null)}>
-            Yeni ürün başlat
-          </Button>
+          {reviewProductId ? (
+            <Button variant="outline" asChild>
+              <Link href="/inceleme">Kuyruğa dön</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => setSaved(null)}>
+              Yeni ürün başlat
+            </Button>
+          )}
           <Button variant="ghost" asChild>
             <Link href="/urunler">Ürünlere dön</Link>
           </Button>

@@ -1,5 +1,4 @@
 import { getPayload } from 'payload'
-import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, AlertTriangle, Info, OctagonAlert } from 'lucide-react'
@@ -23,6 +22,7 @@ import { ProductGallery } from '@/components/ProductGallery'
 import { ProductAdminActions } from '@/components/ProductAdminActions'
 import { ProductViewCounter } from '@/components/ProductViewCounter'
 import { ContributorsStrip } from '@/components/ContributorsStrip'
+import { ContributionForm } from '@/components/ContributionForm'
 import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
 
@@ -69,7 +69,24 @@ export default async function ProductDetailPage({
   const payload = await getPayload({ config: payloadConfig })
 
   const product = await getProductCase(payload, barcode)
-  if (!product) notFound()
+  if (!product) {
+    // Taramada yayında dosya yok: kullanıcı fotoğrafla katkı verebilir (ADR 0024).
+    const code = barcode.replace(/\D/g, '')
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10">
+        <div className="flex flex-col items-start gap-2">
+          <EvidenceTag variant="stamp">DOSYA YOK</EvidenceTag>
+          <h1 className="font-display text-2xl sm:text-3xl">Bu barkod için dosya yok</h1>
+          <p className="text-sm text-muted-foreground">
+            {code} barkoduyla yayında bir ürün dosyası bulunamadı.
+          </p>
+        </div>
+        <div className="mt-6">
+          <ContributionForm barcode={code} />
+        </div>
+      </div>
+    )
+  }
 
   // Dosya önbellekte yaşar; sayaç her istekte canlı okunur.
   const goruntulenme = await viewCountFor(payload, product.id)

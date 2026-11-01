@@ -429,3 +429,43 @@ export async function forgetPhoto(photo: DraftPhoto): Promise<void> {
   if (photo.url) URL.revokeObjectURL(photo.url)
   await deletePhotoBlob(photo.id).catch(() => undefined)
 }
+
+/* --------------------------- inceleme modu -------------------------- */
+
+/** Katkı fotoğrafının üründe zaten var olan medya kaydı. */
+export type ExistingPhoto = { mediaId: string; role: PhotoRole; url: string | null }
+
+function mediaRefOf(ref: unknown): { id: string; url: string | null } | null {
+  if (!ref || typeof ref !== 'object') return null
+  const media = ref as { id?: string | number; url?: string | null }
+  if (media.id === undefined || media.id === null) return null
+  return { id: String(media.id), url: media.url ?? null }
+}
+
+/**
+ * Ürünün mevcut görsellerini katkı/inceleme sırasıyla döndürür: ön yüz ilk sırada,
+ * ardından içindekiler/besin/geri dönüşüm ve ek görseller.
+ */
+export function productPhotoRefs(doc: ProductDoc): ExistingPhoto[] {
+  const refs: ExistingPhoto[] = []
+  const push = (ref: unknown, role: PhotoRole) => {
+    const media = mediaRefOf(ref)
+    if (media) refs.push({ mediaId: media.id, role, url: media.url })
+  }
+  push(doc.frontImage, 'front')
+  push(doc.ingredientsImage, 'ingredients')
+  push(doc.nutritionImage, 'nutrition')
+  push(doc.recyclingImage, 'recycling')
+  for (const row of doc.additionalImages ?? []) push(row?.image, 'additional')
+  return refs
+}
+
+/**
+ * İnceleme modu taslağı (ADR 0024): katkıyla açılmış taslak ürün, Ekle sihirbazının
+ * 1. adımında fotoğrafları hazır hâlde açılır. Kaydetme `update` modunda çalışır; böylece
+ * analiz sonrası ürün yayına alınabilir.
+ */
+export function reviewDraftFromProduct(doc: ProductDoc, photos: DraftPhoto[]): Draft {
+  const draft = draftFromProduct(doc)
+  return { ...draft, photos, step: 1, form: { ...draft.form, isPublished: false } }
+}

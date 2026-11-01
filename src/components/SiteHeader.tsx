@@ -15,15 +15,25 @@ const NAV_ITEMS = [
   { href: '/kategoriler', label: 'Kategoriler' },
   { href: '/konular', label: 'Konular' },
   { href: '/uzmanlar', label: 'Uzmanlar' },
-  { href: '/ekle', label: 'Ekle' },
 ]
+
+/**
+ * Panel rolleri sihirbaza (`/ekle`), son kullanıcı fotoğraflı katkıya (`/katki`) gider (ADR 0024).
+ * Menü etiketi de buna göre değişir: "Ekle" / "Katkı".
+ */
+function navItemsFor(canAddProduct: boolean) {
+  return canAddProduct
+    ? [...NAV_ITEMS, { href: '/ekle', label: 'Ekle' }, { href: '/inceleme', label: 'İnceleme' }]
+    : [...NAV_ITEMS, { href: '/katki', label: 'Katkı' }]
+}
 
 export function SiteHeader() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
-  const { user } = useSession()
+  const { user, canAddProduct } = useSession()
   const profileHref = user ? `/profil/${user.id}` : '/giris'
   const accountLabel = user ? 'Profilim' : 'Giriş'
+  const navItems = navItemsFor(canAddProduct)
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
@@ -42,7 +52,7 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Ana gezinme" className="hidden items-center gap-1 md:flex">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
               <Link
@@ -99,7 +109,7 @@ export function SiteHeader() {
           className="border-t border-border px-4 pt-2 pb-3 md:hidden"
         >
           <ul className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
+            {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <li key={item.href}>

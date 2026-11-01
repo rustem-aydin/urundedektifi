@@ -10,6 +10,7 @@ import { AccountActions } from '@/components/AccountActions'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProfileEditor } from '@/components/ProfileEditor'
+import { MyContributions } from '@/components/MyContributions'
 import { CONTRIBUTION_LABELS } from '@/lib/contributionLabels'
 import { buildPublicProfile } from '@/lib/productContributions'
 
@@ -227,6 +228,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             </p>
           ) : null}
         </CaseSection>
+
+        {/* KENDİ KATKILARI — yalnız profil sahibi giriş yaptığında görünür (ADR 0024). */}
+        <MyContributions profileId={profile.id} />
       </div>
     </div>
   )

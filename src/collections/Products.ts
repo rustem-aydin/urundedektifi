@@ -21,6 +21,16 @@ import {
 } from '@/lib/productFeedback'
 import type { User } from '@/payload-types'
 import { contributorsForBarcode, recordContribution } from '@/lib/productContributions'
+import {
+  ContributionError,
+  PENDING_LIMIT,
+  contributionState,
+  myContributions,
+  normalizeContributionBarcode,
+  pendingContributionCount,
+  reviewQueue,
+  submitContribution,
+} from '@/lib/contributionFlow'
 
 /** Ürün uçlarının ortak kapanışı: yazma sonrası istemci tek istekte taze özet alır. */
 async function feedbackSummaryFor(req: PayloadRequest, product: FeedbackProduct) {
@@ -55,8 +65,23 @@ export const Products: CollectionConfig = {
       'Sistemdeki tüm ürün kayıtları. Kullanıcılar barkod okutarak veya arayarak bu ürünlere ulaşır. Aktif uzman kuralları sayfasında otomatik değerlendirilir.',
   },
   access: {
-    read: () => true,
-    create: () => true,
+    // Taslak ürün "yok" sayılmalı (katkı akışı buna dayanır): yalnız yayındaki kayıtlar
+    // herkese açıktır. Taslağı sahibi (submittedBy) ve panel rolleri görebilir.
+    read: ({ req: { user } }) => {
+      const current = user as User | null
+      const role = current?.role
+      if (role === 'admin' || role === 'editor' || role === 'expert') return true
+      if (current) {
+        return {
+          or: [
+            { status: { equals: 'published' } },
+            { submittedBy: { equals: current.id } },
+          ],
+        } as never
+      }
+      return { status: { equals: 'published' } } as never
+    },
+    create: ({ req: { user } }) => Boolean(user),
     update: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
     delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
@@ -265,6 +290,70 @@ export const Products: CollectionConfig = {
           if (response) return response
           throw error
         }
+      },
+    },
+    {
+      // Tarama sonucu: barkod yayında mı, incelemede mi, yok mu. Herkese açık —
+      // "ürün bulunamadı → katkı" ekranı bu üç duruma göre dallanır.
+      path: '/lookup/:barcode',
+      method: 'get',
+      handler: async (req) => {
+        const code = normalizeContributionBarcode(req.routeParams?.barcode)
+        if (!code) return Response.json({ error: 'Geçersiz barkod' }, { status: 400 })
+        return Response.json({
+          barcode: code,
+          state: await contributionState(req.payload, code),
+        })
+      },
+    },
+    {
+      // Katkı gönderimi (ADR 0024): fotoğraflar önce /api/media'ya yüklenir, sonra
+      // id'leri buraya gelir. Ürün `draft` açılır; editör kuyrukta görür.
+      path: '/contribute',
+      method: 'post',
+      handler: async (req) => {
+        try {
+          const body = (await req.json?.()) as { barcode?: unknown; media?: unknown } | null
+          const result = await submitContribution({
+            payload: req.payload,
+            user: (req.user as User | null) ?? null,
+            barcode: typeof body?.barcode === 'string' ? body.barcode : null,
+            mediaIds: body?.media,
+            req,
+          })
+          return Response.json(result, { status: 201 })
+        } catch (error) {
+          if (error instanceof ContributionError) {
+            return Response.json({ error: error.message }, { status: error.status })
+          }
+          throw error
+        }
+      },
+    },
+    {
+      // Oturum sahibinin katkıları: profildeki "Katkılarım" bölümü (web ve mobil).
+      path: '/mine',
+      method: 'get',
+      handler: async (req) => {
+        const user = req.user as User | null
+        if (!user) return Response.json({ error: 'Giriş gerekli' }, { status: 401 })
+        const [items, pending] = await Promise.all([
+          myContributions(req.payload, user.id),
+          pendingContributionCount(req.payload, user.id),
+        ])
+        return Response.json({ items, pending, limit: PENDING_LIMIT })
+      },
+    },
+    {
+      // İnceleme kuyruğu: yalnız admin/editör (ADR 0024).
+      path: '/review',
+      method: 'get',
+      handler: async (req) => {
+        const role = (req.user as User | null)?.role
+        if (role !== 'admin' && role !== 'editor') {
+          return Response.json({ error: 'Yetkiniz yok' }, { status: 403 })
+        }
+        return Response.json({ items: await reviewQueue(req.payload) })
       },
     },
     {

@@ -151,19 +151,30 @@ function toMasterOption(doc: Record<string, unknown>): MasterOption {
   }
 }
 
-/** Barkodla ham doküman (durumdan bağımsız; taslak ürünler de bulunur). */
-export async function findProductByBarcode(barcode: string): Promise<RawProduct | null> {
+/**
+ * Barkodla ham doküman. Jeton verilmezse yalnız YAYINDAKİ ürün döner (taslak "yok" sayılır,
+ * ADR 0024); jeton verilirse kullanıcının görebildiği taslak da gelir.
+ */
+export async function findProductByBarcode(
+  barcode: string,
+  token?: string | null,
+): Promise<RawProduct | null> {
   const page = await request<PayloadList<RawProduct>>(
     `/products?limit=1&depth=0&where[barcode][equals]=${encodeURIComponent(barcode)}`,
+    {},
+    token,
   )
   return page.docs[0] ?? null
 }
 
-/** Düzenle ekranının formu: ilişkileri açılmış ham doküman (`depth=2`). */
-export async function fetchProductDoc(id: string): Promise<ProductDoc | null> {
+/** Düzenle/incele formu: ilişkileri açılmış ham doküman (`depth=2`). Taslak için jeton şart. */
+export async function fetchProductDoc(
+  id: string,
+  token?: string | null,
+): Promise<ProductDoc | null> {
   try {
     // Payload tekil doküman ucunda `{ doc }` sarmalı yok: gövde doğrudan ürün.
-    return await request<ProductDoc>(`/products/${encodeURIComponent(id)}?depth=2`)
+    return await request<ProductDoc>(`/products/${encodeURIComponent(id)}?depth=2`, {}, token)
   } catch (error) {
     if (error instanceof ApiError && error.kind === 'notFound') return null
     throw error
@@ -438,4 +449,81 @@ export async function recordProductView(id: string): Promise<number | null> {
   )
   const value = Number(result?.goruntulenme)
   return Number.isFinite(value) ? value : null
+}
+
+// --- Katkı akışı (ADR 0024) ---
+
+export type ContributionState = 'published' | 'pending' | 'none'
+
+export type ContributionProduct = {
+  id: string
+  barcode: string | null
+  name: string | null
+  status: 'draft' | 'published' | 'archived' | null
+  createdAt: string | null
+  frontImageUrl: string | null
+  frontImageAlt: string | null
+  photoCount: number
+}
+
+export type ReviewItem = ContributionProduct & {
+  submitterName: string | null
+  submitterId: string | null
+  submitterAvatarUrl: string | null
+  seen: boolean
+}
+
+/** Barkodun durumu. Misafir de çağırabilir: yayında / incelemede / yok. */
+export async function lookupBarcode(barcode: string): Promise<ContributionState> {
+  const result = await request<{ state?: ContributionState }>(
+    `/products/lookup/${encodeURIComponent(barcode)}`,
+  )
+  return result.state ?? 'none'
+}
+
+/** Fotoğrafları yükler ve katkıyı gönderir; ilk fotoğraf ön yüz olur. */
+export async function submitContribution(
+  barcode: string,
+  blobs: Blob[],
+  token: string,
+): Promise<{ id: string; barcode: string; state: ContributionState }> {
+  const media: number[] = []
+  for (const [index, blob] of blobs.entries()) {
+    const doc = await uploadMedia(blob, `katki-${barcode}-${index + 1}.jpg`, token)
+    media.push(Number(doc.id))
+  }
+  return request<{ id: string; barcode: string; state: ContributionState }>(
+    '/products/contribute',
+    { method: 'POST', body: JSON.stringify({ barcode, media }) },
+    token,
+  )
+}
+
+export async function fetchMyContributions(
+  token: string,
+): Promise<{ items: ContributionProduct[]; pending: number; limit: number }> {
+  return request<{ items: ContributionProduct[]; pending: number; limit: number }>(
+    '/products/mine',
+    {},
+    token,
+  )
+}
+
+export async function fetchReviewQueue(token: string): Promise<ReviewItem[]> {
+  const result = await request<{ items?: ReviewItem[] }>('/products/review', {}, token)
+  return result.items ?? []
+}
+
+/** Kuyrukta "baktım" işareti (mevcut `is_submit` alanı). */
+export async function markReviewed(id: string, seen: boolean, token: string): Promise<void> {
+  await request<unknown>(
+    `/products/${encodeURIComponent(id)}`,
+    { method: 'PATCH', body: JSON.stringify({ is_submit: seen }) },
+    token,
+  )
+}
+
+/** Katkı reddi: kayıt silinir (ADR 0024 — reddedilen katkı profilde görünmez). */
+export async function rejectContribution(id: string, token: string): Promise<void> {
+  await request<unknown>(`/products/${encodeURIComponent(id)}`, { method: 'DELETE' }, token)
 }

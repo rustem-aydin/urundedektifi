@@ -267,7 +267,8 @@ export async function saveProduct(
   const { data, dropped } = buildProductData(draft, media)
 
   if (draft.mode === 'update' && draft.productId) {
-    const existing = await findProductByBarcode(data.barcode ?? '')
+    // Jeton şart: taslak ürün anonim okumada "yok" sayılır (ADR 0024).
+    const existing = await findProductByBarcode(data.barcode ?? '', token)
     if (!existing) throw new Error('Güncellenecek ürün bulunamadı. Dosyayı yenileyip tekrar dene.')
     const patch = onlyEmptyFields(data, existing)
     const doc = await updateProduct(existing.id, patch, token)

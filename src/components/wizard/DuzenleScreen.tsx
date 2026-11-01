@@ -51,9 +51,9 @@ export function DuzenleScreen({ productId }: { productId: string }) {
   const [saved, setSaved] = useState<{ barcode: string; published: boolean } | null>(null)
 
   useEffect(() => {
-    if (!canAddProduct || !productId) return
+    if (!canAddProduct || !productId || !token) return
     let active = true
-    fetchProductDoc(productId)
+    fetchProductDoc(productId, token)
       .then((doc) => {
         if (!active) return
         if (!doc) {
@@ -68,7 +68,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     return () => {
       active = false
     }
-  }, [canAddProduct, productId])
+  }, [canAddProduct, productId, token])
 
   const editForm = useCallback((form: ProductForm, field?: string) => {
     setDraft((current) => {

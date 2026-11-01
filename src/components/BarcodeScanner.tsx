@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { getProduct } from '@/actions/product'
+import { CORPORATE_ROLES, useSession } from '@/components/session-provider'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ const SCAN_CONFIG = {
 
 export default function BarcodeScanner() {
   const router = useRouter()
+  const { user } = useSession()
   const scannerRef = useRef<any>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
@@ -113,9 +115,13 @@ export default function BarcodeScanner() {
         toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${barcodeText}`)
       } else {
-        setCameraStatus('Ürün bulunamadı — yeni dosya sihirbazı açılıyor.')
+        // Panel rolleri yeni dosyayı sihirbazla açar; son kullanıcı fotoğrafla katkı verir.
+        const panel = Boolean(user && CORPORATE_ROLES.includes(user.role))
+        setCameraStatus(
+          panel ? 'Ürün bulunamadı — yeni dosya sihirbazı açılıyor.' : 'Ürün bulunamadı — katkı ekranı açılıyor.',
+        )
         toast.message('Ürün bulunamadı — dosyasını sen aç.')
-        router.push(`/ekle?barcode=${encodeURIComponent(barcodeText)}`)
+        router.push(panel ? `/ekle?barcode=${encodeURIComponent(barcodeText)}` : `/katki/${encodeURIComponent(barcodeText)}`)
       }
     } catch (error) {
       console.error('Sorgulama hatası:', error)

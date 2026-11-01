@@ -138,6 +138,11 @@ export type ProductDoc = {
   specifications?: { key?: string | null; value?: string | null; unit?: string | null }[] | null
   warnings?: { severity?: string | null; text?: string | null }[] | null
   prices?: { amount?: number | null; date?: string | null }[] | null
+  frontImage?: MediaRef | string | number | null
+  ingredientsImage?: MediaRef | string | number | null
+  nutritionImage?: MediaRef | string | number | null
+  recyclingImage?: MediaRef | string | number | null
+  additionalImages?: { image?: MediaRef | string | number | null; caption?: string | null }[] | null
 }
 
 /** Master listelerin eşleme adımında kullandığı hafif satır. */
