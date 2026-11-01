@@ -23,7 +23,9 @@
     "seed:off-bulk": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/off-bulk-import.ts",
     "products:countries": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/fill-product-countries.ts",
     "seed:categories": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-categories.ts",
-    "seed:categories:prod": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-categories-prod.ts"
+    "seed:categories:prod": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-categories-prod.ts",
+    "seed:allergens": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-allergens.ts",
+    "seed:allergens:prod": "cross-env NODE_OPTIONS=--no-deprecation node --import tsx/esm scripts/seed-allergens-prod.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
