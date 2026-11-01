@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises'
+
 import sharp from 'sharp'
 
 import { providerChatEndpoint } from '@/globals/AiSettings'
@@ -66,6 +68,22 @@ async function toBase64Jpeg(bytes: ArrayBuffer): Promise<string> {
     .jpeg({ quality: 82 })
     .toBuffer()
   return jpeg.toString('base64')
+}
+
+/**
+ * Medya dosyasını okur. Yükleme sonrası ilk saniyelerde S3 görünürlüğü gecikebiliyor: tek 500
+ * yüzünden analiz düşmesin diye üç deneme, aralarında kısa bekleme.
+ */
+async function readMediaBytes(url: string): Promise<ArrayBuffer> {
+  let lastStatus = 0
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt) await delay(1500)
+    const response = await fetch(url, { cache: 'no-store' })
+    if (response.ok) return response.arrayBuffer()
+    lastStatus = response.status
+    if (response.status !== 500 && response.status !== 403) break
+  }
+  throw new Error(`Fotoğraf okunamadı (${lastStatus || 'ağ hatası'}).`)
 }
 
 async function readProduct(payload: Payload, productId: string) {
@@ -141,9 +159,7 @@ export async function runProductAnalysis({
     const images: AnalyzeInput['images'] = []
     for (const [index, photo] of photos.entries()) {
       const url = absoluteMediaUrl(payload, String(photo.url))
-      const response = await fetch(url, { cache: 'no-store' })
-      if (!response.ok) throw new Error(`Fotoğraf ${index + 1} okunamadı (${response.status}).`)
-      images.push({ index, base64: await toBase64Jpeg(await response.arrayBuffer()) })
+      images.push({ index, base64: await toBase64Jpeg(await readMediaBytes(url)) })
     }
 
     const result = await analyzeProduct({ token: '', images, previous: null, hints: [] }, endpoint)
