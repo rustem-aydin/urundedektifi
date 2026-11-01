@@ -985,8 +985,15 @@ export const Products: CollectionConfig = {
   ],
   hooks: {
     afterChange: [
-      async ({ doc, req, operation }) => {
+      async ({ doc, previousDoc, req, operation }) => {
         invalidateProductCaseCache(doc?.barcode)
+        // Barkod değiştiyse eski kodun Dosya önbelleği de düşürülür: aksi hâlde eski
+        // bağlantı TTL boyunca ürünü göstermeye devam ederdi.
+        if (operation === 'update' && previousDoc?.barcode != null) {
+          if (String(previousDoc.barcode) !== String(doc?.barcode ?? '')) {
+            invalidateProductCaseCache(previousDoc.barcode)
+          }
+        }
         // Katkı kaydı: panelden ya da jetonla yapılan her yazım "oluşturdu"/"düzenledi"
         // olarak işlenir. Misafir yazımında (req.user yok) kayıt tutulmaz.
         await recordContribution({

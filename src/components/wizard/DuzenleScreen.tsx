@@ -9,11 +9,11 @@ import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { AnalysisSummary } from '@/components/wizard/AnalysisSummary'
-import { Chip, WizardIntro } from '@/components/wizard/controls'
+import { Chip, TextField, WizardIntro } from '@/components/wizard/controls'
 import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { AiError } from '@/lib/wizard/ai'
-import { ApiError, fetchProductDoc } from '@/lib/wizard/api'
+import { ApiError, fetchProductDoc, findProductByBarcode } from '@/lib/wizard/api'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import { getPhotoBlob, putPhotoBlob } from '@/lib/wizard/photoStore'
 import {
@@ -49,6 +49,8 @@ export function DuzenleScreen({ productId }: { productId: string }) {
   const [busy, setBusy] = useState(false)
   const [dropped, setDropped] = useState<string[]>([])
   const [saved, setSaved] = useState<{ barcode: string; published: boolean } | null>(null)
+  /** Yüklenen dosyanın barkodu: doğrulama yalnız barkod değiştiğinde uygulanır. */
+  const [originalBarcode, setOriginalBarcode] = useState('')
 
   useEffect(() => {
     if (!canAddProduct || !productId || !token) return
@@ -60,7 +62,9 @@ export function DuzenleScreen({ productId }: { productId: string }) {
           setLoadError('Bu ürün bulunamadı. Silinmiş olabilir.')
           return
         }
-        setDraft(draftFromProduct(doc))
+        const next = draftFromProduct(doc)
+        setDraft(next)
+        setOriginalBarcode(next.barcode)
       })
       .catch((error: unknown) => {
         if (active) setLoadError(describe(error))
@@ -76,6 +80,17 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       const touched =
         field && !current.touched.includes(field) ? [...current.touched, field] : current.touched
       return { ...current, form, touched }
+    })
+  }, [])
+
+  /** Barkod kimliği taslakta ve formda ayrı durur; ikisi birlikte yazılır. */
+  const setBarcode = useCallback((digits: string) => {
+    setDraft((current) => {
+      if (!current) return current
+      const touched = current.touched.includes('barcode')
+        ? current.touched
+        : [...current.touched, 'barcode']
+      return { ...current, barcode: digits, form: { ...current.form, barcode: digits }, touched }
     })
   }, [])
 
@@ -104,6 +119,23 @@ export function DuzenleScreen({ productId }: { productId: string }) {
     setFailure(null)
     setBusy(true)
     try {
+      const digits = draft.form.barcode.trim()
+      // Barkod değişmediyse eski değer olduğu gibi gönderilir (eski kayıtların biçimi
+      // bu ekranın sorunu değil); değiştiyse geçerlilik ve tekillik burada sınanır.
+      if (digits !== originalBarcode) {
+        if (!/^\d{8,14}$/.test(digits)) {
+          setFailure('Barkod 8–14 hane olmalı (yalnız rakam). Kaydetmeden önce düzelt.')
+          return
+        }
+        // Barkod tekil: başka bir dosyaya ait kodu yazmak sunucuda unique hatası verir.
+        // Hata mesajını anlaşılır kılmak için çakışma önceden sorulur.
+        const clash = await findProductByBarcode(digits, token)
+        if (clash && String(clash.id) !== String(draft.productId)) {
+          setFailure(`${digits} barkodu başka bir ürün dosyasında kayıtlı.`)
+          return
+        }
+      }
+
       const resolved = await resolveCreatedMasters(draft, token)
       if (resolved.errors.length) {
         setFailure(`Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
@@ -226,6 +258,14 @@ export function DuzenleScreen({ productId }: { productId: string }) {
           Kaydettiğinde formdaki değerler ürünün üzerine yazılır (Ekle’deki “yalnız boş alan” kuralı
           burada geçerli değil). Yeni fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur.
         </p>
+        <TextField
+          label="Barkod (8–14 hane)"
+          value={draft.form.barcode}
+          inputMode="numeric"
+          placeholder="8690123456789"
+          hint="Barkodu değiştirirsen ürünün dosya adresi de yeni barkoda taşınır; eski bağlantı açılmaz."
+          onChange={(value) => setBarcode(value.replace(/\D/g, '').slice(0, 14))}
+        />
         <div className="flex flex-col gap-1.5">
           <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
             YAYIN DURUMU
