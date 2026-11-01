@@ -13,7 +13,7 @@ import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
 /**
  * Yapay zekâ sağlayıcısı (ADR 0008/0021): ayar tek merkezde, Payload panelindeki
  * `ai-settings` global'inde. Bu ekran yalnız durumu gösterir — anahtar tarayıcıya inmez,
- * model seçimi buradan yapılmaz. Ayar dosyası yalnız admin'e açıktır (ADR 0027).
+ * model seçimi buradan yapılmaz. Ayar dosyası yalnız admin'e açıktır (ADR 0029).
  */
 export function SaglayiciForm() {
   const { token, user, restoring } = useSession()

@@ -1,4 +1,4 @@
-# ADR 0027 — Rol yetki matrisi: yazma işleri role göre daraltıldı
+# ADR 0029 — Rol yetki matrisi: yazma işleri role göre daraltıldı
 
 - Durum: Kabul edildi
 - Tarih: 2026-11-01

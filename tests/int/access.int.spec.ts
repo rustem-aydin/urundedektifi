@@ -4,7 +4,7 @@ import config from '@/payload.config'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 /**
- * Rol yetki matrisi (ADR 0027): yazma işleri işin sahibine daraltıldı.
+ * Rol yetki matrisi (ADR 0029): yazma işleri işin sahibine daraltıldı.
  * Denemeler gerçek `payload.create` çağrısıdır; erişim kapısı 403 ile reddederse test geçer.
  */
 
@@ -92,7 +92,7 @@ const lexicalBody = {
   },
 }
 
-describe('rol yetki matrisi (ADR 0027)', () => {
+describe('rol yetki matrisi (ADR 0029)', () => {
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
     const topic = await payload.create({
