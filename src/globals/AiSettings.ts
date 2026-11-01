@@ -29,6 +29,24 @@ const AI_ROLES: User['role'][] = ['admin', 'editor']
 const CHAT_TIMEOUT_MS = 120_000
 const MODELS_TIMEOUT_MS = 20_000
 
+/**
+ * Sağlayıcı istemci kimliği. OpenCode Go geçidi jenerik SDK/fetch kimliğini kabul etmiyor,
+ * kendi adını taşıyan istemci istiyor (opencode.ai/v2/docs/console/go → "Where can I use it?").
+ */
+const AI_CLIENT_AGENT = 'urundedektifi/1.0'
+
+/**
+ * OpenCode Go, isteği yönlendirmek ve prompt önbelleğini eşlemek için konuşma başına sabit bir
+ * oturum kimliği bekler (`x-opencode-session`); eksikse istek 400 `MissingSessionID` döner.
+ * Kimlik kullanıcıya sabitlenir: aynı kullanıcının ardışık analizleri önbelleği paylaşır.
+ */
+function providerSessionHeaders(user: User | null): Record<string, string> {
+  return {
+    'User-Agent': AI_CLIENT_AGENT,
+    'x-opencode-session': `urundedektifi-${user?.id ?? 'anon'}`,
+  }
+}
+
 function canUseAi(req: PayloadRequest): boolean {
   const role = (req.user as User | null)?.role
   return role ? AI_ROLES.includes(role) : false
@@ -198,7 +216,13 @@ export const AiSettings: GlobalConfig = {
         try {
           const response = await callProvider(
             `${config.baseUrl}/models`,
-            { headers: { Authorization: `Bearer ${config.apiKey}` }, method: 'GET' },
+            {
+              headers: {
+                Authorization: `Bearer ${config.apiKey}`,
+                ...providerSessionHeaders(req.user as User | null),
+              },
+              method: 'GET',
+            },
             MODELS_TIMEOUT_MS,
           )
           return relayProviderResponse(response)
@@ -231,6 +255,7 @@ export const AiSettings: GlobalConfig = {
               headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${config.apiKey}`,
+                ...providerSessionHeaders(req.user as User | null),
               },
               body: JSON.stringify(body),
             },

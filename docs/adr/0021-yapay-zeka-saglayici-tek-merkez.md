@@ -39,6 +39,29 @@ Vekil gelen gövdeden **modeli ezer** (sunucudaki model kullanılır) ve `Author
 başlığını sunucuda ekler. Sağlayıcı yanıtı (durum kodu + gövde) olduğu gibi istemciye döner; böylece
 istemcideki `json_schema` → `json_object` düşüşü ve tek onarım turu mantığı değişmeden çalışır.
 
+### Sağlayıcıya özgü başlıklar (OpenCode Go)
+
+Vekil her iki uçta da istemci kimliğini kendisi ekler (`providerSessionHeaders`):
+
+| Başlık | Değer | Neden |
+|---|---|---|
+| `User-Agent` | `urundedektifi/1.0` | Go geçidi jenerik SDK/fetch kimliğini kabul etmiyor |
+| `x-opencode-session` | `urundedektifi-<userId>` | Go, yönlendirme/önbellek için konuşma başına sabit oturum ister; eksikse `400 MissingSessionID` |
+
+Kimlik kullanıcıya sabitlendiği için aynı kullanıcının ardışık analizleri prompt önbelleğini paylaşır.
+Diğer OpenAI uyumlu sağlayıcılar bu iki başlığı yok sayar; sağlayıcı değişince ayar değişir, kod değişmez.
+
+### Yürürlükteki ayar
+
+| Alan | Değer |
+|---|---|
+| `baseUrl` | `https://opencode.ai/inference/go/v1` |
+| `model` | `deepseek-v4.1-flash` (görsel + `json_schema` kabul eder) |
+| `apiKey` | OpenCode Go planı anahtarı (yalnız sunucuda/veritabanında) |
+
+`https://opencode.ai/zen/v1` adresi Go anahtarıyla `402 Insufficient account funds` döner: bu taban
+ön ödemeli Zen bakiyesine bakar, Go planına değil.
+
 ### Yetki
 
 - `chat`/`models`/`status`: **admin + editör**. Tüketici hesabı ve anonim istek 401 alır; aksi hâlde
@@ -62,8 +85,9 @@ istemcideki `json_schema` → `json_object` düşüşü ve tek onarım turu mant
 - Yönetici tek panelden sağlayıcıyı değiştirir; web ve mobil aynı anda yeni sağlayıcıyı kullanır.
 - API anahtarı tarayıcıya/telefona inmez; cihaz kaybı anahtar sızıntısı değildir.
 - Analiz trafiği sunucudan geçer: sağlayıcı anahtarı sunucuda olduğu için istemci sayısı sınırsız.
-- Vekil, `chat/completions` gövdesini geçirdiği için sağlayıcıya özgü mantık eklenmedi; yeni gateway
-  desteği panelden adres değiştirmekle gelir.
+- Vekil gövdeyi olduğu gibi geçirir; sağlayıcıya özgü tek ek, kimlik/oturum başlıklarıdır. Yeni bir
+  gateway yalnız ek başlık istiyorsa kod değil `providerSessionHeaders` genişler; adres/model değişimi
+  panelden yapılır.
 
 ## Değerlendirilen seçenekler
 
