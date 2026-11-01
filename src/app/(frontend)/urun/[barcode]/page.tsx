@@ -206,17 +206,6 @@ export default async function ProductDetailPage({
       </header>
 
       <div className="mt-10 flex flex-col gap-10">
-        {/* KATKIDA BULUNANLAR — oluşturan / düzenleyen / doğrulayan, kişi başına tek satır */}
-        <CaseSection
-          id="katkida-bulunanlar"
-          eyebrow="Katkı"
-          title={`Katkıda Bulunanlar (${contributorTotal})`}
-          hasData={contributorTotal > 0}
-          emptyMessage="Bu dosyaya henüz katkı kaydı yok. Ürün eklendikçe, düzenlendikçe ve doğrulandıkça katkıda bulunanlar burada listelenir."
-        >
-          <ContributorsStrip contributors={contributors} total={contributorTotal} />
-        </CaseSection>
-
         {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
         <VerdictSection avatars={expertAvatars} />
 
@@ -471,6 +460,17 @@ export default async function ProductDetailPage({
               </li>
             ))}
           </ul>
+        </CaseSection>
+
+        {/* KATKIDA BULUNANLAR — yorumların hemen üstünde; oluşturan / düzenleyen / doğrulayan, kişi başına tek satır */}
+        <CaseSection
+          id="katkida-bulunanlar"
+          eyebrow="Katkı"
+          title={`Katkıda Bulunanlar (${contributorTotal})`}
+          hasData={contributorTotal > 0}
+          emptyMessage="Bu dosyaya henüz katkı kaydı yok. Ürün eklendikçe, düzenlendikçe ve doğrulandıkça katkıda bulunanlar burada listelenir."
+        >
+          <ContributorsStrip contributors={contributors} total={contributorTotal} />
         </CaseSection>
 
         <FeedbackCommentsSection />
