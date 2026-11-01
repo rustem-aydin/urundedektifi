@@ -3,13 +3,9 @@
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { Button } from '@/components/ui/button'
-import type { PhotoRole } from '@/lib/wizard/ai'
-import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import type { Draft, ResolutionCounts } from '@/lib/wizard/productDraft'
 
 import { Chip, TextField, WizardIntro } from './controls'
-
-const ROLES: PhotoRole[] = ['front', 'ingredients', 'nutrition', 'recycling', 'additional', 'unknown']
 
 type Props = {
   draft: Draft
@@ -21,17 +17,13 @@ type Props = {
   onSave: () => void
 }
 
-/** Kayıt bölümü: hangi fotoğraf ürüne bağlanacak, yayın durumu, fiyat, özet. */
+/**
+ * Kayıt bölümü: yayın durumu, fiyat ve özet. Fotoğraf rolleri sayfanın altındaki fotoğraf
+ * çekmecesinde atanır; burada tekrar edilmez.
+ */
 export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSave }: Props) {
   const form = draft.form
   const attached = draft.photos.filter((photo) => photo.role !== 'unknown')
-
-  function setRole(id: string, role: PhotoRole) {
-    onEdit({
-      ...draft,
-      photos: draft.photos.map((photo) => (photo.id === id ? { ...photo, role } : photo)),
-    })
-  }
 
   const warnings: string[] = []
   if (!counts.total) warnings.push('Hiçbir satır master kayda bağlanmadı; hüküm değerlendirmesi boş kalır.')
@@ -58,41 +50,6 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
             : 'Yeni ürün dosyası oluşturulacak.'}
         </p>
       </CaseCard>
-
-      <div className="flex flex-col gap-2">
-        <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
-          ÜRÜNE BAĞLANACAK FOTOĞRAFLAR ({attached.length}/6)
-        </span>
-        {draft.photos.length === 0 ? <p className="text-sm text-muted-foreground">Fotoğraf yok.</p> : null}
-        {draft.photos.map((photo, index) => (
-          <div
-            key={photo.id}
-            className="flex flex-col gap-2 rounded-md border border-border bg-card p-3 sm:flex-row sm:items-center"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- object URL */}
-            <img
-              src={photo.url}
-              alt={`Fotoğraf ${index + 1}`}
-              className="size-14 shrink-0 rounded-sm bg-muted object-cover"
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
-                FOTOĞRAF {index + 1}
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {ROLES.map((role) => (
-                  <Chip
-                    key={role}
-                    label={PHOTO_ROLE_NAMES[role]}
-                    selected={photo.role === role}
-                    onClick={() => setRole(photo.id, role)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">

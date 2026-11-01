@@ -60,6 +60,8 @@ export function ReviewWizard({ productId }: { productId: string }) {
   const [dropped, setDropped] = useState<string[]>([])
   /** Analiz yapılmadan alanların elle doldurulmasına izin verir (tek ekran akışı). */
   const [manualEdit, setManualEdit] = useState(false)
+  /** Fotoğraf çekmecesi varsayılan kapalı: sayfa kaydırılırken fotoğraflar yolu kesmez. */
+  const [photosOpen, setPhotosOpen] = useState(false)
 
   useEffect(() => {
     if (!isPanel || !token) return
@@ -310,7 +312,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
   const hasContent = manualEdit || draft.analysisRounds > 0 || draft.extraction !== null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-20">
       <div className="flex flex-wrap items-center gap-2">
         <EvidenceTag variant="tape">{draft.barcode}</EvidenceTag>
         <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
@@ -337,15 +339,6 @@ export function ReviewWizard({ productId }: { productId: string }) {
           </Button>
         </CaseCard>
       ) : null}
-
-      <PhotoTray
-        photos={draft.photos}
-        requests={draft.extraction?.requests ?? []}
-        disabled={busy}
-        onAdd={(files, source) => void addPhotos(files, source)}
-        onRemove={(id) => void removePhoto(id)}
-        onRole={(id, role) => void setPhotoRole(id, role)}
-      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" disabled={busy || draft.photos.length === 0} onClick={() => void analyze()}>
@@ -375,7 +368,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
                 </p>
               ))}
               <p className="text-sm text-muted-foreground">
-                Eksik alan için fotoğrafı yukarıdan ekleyip yeniden analiz et.
+                Eksik alan için fotoğrafı alttaki çekmeceden ekleyip yeniden analiz et.
               </p>
             </CaseCard>
           ) : null}
@@ -400,6 +393,47 @@ export function ReviewWizard({ productId }: { productId: string }) {
           />
         </div>
       ) : null}
+
+      {/* Fotoğraf çekmecesi: sayfa kaydırılırken fotoğraflar yolu kesmesin diye sabit alt şerit,
+          içerik yalnız istendiğinde açılır (varsayılan kapalı). */}
+      <div className="fixed inset-x-0 bottom-0 z-40">
+        {photosOpen ? (
+          <div className="max-h-[70vh] overflow-y-auto border-t border-border bg-card">
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-4 pb-2">
+              <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
+                FOTOĞRAFLAR ({draft.photos.length}/6)
+              </span>
+              <PhotoTray
+                photos={draft.photos}
+                requests={draft.extraction?.requests ?? []}
+                disabled={busy}
+                onAdd={(files, source) => void addPhotos(files, source)}
+                onRemove={(id) => void removePhoto(id)}
+                onRole={(id, role) => void setPhotoRole(id, role)}
+              />
+            </div>
+          </div>
+        ) : null}
+        <div className="border-t border-border bg-card">
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-2">
+            <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
+              {draft.photos.length}/6 FOTOĞRAF
+              {draft.photos.some((photo) => photo.role !== 'unknown')
+                ? ' · ROL ATANDI'
+                : draft.photos.length
+                  ? ' · ROL BEKLİYOR'
+                  : ''}
+            </span>
+            <Button
+              type="button"
+              variant={photosOpen ? 'outline' : 'default'}
+              onClick={() => setPhotosOpen((open) => !open)}
+            >
+              {photosOpen ? 'Fotoğrafları kapat' : 'Fotoğrafları aç'}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

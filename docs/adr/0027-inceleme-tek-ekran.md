@@ -27,11 +27,14 @@ belirliyordu. Editör/admin geri bildirimi:
 `ReviewWizard` tek bir dikey akış çizer, adım durumu yoktur:
 
 1. Barkod + fotoğraf sayısı başlığı, bildirim/hata satırları.
-2. Fotoğraf tepsisi (ekleme, rol seçimi, kaldırma) — her zaman görünür.
+2. Sabit alt fotoğraf şeridi ve varsayılan **kapalı** çekmece: açıldığında fotoğraf ekleme, rol
+   seçimi, kaldırma. Şerit her zaman görünür (ör. "3/6 FOTOĞRAF"), böylece alanları okurken
+   fotoğrafa bakmak için sayfa başına dönmek gerekmez.
 3. "Analiz et" / "Tekrar analiz et" düğmesi; analiz olmadan devam etmek isteyene
    "Analiz olmadan elle doldur" (yerel `manualEdit` bayrağı, taslakta saklanmaz).
 4. Analiz varsa (ya da elle doldurma açıldıysa) alt alta: eksik veri kartı, alan onayı
    (`AnalysisSummary`), master eşleme (`MasterResolver`), eşleme özeti, kayıt (`SaveReview`).
+   Fotoğraf rolleri kayıt bölümünde tekrarlanmaz; tek yer çekmecedir.
 
 "Eşlemeye geç", "Kayıt adımına geç", "Analizi atla, elle doldur" ve adım çipleri silindi.
 
