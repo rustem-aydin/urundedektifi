@@ -145,7 +145,7 @@ export type ProductDoc = {
   additionalImages?: { image?: MediaRef | string | number | null; caption?: string | null }[] | null
 }
 
-/** Master listelerin eşleme adımında kullandığı hafif satır. */
+/** Master listelerin eşleme bölümünde kullandığı hafif satır. */
 export type MasterOption = {
   id: string
   name: string

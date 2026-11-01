@@ -159,7 +159,7 @@ Editör/yöneticinin Taslak Katkıları gördüğü yüzey (`/inceleme`, mobil �
 _Avoid_: moderasyon paneli, onay listesi, görev kuyruğu
 
 **İnceleme Sihirbazı**:
-Panel rolünün Katkı Akışından gelen taslağı alanlara dönüştürdüğü yüzey (`/inceleme/[id]`, mobil `inceleme/[id]`). Adımlar: fotoğraf → onay → eşleme → kayıt; "Analiz et" yapay zekâyla etiketi okur. Yeni ürün açan bir modu yoktur — ürün yalnız Katkı Akışından doğar.
+Panel rolünün Katkı Akışından gelen taslağı alanlara dönüştürdüğü yüzey (`/inceleme/[id]`, mobil `inceleme/[id]`). Web'de tek ekran (ADR 0027): fotoğraf tepsisi, "Analiz et", alan onayı, master eşleme ve kayıt bölümleri alt alta; adım geçişi yok. Mobilde adımlı akış (fotoğraf → onay → eşleme → kayıt) sürer. "Analiz et" yapay zekâyla etiketi okur. Yeni ürün açan bir modu yoktur — ürün yalnız Katkı Akışından doğar.
 _Avoid_: Ekle sihirbazı, ürün ekleme ekranı
 
 **Katkı Reddi**:

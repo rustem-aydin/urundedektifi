@@ -9,7 +9,7 @@ import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { AnalysisSummary } from '@/components/wizard/AnalysisSummary'
-import { Chip, WizardIntro } from '@/components/wizard/controls'
+import { WizardIntro } from '@/components/wizard/controls'
 import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { SaveReview } from '@/components/wizard/SaveReview'
@@ -35,17 +35,16 @@ import {
   type UploadablePhoto,
 } from '@/lib/wizard/productWrite'
 
-const STEP_TITLES = ['Fotoğraf', 'Onay', 'Eşleme', 'Kayıt'] as const
-
 function describe(error: unknown): string {
   if (error instanceof AiError || error instanceof ApiError) return error.message
   return error instanceof Error ? error.message : 'Bilinmeyen hata.'
 }
 
 /**
- * İnceleme sihirbazı (ADR 0026): katkı olarak açılmış taslak ürünü, fotoğrafları hazır
- * hâlde açar — YZ analizi → alan onayı → master eşleme → yayın. Yeni ürün açan bir mod
- * yoktur: herkes ürünü fotoğrafla katkı olarak açar, ürünü yalnız panel rolleri yayınlar.
+ * İnceleme ekranı (ADR 0026, ADR 0027): katkı olarak açılmış taslak ürünü, fotoğrafları hazır
+ * hâlde tek sayfada açar — YZ analizi, alan onayı, master eşleme ve kayıt aynı ekranda
+ * alt alta durur; adım makinesi yoktur. Yeni ürün açan bir mod yoktur: herkes ürünü
+ * fotoğrafla katkı olarak açar, ürünü yalnız panel rolleri yayınlar.
  * Kaydetmeden sonra otomatik olarak sıradaki incelenmemiş taslağa geçilir.
  */
 export function ReviewWizard({ productId }: { productId: string }) {
@@ -59,6 +58,8 @@ export function ReviewWizard({ productId }: { productId: string }) {
   const [failure, setFailure] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [dropped, setDropped] = useState<string[]>([])
+  /** Analiz yapılmadan alanların elle doldurulmasına izin verir (tek ekran akışı). */
+  const [manualEdit, setManualEdit] = useState(false)
 
   useEffect(() => {
     if (!isPanel || !token) return
@@ -207,7 +208,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
         },
         result.data,
       )
-      await update({ ...merged, step: 2 })
+      await update(merged)
       const tokenNote = result.usage?.totalTokens ? ` · ${result.usage.totalTokens} token` : ''
       setNotice(
         result.data.requests.length
@@ -305,25 +306,17 @@ export function ReviewWizard({ productId }: { productId: string }) {
   }
 
   const counts = resolutionCounts(draft)
-  const step = draft.step
+  /** Tek ekran: analiz yapılmadıysa alanlar gizli kalır, elle doldurma ile açılabilir. */
+  const hasContent = manualEdit || draft.analysisRounds > 0 || draft.extraction !== null
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-2">
-        {STEP_TITLES.map((title, index) => {
-          const number = (index + 1) as Draft['step']
-          return (
-            <Chip
-              key={title}
-              label={`${number}. ${title}`}
-              selected={step === number}
-              disabled={number > step}
-              onClick={() => void update({ ...draft, step: number })}
-              title={number > step ? 'Bu adıma henüz geçilmedi' : title}
-            />
-          )
-        })}
         <EvidenceTag variant="tape">{draft.barcode}</EvidenceTag>
+        <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
+          {draft.photos.length} FOTOĞRAF
+          {draft.analysisRounds ? ` · ${draft.analysisRounds} ANALİZ` : ''}
+        </span>
       </div>
 
       {notice ? <p className="text-sm text-evidence-green">{notice}</p> : null}
@@ -332,56 +325,47 @@ export function ReviewWizard({ productId }: { productId: string }) {
         <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">İşleniyor…</p>
       ) : null}
 
-      {!busy && step === 1 ? (
-        <div className="flex flex-col gap-5">
-          {providerReady === false ? (
-            <CaseCard className="flex flex-col gap-2 p-4">
-              <EvidenceTag variant="stamp">SAĞLAYICI</EvidenceTag>
-              <WizardIntro eyebrow="YAPAY ZEKÂ" title="Sağlayıcı ayarlanmadı">
-                Fotoğraf analizi için yönetici sağlayıcıyı tanımlamalı (servis adresi, API
-                anahtarı, model).
-              </WizardIntro>
-              <Button asChild className="w-fit">
-                <Link href="/saglayici">Durumu gör</Link>
-              </Button>
-            </CaseCard>
-          ) : null}
-
-          <PhotoTray
-            photos={draft.photos}
-            requests={draft.extraction?.requests ?? []}
-            disabled={busy}
-            onAdd={(files, source) => void addPhotos(files, source)}
-            onRemove={(id) => void removePhoto(id)}
-            onRole={(id, role) => void setPhotoRole(id, role)}
-          />
-
-          {draft.analysisRounds > 0 ? (
-            <p className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
-              {draft.analysisRounds} ANALİZ TURU
-              {draft.usage ? ` · ${draft.usage.prompt ?? 0}+${draft.usage.completion ?? 0} TOKEN` : ''}
-            </p>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              disabled={busy || draft.photos.length === 0}
-              onClick={() => void analyze()}
-            >
-              {draft.analysisRounds ? 'Tekrar analiz et' : 'Analiz et'}
-            </Button>
-            {draft.analysisRounds > 0 ? (
-              <Button variant="outline" onClick={() => void update({ ...draft, step: 2 })}>
-                Analizi atla, elle doldur
-              </Button>
-            ) : null}
-          </div>
-        </div>
+      {providerReady === false ? (
+        <CaseCard className="flex flex-col gap-2 p-4">
+          <EvidenceTag variant="stamp">SAĞLAYICI</EvidenceTag>
+          <WizardIntro eyebrow="YAPAY ZEKÂ" title="Sağlayıcı ayarlanmadı">
+            Fotoğraf analizi için yönetici sağlayıcıyı tanımlamalı (servis adresi, API anahtarı,
+            model).
+          </WizardIntro>
+          <Button asChild className="w-fit">
+            <Link href="/saglayici">Durumu gör</Link>
+          </Button>
+        </CaseCard>
       ) : null}
 
-      {!busy && step === 2 ? (
-        <div className="flex flex-col gap-5">
+      <PhotoTray
+        photos={draft.photos}
+        requests={draft.extraction?.requests ?? []}
+        disabled={busy}
+        onAdd={(files, source) => void addPhotos(files, source)}
+        onRemove={(id) => void removePhoto(id)}
+        onRole={(id, role) => void setPhotoRole(id, role)}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" disabled={busy || draft.photos.length === 0} onClick={() => void analyze()}>
+          {draft.analysisRounds ? 'Tekrar analiz et' : 'Analiz et'}
+        </Button>
+        {!hasContent ? (
+          <Button type="button" variant="outline" onClick={() => setManualEdit(true)}>
+            Analiz olmadan elle doldur
+          </Button>
+        ) : null}
+        {draft.analysisRounds > 0 ? (
+          <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
+            {draft.analysisRounds} ANALİZ TURU
+            {draft.usage ? ` · ${draft.usage.prompt ?? 0}+${draft.usage.completion ?? 0} TOKEN` : ''}
+          </span>
+        ) : null}
+      </div>
+
+      {hasContent ? (
+        <div className="flex flex-col gap-6">
           {draft.extraction?.requests.length ? (
             <CaseCard className="flex flex-col gap-1 p-4">
               <EvidenceTag variant="stamp">EKSİK VERİ</EvidenceTag>
@@ -390,47 +374,31 @@ export function ReviewWizard({ productId }: { productId: string }) {
                   • {request.need} — {request.hint}
                 </p>
               ))}
-              <Button variant="ghost" className="w-fit" onClick={() => void update({ ...draft, step: 1 })}>
-                Fotoğraf ekleyip tekrar analiz et
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Eksik alan için fotoğrafı yukarıdan ekleyip yeniden analiz et.
+              </p>
             </CaseCard>
           ) : null}
 
           <AnalysisSummary form={draft.form} touched={draft.touched} onEdit={editForm} />
 
-          <Button
-            className="w-fit"
-            disabled={!draft.form.name.trim()}
-            onClick={() => void update({ ...draft, step: 3 })}
-          >
-            Eşlemeye geç
-          </Button>
-        </div>
-      ) : null}
-
-      {!busy && step === 3 ? (
-        <div className="flex flex-col gap-4">
           <MasterResolver form={draft.form} onEdit={editForm} />
-          <p className="text-sm text-muted-foreground">
-            {counts.matched} eşleşti · {counts.created} yeni · {counts.skipped} atlandı · {counts.pending}{' '}
-            beklemede
-          </p>
-          <Button className="w-fit" onClick={() => void update({ ...draft, step: 4 })}>
-            Kayıt adımına geç
-          </Button>
-        </div>
-      ) : null}
 
-      {!busy && step === 4 ? (
-        <SaveReview
-          draft={draft}
-          counts={counts}
-          busy={busy}
-          failure={failure}
-          dropped={dropped}
-          onEdit={(next) => void update(next)}
-          onSave={() => void save()}
-        />
+          <p className="text-sm text-muted-foreground">
+            {counts.matched} eşleşti · {counts.created} yeni · {counts.skipped} atlandı ·{' '}
+            {counts.pending} beklemede
+          </p>
+
+          <SaveReview
+            draft={draft}
+            counts={counts}
+            busy={busy}
+            failure={failure}
+            dropped={dropped}
+            onEdit={(next) => void update(next)}
+            onSave={() => void save()}
+          />
+        </div>
       ) : null}
     </div>
   )

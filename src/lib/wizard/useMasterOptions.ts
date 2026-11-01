@@ -6,7 +6,7 @@ import { fetchMasterOptions } from './api'
 import type { MasterCollection, MasterOption } from './types'
 
 /**
- * Eşleme adımının master listeleri. Sihirbaz içinde sekmeler arasında gezinirken yeniden
+ * Eşleme bölümünün master listeleri. Tek ekranda bölümler arasında gezinirken yeniden
  * indirilmesin diye modül düzeyinde söz önbelleği tutulur (mobildeki 5 dk staleTime karşılığı).
  */
 const cache = new Map<MasterCollection, Promise<MasterOption[]>>()

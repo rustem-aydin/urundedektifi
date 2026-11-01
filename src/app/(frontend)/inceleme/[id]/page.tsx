@@ -21,8 +21,9 @@ export default async function IncelemeDetayPage({
         <EvidenceTag variant="stamp">İNCELEME · #{id}</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Taslağı incele</h1>
         <p className="text-sm text-muted-foreground">
-          Katkı fotoğrafları hazır. "Analiz et" yapay zekâyla alanları doldurur; eşleme adımından
-          sonra yayın durumunu seçip kaydet. Katkı onaylanınca katkı sahibinin profilinde görünür.
+          Katkı fotoğrafları hazır. "Analiz et" yapay zekâyla alanları doldurur; analiz, eşleme ve
+          kayıt aynı ekranda. Yayın durumunu seçip kaydet. Katkı onaylanınca katkı sahibinin
+          profilinde görünür.
         </p>
         <Link href="/inceleme" className="text-sm underline">
           Kuyruğa dön

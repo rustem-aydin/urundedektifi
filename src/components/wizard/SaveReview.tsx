@@ -21,7 +21,7 @@ type Props = {
   onSave: () => void
 }
 
-/** Son adım: hangi fotoğraf ürüne bağlanacak, yayın durumu, fiyat, özet. */
+/** Kayıt bölümü: hangi fotoğraf ürüne bağlanacak, yayın durumu, fiyat, özet. */
 export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSave }: Props) {
   const form = draft.form
   const attached = draft.photos.filter((photo) => photo.role !== 'unknown')
@@ -183,7 +183,7 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
         {busy ? 'Kaydediliyor…' : 'İncelemeyi kaydet'}
       </Button>
 
-      <WizardIntro eyebrow="ADIM 4" title="Kayıt">
+      <WizardIntro eyebrow="KAYIT" title="Kayıt">
         Kaydettiğinde ürün veritabanına yazılır; yayında işaretlediysen dosyası hemen açılır.
       </WizardIntro>
     </div>

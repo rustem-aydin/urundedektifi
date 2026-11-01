@@ -3,7 +3,7 @@ import { deletePhotoBlob } from './photoStore'
 import type { ProductDoc, RelationRef } from './types'
 
 /**
- * İnceleme sihirbazının taslağı (ADR 0026, web uyarlaması).
+ * İnceleme ekranının taslağı (ADR 0026, web uyarlaması).
  * Taslak bellekte yaşar; yalnız fotoğraf blob'ları IndexedDB'de (photoStore) tutulur.
  * `url` yalnız bellekte yaşayan object URL'dir, kalıcı tutulmaz.
  */
@@ -59,7 +59,6 @@ export type ProductForm = {
 
 export type Draft = {
   version: 1
-  step: 1 | 2 | 3 | 4
   barcode: string
   mode: 'create' | 'update'
   /** update modunda mevcut ürünün id'si */
@@ -310,7 +309,6 @@ export function draftFromProduct(doc: ProductDoc): Draft {
 
   return {
     version: 1,
-    step: 2,
     barcode: form.barcode,
     mode: 'update',
     productId: String(doc.id),
@@ -363,11 +361,11 @@ export function productPhotoRefs(doc: ProductDoc): ExistingPhoto[] {
 }
 
 /**
- * İnceleme modu taslağı (ADR 0024/0026): katkıyla açılmış taslak ürün, inceleme sihirbazının
- * 1. adımında fotoğrafları hazır hâlde açılır. Kaydetme `update` modunda çalışır; böylece
+ * İnceleme modu taslağı (ADR 0024/0026): katkıyla açılmış taslak ürün, fotoğrafları hazır
+ * hâlde inceleme ekranında açılır. Kaydetme `update` modunda çalışır; böylece
  * analiz sonrası ürün yayına alınabilir.
  */
 export function reviewDraftFromProduct(doc: ProductDoc, photos: DraftPhoto[]): Draft {
   const draft = draftFromProduct(doc)
-  return { ...draft, photos, step: 1, form: { ...draft.form, isPublished: false } }
+  return { ...draft, photos, form: { ...draft.form, isPublished: false } }
 }

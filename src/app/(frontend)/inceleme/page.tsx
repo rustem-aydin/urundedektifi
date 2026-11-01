@@ -14,8 +14,8 @@ export default function IncelemePage() {
         <EvidenceTag variant="stamp">İNCELEME</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Taslak ürünler</h1>
         <p className="text-sm text-muted-foreground">
-          Kullanıcı katkıları burada birikir. "Analiz et" ürünü sihirbazda fotoğraflarıyla açar;
-          yayınlama oradan yapılır. Reddedilen katkı silinir.
+          Kullanıcı katkıları burada birikir. "Analiz et" ürünü tek inceleme ekranında fotoğraflarıyla
+          açar: analiz, eşleme ve kayıt aynı sayfada. Yayınlama oradan yapılır. Reddedilen katkı silinir.
         </p>
       </div>
 

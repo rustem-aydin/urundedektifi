@@ -158,7 +158,7 @@ function GroupHeader({
   )
 }
 
-/** Eşleme adımı: serbest metni master kayıtlara bağlar (ADR 0008). */
+/** Eşleme bölümü: serbest metni master kayıtlara bağlar (ADR 0008). */
 export function MasterResolver({ form, onEdit }: Props) {
   const brands = useMasterOptions('brands')
   const categories = useMasterOptions('categories')
@@ -178,7 +178,7 @@ export function MasterResolver({ form, onEdit }: Props) {
     <div className="flex flex-col gap-4">
       <CaseCard className="flex flex-col gap-2 p-4">
         <EvidenceTag variant="evidence">EŞLEME</EvidenceTag>
-        <WizardIntro eyebrow="ADIM 3" title="Serbest metni master kayda bağla">
+        <WizardIntro eyebrow="EŞLEME" title="Serbest metni master kayda bağla">
           Kural motoru yalnız master kayıtlar üzerinden eşleşir. “Yeni oluştur” dediğin satırlar kayıt
           sırasında açılır; atlanan satır ürüne bağlanmaz ve hükümlerde görünmez.
         </WizardIntro>

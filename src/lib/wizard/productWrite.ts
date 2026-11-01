@@ -117,7 +117,7 @@ async function resolveOne(
 }
 
 /**
- * Eşleme adımında "Yeni oluştur" işaretlenen master kayıtlarını sunucuda açar ve
+ * Eşleme bölümünde "Yeni oluştur" işaretlenen master kayıtlarını sunucuda açar ve
  * kararları `existing` + id'ye çevirir. Hata alan satır olduğu gibi kalır (kayıt denenmez).
  */
 export async function resolveCreatedMasters(draft: Draft, token: string): Promise<ResolveOutcome> {

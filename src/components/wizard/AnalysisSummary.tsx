@@ -32,7 +32,7 @@ const SEVERITY_OPTIONS = [
 ] as const
 
 /**
- * Onay adımı: YZ'dan gelen alanlar düzenlenebilir; etiket "(YZ)" işaretini kaybeder kaybetmez
+ * Onay bölümü: YZ'dan gelen alanlar düzenlenebilir; etiket "(YZ)" işaretini kaybeder kaybetmez
  * yeniden analiz o alanı ezmez (draft.touched).
  */
 export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Props) {
@@ -58,7 +58,7 @@ export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Prop
         ) : (
           <>
             <EvidenceTag variant="evidence">ONAY</EvidenceTag>
-            <WizardIntro eyebrow="ADIM 2" title="Yapay zekânın okuduğu veriler">
+            <WizardIntro eyebrow="ANALİZ" title="Yapay zekânın okuduğu veriler">
               Etiket “(YZ)” taşıyan alanlar fotoğraftan geldi. Yazmaya başladığın anda işaret kalkar ve
               o alan bir daha otomatik değişmez.
             </WizardIntro>
@@ -69,7 +69,7 @@ export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Prop
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField label={mark('name', 'Ürün adı')} value={form.name} onChange={(value) => setText('name', value)} />
         <TextField
-          label={mark('brand', editing ? 'Marka (aşağıda eşlenir)' : 'Marka (eşleme sonraki adımda)')}
+          label={mark('brand', editing ? 'Marka (aşağıda eşlenir)' : 'Marka (aşağıdaki eşleme bölümünde)')}
           value={form.brand.name}
           onChange={(value) =>
             onEdit(
@@ -79,7 +79,7 @@ export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Prop
           }
         />
         <TextField
-          label={mark('category', editing ? 'Kategori (aşağıda eşlenir)' : 'Kategori (eşleme sonraki adımda)')}
+          label={mark('category', editing ? 'Kategori (aşağıda eşlenir)' : 'Kategori (aşağıdaki eşleme bölümünde)')}
           value={form.category.name}
           onChange={(value) =>
             onEdit(
@@ -282,7 +282,7 @@ export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Prop
       </div>
 
       <p className="text-sm text-muted-foreground">
-        İçindekiler, katkı maddeleri, alerjenler ve besin tablosu {editing ? 'aşağıda' : 'sonraki adımda'}{' '}
+        İçindekiler, katkı maddeleri, alerjenler ve besin tablosu {editing ? 'aşağıda' : 'aşağıdaki eşleme bölümünde'}{' '}
         master listeye eşlenir.
       </p>
     </div>

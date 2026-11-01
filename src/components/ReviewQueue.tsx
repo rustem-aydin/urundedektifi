@@ -32,7 +32,7 @@ function describe(error: unknown): string {
 
 /**
  * İnceleme kuyruğu (ADR 0024/0026): taslak ürünler, görülmemişler önce.
- * "Analiz et" inceleme sihirbazını açar; yayınlama oradan yapılır.
+ * "Analiz et" tek ekranlı inceleme sayfasını açar; eşleme ve yayınlama oradan yapılır.
  * Reddedilen katkı silinir — katkı sahibinin profiline düşmez.
  */
 export function ReviewQueue() {
