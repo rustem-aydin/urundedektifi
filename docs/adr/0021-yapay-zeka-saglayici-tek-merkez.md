@@ -65,10 +65,12 @@ Diğer OpenAI uyumlu sağlayıcılar bu iki başlığı yok sayar; sağlayıcı 
 ### Yetki
 
 - `chat`/`models`/`status`: **admin + editör**. Tüketici hesabı ve anonim istek 401 alır; aksi hâlde
-  vekil ücretsiz bir LLM geçidi olurdu.
+  vekil ücretsiz bir LLM geçidi olurdu. Editör vekili kullanır ama **ayarı görmez** (ADR 0027).
+- Global `read`: **yalnız admin** — ayar dosyası (adres, model, anahtar alanı) admin dışına kapalı.
 - Global `update`: **yalnız admin** — ayar tüm istemcileri etkilediği için tek elden değişir.
-- `apiKey` alanının alan-seviyesi `read` erişimi **yalnız admin**: editör global'i okuyabilir ama
-  anahtarı REST yanıtında görmez. Vekil uçlar global'i `overrideAccess: true` ile okur.
+- `apiKey` alanının alan-seviyesi `read` erişimi **yalnız admin**. Vekil uçları global'i
+  `overrideAccess: true` ile okur.
+- `/saglayici` ekranı yalnız admin'e açıktır; diğer roller "yalnız admin" kartını görür.
 
 ### İstemci tarafı
 

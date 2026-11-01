@@ -16,7 +16,7 @@ import type { User } from '@/payload-types'
 const PANEL_ROLES: User['role'][] = ['admin', 'editor']
 
 /** Oturumdaki uzman kullanıcısının `experts` kaydı (yoksa null). */
-async function expertIdForUser(payload: Payload, userId: string | number): Promise<string | null> {
+async function expertIdForUser(payload: Payload, userId: string | number): Promise<number | null> {
   const result = await payload.find({
     collection: 'experts',
     where: { user: { equals: userId } },
@@ -25,7 +25,8 @@ async function expertIdForUser(payload: Payload, userId: string | number): Promi
     overrideAccess: true,
   })
   const expert = result.docs[0]
-  return expert ? String(expert.id) : null
+  // İlişki alanına metin yazmak doğrulamada "geçersiz ilişki" hatası üretiyordu; kimlik sayı kalır.
+  return expert ? Number(expert.id) : null
 }
 
 const PUBLISHED_ONLY: Where = { status: { equals: 'published' } }
@@ -59,8 +60,10 @@ export const Posts: CollectionConfig = {
   },
   access: {
     read: readAccess,
+    // Yazı açma uzmanın işidir; editör yazı üretemez. Her yazıyı silme yetkisi yalnız adminde
+    // (uzman kendi yazısını silmez, yayından kaldırır).
     create: ({ req: { user } }) =>
-      ['admin', 'editor', 'expert'].includes((user as User | null)?.role ?? ''),
+      ['admin', 'expert'].includes((user as User | null)?.role ?? ''),
     update: async ({ req }) => {
       const user = req.user as User | null
       if (!user) return false
@@ -69,7 +72,7 @@ export const Posts: CollectionConfig = {
       const expertId = await expertIdForUser(req.payload, user.id)
       return expertId ? { expert: { equals: expertId } } : false
     },
-    delete: ({ req: { user } }) => PANEL_ROLES.includes((user as User | null)?.role ?? 'user'),
+    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
   fields: [
     {

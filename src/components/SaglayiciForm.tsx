@@ -13,10 +13,10 @@ import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
 /**
  * Yapay zekâ sağlayıcısı (ADR 0008/0021): ayar tek merkezde, Payload panelindeki
  * `ai-settings` global'inde. Bu ekran yalnız durumu gösterir — anahtar tarayıcıya inmez,
- * model seçimi buradan yapılmaz.
+ * model seçimi buradan yapılmaz. Ayar dosyası yalnız admin'e açıktır (ADR 0027).
  */
 export function SaglayiciForm() {
-  const { token, isPanel, restoring } = useSession()
+  const { token, user, restoring } = useSession()
   const [status, setStatus] = useState<ProviderStatus | null>(null)
 
   useEffect(() => {
@@ -41,12 +41,13 @@ export function SaglayiciForm() {
     return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
   }
 
-  if (!isPanel) {
+  if (user?.role !== 'admin') {
     return (
       <CaseCard className="flex flex-col gap-3 p-5">
         <EvidenceTag variant="stamp">YETKİ</EvidenceTag>
-        <WizardIntro eyebrow="SAĞLAYICI" title="Bu ekran rolüne kapalı">
-          Admin ya da editör hesabıyla giriş yap; sağlayıcı ayarı inceleme yapan roller için gerekir.
+        <WizardIntro eyebrow="SAĞLAYICI" title="Bu ekran yalnız admin'e açık">
+          Sağlayıcı ayarını yalnız admin görür ve değiştirir. İnceleme yapan editör sağlayıcıyı
+          kullanır; ayarı görmesi gerekmez.
         </WizardIntro>
         <Button asChild className="w-fit">
           <Link href={`/giris?next=${encodeURIComponent('/saglayici')}`}>Giriş ekranına git</Link>
@@ -65,7 +66,7 @@ export function SaglayiciForm() {
         >
           {status.configured
             ? 'Ürün fotoğrafları sunucu üzerinden bu sağlayıcıya gönderilir. API anahtarı yalnız sunucuda tutulur.'
-            : 'İnceleme sihirbazının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
+            : 'İnceleme ekranının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
         </WizardIntro>
       </CaseCard>
 

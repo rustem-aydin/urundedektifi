@@ -32,7 +32,8 @@ export const ExpertRules: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
+    // Kural yazmak uzmanın işidir: editör kural üretemez, yalnız admin ve uzman açabilir.
+    create: ({ req: { user } }) => ['admin', 'expert'].includes((user as User | null)?.role || ''),
     update: ({ req: { user } }) => {
       if (['admin', 'editor'].includes((user as User | null)?.role || '')) return true
       if ((user as User | null)?.role === 'expert') {

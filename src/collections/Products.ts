@@ -20,6 +20,7 @@ import {
   type FeedbackProduct,
 } from '@/lib/productFeedback'
 import type { User } from '@/payload-types'
+import { queueProductAnalysis } from '@/lib/aiAnalysis'
 import { contributorsForBarcode, recordContribution } from '@/lib/productContributions'
 import {
   ContributionError,
@@ -81,7 +82,10 @@ export const Products: CollectionConfig = {
       }
       return { status: { equals: 'published' } } as never
     },
-    create: ({ req: { user } }) => Boolean(user),
+    // Ürün kaydı doğrudan yalnız panel rollerince açılır: son kullanıcının tek kapısı
+    // `/api/products/contribute` (barkod + fotoğraf, ADR 0026) ve ürünün diğer alanları
+    // editör/admin tarafından inceleme ekranında doldurulur.
+    create: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
     update: ({ req: { user } }) => ['admin', 'editor', 'expert'].includes((user as User | null)?.role || ''),
     delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },
@@ -328,6 +332,24 @@ export const Products: CollectionConfig = {
           }
           throw error
         }
+      },
+    },
+    {
+      // Analizi elle yeniden başlatır: arka plan işi başarısız olduysa ya da eski taslakta
+      // analiz hiç yoksa inceleme ekranındaki "Analizi yeniden başlat" buraya gelir.
+      path: '/:id/analyze',
+      method: 'post',
+      handler: async (req) => {
+        const role = (req.user as User | null)?.role
+        if (role !== 'admin' && role !== 'editor') {
+          return Response.json({ error: 'Yetkiniz yok' }, { status: 403 })
+        }
+        const id = String(req.routeParams?.id ?? '')
+        if (!/^\d+$/.test(id)) {
+          return Response.json({ error: 'Geçersiz ürün kimliği.' }, { status: 400 })
+        }
+        queueProductAnalysis(req.payload, id)
+        return Response.json({ status: 'running' })
       },
     },
     {
@@ -1004,6 +1026,41 @@ export const Products: CollectionConfig = {
         readOnly: true,
         description:
           'Ürün dosyasının kaç kez açıldığı. Web ve mobil detay sayfaları otomatik artırır; elle düzenlenemez.',
+      },
+    },
+    {
+      // Katkı açılır açılmaz sunucudaki arka plan işi etiketi okur (ADR 0028). Durum yalnız
+      // sunucu tarafından yazılır: alan düzeyi erişimi kapalı, panelden düzenlenemez.
+      name: 'aiStatus',
+      label: 'YZ analizi',
+      type: 'select',
+      options: [
+        { label: 'Yok', value: 'none' },
+        { label: 'Sürüyor', value: 'running' },
+        { label: 'Tamam', value: 'done' },
+        { label: 'Başarısız', value: 'failed' },
+      ],
+      defaultValue: 'none',
+      index: true,
+      access: { create: () => false, update: () => false },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description:
+          'Etiket okumasının arka plan durumu. Katkı oluşturulunca otomatik başlar; elle değiştirilemez.',
+      },
+    },
+    {
+      // Analizin ham çıktısı (çıkarılan alanlar + eksik fotoğraf talepleri + kullanım). İnceleme
+      // ekranı taslağı buradan doldurur; tekrar analiz istendiğinde üzerine yazılır.
+      name: 'aiAnalysis',
+      label: 'YZ analiz verisi',
+      type: 'json',
+      access: { create: () => false, update: () => false },
+      admin: {
+        hidden: true,
+        readOnly: true,
+        description: 'Ham analiz çıktısı. Sunucu yazar, istemci yalnız okur.',
       },
     },
   ],

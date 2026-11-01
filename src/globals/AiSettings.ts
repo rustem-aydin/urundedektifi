@@ -1,12 +1,13 @@
-import type { GlobalConfig, PayloadRequest } from 'payload'
+import type { GlobalConfig, Payload, PayloadRequest } from 'payload'
 
+import type { ChatEndpoint } from '@/lib/wizard/ai'
 import type { User } from '@/payload-types'
 
 /**
  * Yapay zekâ sağlayıcısı — tek merkez (web + mobil).
  *
  * Sağlayıcı adresi, model ve API anahtarı yalnız burada tutulur. İstemciler anahtarı hiç
- * görmez: İnceleme sihirbazının etiket okuma çağrısı sunucudaki `/api/ai-settings/chat`
+ * görmez: İnceleme ekranının etiket okuma çağrısı sunucudaki `/api/ai-settings/chat`
  * vekilinden geçer, anahtar burada kalır. Böylece yönetici tek yerden sağlayıcıyı değiştirir,
  * her istemci (tarayıcı, telefon) aynı sağlayıcıyı kullanır — cihaz başına anahtar gerekmez.
  *
@@ -19,7 +20,7 @@ import type { User } from '@/payload-types'
  * ücretsiz bir LLM geçidi olurdu.
  */
 
-/** İnceleme yapan roller: vekil uçları ve durum okuması bunlara açık. */
+/** İnceleme yapan roller: sağlayıcıyı **kullanan** vekil uçları bunlara açık. */
 const AI_ROLES: User['role'][] = ['admin', 'editor']
 
 /**
@@ -59,8 +60,8 @@ type ProviderConfig = {
 }
 
 /** Global'ı sunucu tarafında okur: `apiKey` REST'e kapalıdır, vekil overrideAccess ile görür. */
-async function readProviderConfig(req: PayloadRequest): Promise<ProviderConfig | null> {
-  const doc = (await req.payload.findGlobal({
+async function readProviderConfig(payload: Payload): Promise<ProviderConfig | null> {
+  const doc = (await payload.findGlobal({
     slug: 'ai-settings',
     depth: 0,
     overrideAccess: true,
@@ -71,6 +72,23 @@ async function readProviderConfig(req: PayloadRequest): Promise<ProviderConfig |
   const model = typeof doc?.model === 'string' ? doc.model.trim() : ''
   if (!baseUrl || !apiKey || !model) return null
   return { baseUrl, apiKey, model }
+}
+
+/**
+ * Sunucu içi analiz için sağlayıcı ucu: arka plan işi vekile değil doğrudan sağlayıcıya gider
+ * (istek bağlamında oturum yok). Prompt/şema/ayrıştırma istemciyle aynı koddan gelir.
+ */
+export async function providerChatEndpoint(payload: Payload): Promise<ChatEndpoint | null> {
+  const config = await readProviderConfig(payload)
+  if (!config) return null
+  return {
+    url: `${config.baseUrl}/chat/completions`,
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      ...providerSessionHeaders(null),
+    },
+    model: config.model,
+  }
 }
 
 /**
@@ -142,15 +160,13 @@ export const AiSettings: GlobalConfig = {
   admin: {
     group: 'Sistem',
     description:
-      'İnceleme sihirbazının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama ' +
+      'İnceleme ekranının etiket okuma adımı bu sağlayıcıyı kullanır. Web ve mobil uygulama ' +
       'aynı ayarı okur; API anahtarı yalnız sunucuda kalır, istemcilere gönderilmez.',
   },
   access: {
-    // Panel rolleri ayarı görebilir; tüketici hesabı okuyamaz.
-    read: ({ req: { user } }) => {
-      const role = (user as User | null)?.role
-      return role ? AI_ROLES.includes(role) : false
-    },
+    // Ayar dosyası yalnız admin'e açık: editör sağlayıcıyı kullanır (vekil uçları) ama
+    // ayarın kendisini görmez/değiştirmez.
+    read: ({ req: { user } }) => (user as User | null)?.role === 'admin',
     // Ayarı yalnız admin değiştirir: tek merkez, tüm istemcileri etkiler.
     update: ({ req: { user } }) => (user as User | null)?.role === 'admin',
   },
@@ -201,7 +217,7 @@ export const AiSettings: GlobalConfig = {
       method: 'get',
       handler: async (req) => {
         if (!canUseAi(req)) return unauthorized()
-        const config = await readProviderConfig(req)
+        const config = await readProviderConfig(req.payload)
         if (!config) return Response.json({ configured: false, baseUrl: null, model: null })
         return Response.json({ configured: true, baseUrl: config.baseUrl, model: config.model })
       },
@@ -211,7 +227,7 @@ export const AiSettings: GlobalConfig = {
       method: 'get',
       handler: async (req) => {
         if (!canUseAi(req)) return unauthorized()
-        const config = await readProviderConfig(req)
+        const config = await readProviderConfig(req.payload)
         if (!config) return Response.json(NOT_CONFIGURED, { status: 503 })
         try {
           const response = await callProvider(
@@ -236,7 +252,7 @@ export const AiSettings: GlobalConfig = {
       method: 'post',
       handler: async (req) => {
         if (!canUseAi(req)) return unauthorized()
-        const config = await readProviderConfig(req)
+        const config = await readProviderConfig(req.payload)
         if (!config) return Response.json(NOT_CONFIGURED, { status: 503 })
 
         const incoming = (await req.json?.()) as Record<string, unknown> | null
