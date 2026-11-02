@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, ScanBarcode, UserRound, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { BrandName } from '@/components/BrandName'
 import { useSession } from '@/components/session-provider'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { fetchReviewCount } from '@/lib/wizard/api'
@@ -76,9 +77,7 @@ export function SiteHeader() {
           <span className="flex size-7 items-center justify-center rounded-sm bg-foreground text-background">
             <ScanBarcode className="size-4" aria-hidden="true" />
           </span>
-          <span className="font-display text-base leading-none tracking-wide sm:text-lg">
-            Barkod Dedektifi
-          </span>
+          <BrandName className="text-base leading-none sm:text-lg" />
         </Link>
 
         <nav aria-label="Ana gezinme" className="hidden items-center gap-1 md:flex">

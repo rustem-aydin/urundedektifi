@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { ScanBarcode } from 'lucide-react'
 
+import { BrandName } from '@/components/BrandName'
+
 const FOOTER_NAV = [
   { href: '/tara', label: 'Tara' },
   { href: '/urunler', label: 'Ürünler' },
@@ -23,7 +25,7 @@ export function SiteFooter() {
               <span className="flex size-7 items-center justify-center rounded-sm bg-foreground text-background">
                 <ScanBarcode className="size-4" aria-hidden="true" />
               </span>
-              <span className="font-display text-base tracking-wide">Barkod Dedektifi</span>
+              <BrandName className="text-base" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Barkodu okut; ürünün boykot, sağlık ve helal açısından hükmünü uzmanların yazdığı
