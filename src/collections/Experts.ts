@@ -272,7 +272,7 @@ export const Experts: CollectionConfig = {
         return data
       },
     ],
-    // Her uzmanın tam olarak bir panel hesabı vardır (ADR 0030). Hesap ya uzman
+    // Her uzmanın tam olarak bir panel hesabı vardır (ADR 0032). Hesap ya uzman
     // kaydından otomatik açılır ya da bağlanan hesap uzmana çekilir.
     beforeChange: [
       async ({ data, originalDoc, req }) => {

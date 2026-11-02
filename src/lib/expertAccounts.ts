@@ -6,7 +6,7 @@ import { slugify } from '@/lib/slugify'
 import type { User } from '@/payload-types'
 
 /**
- * Uzman ↔ personel hesabı eşleşmesi (ADR 0030).
+ * Uzman ↔ personel hesabı eşleşmesi (ADR 0032).
  *
  * Kural: her `experts` kaydının tam olarak bir `users` hesabı vardır ve o hesap
  * başka bir uzmana bağlanamaz. Hesap `experts` kaydından **otomatik** açılır;
@@ -69,7 +69,7 @@ export async function availableExpertEmail(
 
 /**
  * Rastgele geçici şifre. Değer hiçbir yerde saklanmaz ve kullanıcıya gösterilmez;
- * admin panelden gerçek şifreyi belirler (ADR 0030 §2).
+ * admin panelden gerçek şifreyi belirler (ADR 0032 §2).
  */
 export function generateExpertPassword(): string {
   return crypto.randomBytes(24).toString('base64url')

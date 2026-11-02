@@ -36,7 +36,7 @@ export const ProductFeedback: CollectionConfig = {
   },
   access: {
     // Uzman geri bildirimleri okur (kendi hükmüne gelen itirazları görür) ama
-    // yazamaz/silemez; silme panel işidir (ADR 0030 §3).
+    // yazamaz/silemez; silme panel işidir (ADR 0032 §3).
     read: ({ req: { user } }) => {
       const role = (user as User | null)?.role
       return role === 'admin' || role === 'editor' || role === 'expert'

@@ -7,7 +7,7 @@ import {
 } from '../src/lib/expertAccounts'
 
 /**
- * Hesabı olmayan uzmanlar için panel hesabı açar — UZAK Payload REST API'si (ADR 0030).
+ * Hesabı olmayan uzmanlar için panel hesabı açar — UZAK Payload REST API'si (ADR 0032).
  *
  * Akış: uzman kaydı REST'ten okunur → `users` rolü `user` olarak açılır (uzman rolü
  * elle açılamaz) → uzman `user` alanına bağlanır; sunucu hook'u rolü `uzman`a çeker.
@@ -76,7 +76,9 @@ async function main() {
   console.log(`Uzman ${experts.length} · yeni hesap ${opened} · zaten bağlı ${experts.length - opened}`)
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })

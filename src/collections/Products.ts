@@ -86,7 +86,7 @@ export const Products: CollectionConfig = {
     // `/api/products/contribute` (barkod + fotoğraf, ADR 0026) ve ürünün diğer alanları
     // editör/admin tarafından inceleme ekranında doldurulur.
     create: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
-    // Ürün verisi panel işidir; uzman içerik üretir, ürün dosyasına dokunmaz (ADR 0030 §3).
+    // Ürün verisi panel işidir; uzman içerik üretir, ürün dosyasına dokunmaz (ADR 0032 §3).
     update: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
     delete: ({ req: { user } }) => ['admin', 'editor'].includes((user as User | null)?.role || ''),
   },

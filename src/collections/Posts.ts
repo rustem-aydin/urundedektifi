@@ -61,7 +61,7 @@ export const Posts: CollectionConfig = {
   access: {
     read: readAccess,
     // Yazı açma uzmanın işidir; editör yazı üretemez. Silme: admin her yazıyı,
-    // uzman yalnız kendi yazısını siler (ADR 0030: hesap eşleşmesi belirginleşti).
+    // uzman yalnız kendi yazısını siler (ADR 0032: hesap eşleşmesi belirginleşti).
     create: ({ req: { user } }) =>
       ['admin', 'expert'].includes((user as User | null)?.role ?? ''),
     update: async ({ req }) => {

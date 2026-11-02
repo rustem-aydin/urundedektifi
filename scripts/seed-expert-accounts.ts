@@ -5,7 +5,7 @@ import config from '../src/payload.config'
 import { createExpertAccount, relationshipId } from '../src/lib/expertAccounts'
 
 /**
- * Hesabı olmayan uzmanlar için panel hesabı açar (ADR 0030).
+ * Hesabı olmayan uzmanlar için panel hesabı açar (ADR 0032).
  * Idempotent: hesabı zaten bağlı uzmanlar atlanır.
  *
  * Kullanım: pnpm seed:expert-accounts
@@ -50,7 +50,9 @@ async function main() {
   )
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })

@@ -30,6 +30,10 @@ _Avoid_: kategori (ürün kategorisi ayrı şey)
 **Uzman**:
 Kuralları yazan, her biri kendi derecelendirme ölçeğine sahip değerlendirici profil.
 
+**Panel Hesabı**:
+Bir Uzmanın panele giriş yaptığı `users` kaydı (`experts.user`). 1 uzman = 1 hesap; hesap uzman kaydından otomatik açılır, e-posta uzmanın adından türetilir (`boykot_dedektifi@expert.local`), ilk şifreyi admin panelden belirler. Rol her iki yönde kilitlidir: bağsız hesap "Uzman" olamaz, bağlı hesap "Uzman"dan düşürülemez (ADR 0032).
+_Avoid_: uzman kullanıcısı, expert hesabı
+
 **Uzman Kuralı**:
 Bir uzmana ve bir konuya ait tek eşleşme kuralı. 12 kural tipi (içindekiler/katkı/alerjen/ülke/marka/boykot/kategori/besin min-max/etiket) destekler.
 _Avoid_: politika, kontrol

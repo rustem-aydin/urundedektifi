@@ -37,41 +37,55 @@ async function createExact(run: () => Promise<unknown>): Promise<boolean> {
 
 async function userFor(role: Role) {
   seq += 1
-  const person = await payload.create({
-    collection: 'users',
-    data: {
-      name: `access ${role}`,
-      email: `access-${role}-${seq}-${stamp}@example.com`,
-      password: 'test-password-123',
-      role,
-    } as never,
-    overrideAccess: true,
-    // ADR 0030: "uzman" rolü yalnız uzman kaydından açılır. Yardımcı, rolleri
-    // doğrudan kurduğu için Users kapısını bu bağlamla atlar.
-    context: { skipExpertAccountGuard: true },
-  })
-  created.push({ collection: 'users', id: person.id })
+  const label = `access-${role}-${seq}-${stamp}`
 
+  // Hedef uzman: her rol bu uzmanın kimliğiyle yazar; hesabı otomatik açılır (ADR 0032).
   const expert = await payload.create({
     collection: 'experts',
     data: {
-      name: `access uzman ${role} ${seq} ${stamp}`,
-      slug: `access-uzman-${role}-${seq}-${stamp}`,
-      // "user" senaryosu bağsız kalmalı: uzmana bağlanan hesabın rolü uzmana çekilir.
-      ...(role === 'user' ? {} : { user: person.id }),
+      name: `access uzman ${label}`,
+      slug: `access-uzman-${label}`,
     } as never,
     overrideAccess: true,
   })
   created.push({ collection: 'experts', id: expert.id })
 
+  // "Uzman" rolü yalnız uzman kaydından doğar: hesap normal üye olarak açılır,
+  // uzman kaydına bağlanınca rolü uzmana çekilir. Diğer roller bağsız kalır.
+  const person = await payload.create({
+    collection: 'users',
+    data: {
+      name: `access ${label}`,
+      email: `${label}@example.com`,
+      password: 'test-password-123',
+      role: role === 'expert' ? 'user' : role,
+    } as never,
+    overrideAccess: true,
+  })
+  created.push({ collection: 'users', id: person.id })
+
+  let actorExpert = expert
+  if (role === 'expert') {
+    actorExpert = await payload.create({
+      collection: 'experts',
+      data: {
+        name: `access uzman sahibi ${label}`,
+        slug: `access-uzman-sahibi-${label}`,
+        user: person.id,
+      } as never,
+      overrideAccess: true,
+    })
+    created.push({ collection: 'experts', id: actorExpert.id })
+  }
+
   const scale = await payload.create({
     collection: 'rating-scales',
-    data: { expert: expert.id, name: 'Uygun', order: 0 } as never,
+    data: { expert: actorExpert.id, name: 'Uygun', order: 0 } as never,
     overrideAccess: true,
   })
   created.push({ collection: 'rating-scales', id: scale.id })
 
-  return { person, expert, scale, user: actor(person.id, role) }
+  return { person, expert: actorExpert, scale, user: actor(person.id, role) }
 }
 
 const lexicalBody = {
@@ -135,9 +149,36 @@ describe('rol yetki matrisi (ADR 0029)', () => {
     }
   })
 
+  it('ürün verisini yalnız admin ve editör günceller (uzman dosyaya dokunmaz)', async () => {
+    const allowed: Record<Role, boolean> = { admin: true, editor: true, expert: false, user: false }
+    for (const role of ROLES) {
+      const product = await payload.create({
+        collection: 'products',
+        data: {
+          barcode: `8${`${stamp}`.slice(-9)}${ROLES.indexOf(role)}`,
+          nutrition: { per: '100g' },
+        } as never,
+        overrideAccess: true,
+      })
+      created.push({ collection: 'products', id: product.id })
+
+      const { user } = await userFor(role)
+      const ok = await createExact(() =>
+        payload.update({
+          collection: 'products',
+          id: product.id,
+          data: { name: `access güncelleme ${role}` },
+          user,
+          overrideAccess: false,
+        }),
+      )
+      expect({ role, ok }).toEqual({ role, ok: allowed[role] })
+    }
+  })
+
   it('yazıyı yalnız admin ve uzman açar, silmeyi admin ve yazının sahibi uzman yapar', async () => {
     const createAllowed: Record<Role, boolean> = { admin: true, editor: false, expert: true, user: false }
-    // ADR 0030: uzman kendi yazısını siler (aşağıdaki yazı o uzmanın).
+    // ADR 0032: uzman kendi yazısını siler (aşağıdaki yazı o uzmanın).
     const deleteAllowed: Record<Role, boolean> = { admin: true, editor: false, expert: true, user: false }
 
     for (const role of ROLES) {

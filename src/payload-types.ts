@@ -191,7 +191,7 @@ export interface User {
    */
   name: string;
   /**
-   * Admin tüm yetkilere sahiptir. Editör içerik yönetir. Uzman kural/yorum yazar. Kullanıcı standart üyedir.
+   * Admin tüm yetkilere sahiptir. Editör içerik yönetir. Uzman kendi yazı, kural ve derecelendirmesini yönetir; bu rol Uzmanlar ekranından otomatik atanır. Kullanıcı standart üyedir.
    */
   role: 'admin' | 'editor' | 'expert' | 'user';
   /**
@@ -266,7 +266,7 @@ export interface Expert {
    */
   slug: string;
   /**
-   * Uzmanın admin panele giriş yapacağı kullanıcı hesabı (opsiyonel). Boş bırakılırsa sadece admin tarafından yönetilir.
+   * Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır: e-posta uzmanın adından türetilir (ör. boykot_dedektifi@expert.local), şifre Kullanıcılar ekranından admin tarafından belirlenir. 1 uzman = 1 hesap; elle değiştirilemez.
    */
   user?: (number | null) | User;
   /**

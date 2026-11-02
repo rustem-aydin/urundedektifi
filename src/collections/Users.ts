@@ -131,7 +131,7 @@ export const Users: CollectionConfig = {
   ],
   hooks: {
     /**
-     * Rol ↔ uzman kaydı tutarlılığı (ADR 0030).
+     * Rol ↔ uzman kaydı tutarlılığı (ADR 0032).
      * - "Uzman" rolü elle açılamaz: hesap uzman kaydından otomatik açılır.
      * - Bir uzmana bağlı hesabın rolü uzman kalır; bağı olmayan hesap uzman yapılamaz.
      * Uzman kaydından gelen yazımlar `EXPERT_ACCOUNT_CONTEXT` ile bu kapıyı atlar.
