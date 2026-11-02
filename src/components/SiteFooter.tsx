@@ -26,8 +26,8 @@ export function SiteFooter() {
               <span className="font-display text-base tracking-wide">Şeffaf Ürün</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Barkodu göster; boykot, sağlık ve helal kuralları uzmanların kaleminden ürüne
-              uygulanır.
+              Barkodu okut; ürünün boykot, sağlık ve helal açısından hükmünü uzmanların yazdığı
+              kurallara göre anında gör.
             </p>
           </div>
 
