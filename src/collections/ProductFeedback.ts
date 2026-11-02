@@ -35,7 +35,12 @@ export const ProductFeedback: CollectionConfig = {
       'Kullanıcıların ürün verisi doğrulamaları ve yorumları. Doğrulama oyu kendi yorum metnini taşır; panelde yalnız inceleme ve silme yapılır. Yazma, ürünün kendi uçlarından geçer.',
   },
   access: {
-    read: ({ req: { user } }) => isPanelUser(user as User | null),
+    // Uzman geri bildirimleri okur (kendi hükmüne gelen itirazları görür) ama
+    // yazamaz/silemez; silme panel işidir (ADR 0030 §3).
+    read: ({ req: { user } }) => {
+      const role = (user as User | null)?.role
+      return role === 'admin' || role === 'editor' || role === 'expert'
+    },
     create: () => false,
     update: () => false,
     delete: ({ req: { user } }) => isPanelUser(user as User | null),

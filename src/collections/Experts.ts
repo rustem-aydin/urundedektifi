@@ -1,6 +1,11 @@
-import type { CollectionConfig } from 'payload'
+import { APIError, type CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
 import { expertRules, invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
+import {
+  createExpertAccount,
+  ensureExpertAccountRole,
+  relationshipId,
+} from '@/lib/expertAccounts'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -110,10 +115,12 @@ export const Experts: CollectionConfig = {
       name: 'user',
       type: 'relationship',
       relationTo: 'users',
-      label: 'Sistem Kullanıcı Hesabı',
+      label: 'Panel Hesabı',
       admin: {
+        readOnly: true,
+        position: 'sidebar',
         description:
-          'Uzmanın admin panele giriş yapacağı kullanıcı hesabı (opsiyonel). Boş bırakılırsa sadece admin tarafından yönetilir.',
+          'Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır: e-posta uzmanın adından türetilir (ör. boykot_dedektifi@expert.local), şifre Kullanıcılar ekranından admin tarafından belirlenir. 1 uzman = 1 hesap; elle değiştirilemez.',
       },
     },
     {
@@ -265,8 +272,76 @@ export const Experts: CollectionConfig = {
         return data
       },
     ],
+    // Her uzmanın tam olarak bir panel hesabı vardır (ADR 0030). Hesap ya uzman
+    // kaydından otomatik açılır ya da bağlanan hesap uzmana çekilir.
+    beforeChange: [
+      async ({ data, originalDoc, req }) => {
+        const linked =
+          relationshipId(data?.user) ?? relationshipId(originalDoc?.user)
+
+        if (linked) {
+          // 1 uzman = 1 hesap: aynı hesap ikinci bir uzmana bağlanamaz.
+          const clash = await req.payload.find({
+            collection: 'experts',
+            where: {
+              and: [
+                { user: { equals: linked } },
+                ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : []),
+              ],
+            },
+            limit: 1,
+            depth: 0,
+            overrideAccess: true,
+            req,
+          })
+          if (clash.docs.length > 0) {
+            throw new APIError(
+              'Bu hesap başka bir uzmana bağlı. Bir hesap yalnız bir uzmana ait olabilir.',
+              400,
+            )
+          }
+          data.user = linked
+          await ensureExpertAccountRole(req.payload, linked, req)
+          return data
+        }
+
+        const name =
+          typeof data?.name === 'string' && data.name.trim()
+            ? data.name
+            : typeof originalDoc?.name === 'string'
+              ? originalDoc.name
+              : ''
+        if (!name.trim()) {
+          throw new APIError('Uzmanın adı olmadan panel hesabı açılamaz.', 400)
+        }
+        data.user = await createExpertAccount(req.payload, name, req)
+        return data
+      },
+    ],
     // Uzman adı/slug/avatarı ürün dosyasındaki hüküm satırlarında görünür: case önbelleği düşsün.
     afterChange: [() => invalidateProductCaseCache()],
-    afterDelete: [() => invalidateProductCaseCache()],
+    afterDelete: [
+      async ({ doc, req }) => {
+        invalidateProductCaseCache()
+        // Uzman silinince hesabı da gider; admin/editör hesabı asla cascade silinmez.
+        const linked = relationshipId(doc?.user)
+        if (!linked) return
+        const account = await req.payload
+          .findByID({
+            collection: 'users',
+            id: linked,
+            depth: 0,
+            overrideAccess: true,
+            req,
+          })
+          .catch(() => null)
+        if (!account) return
+        const role = (account as User | null)?.role
+        if (role === 'admin' || role === 'editor') return
+        await req.payload
+          .delete({ collection: 'users', id: linked, overrideAccess: true, req })
+          .catch(() => undefined)
+      },
+    ],
   },
 }

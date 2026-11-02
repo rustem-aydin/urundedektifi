@@ -46,6 +46,9 @@ async function userFor(role: Role) {
       role,
     } as never,
     overrideAccess: true,
+    // ADR 0030: "uzman" rolü yalnız uzman kaydından açılır. Yardımcı, rolleri
+    // doğrudan kurduğu için Users kapısını bu bağlamla atlar.
+    context: { skipExpertAccountGuard: true },
   })
   created.push({ collection: 'users', id: person.id })
 
@@ -54,7 +57,8 @@ async function userFor(role: Role) {
     data: {
       name: `access uzman ${role} ${seq} ${stamp}`,
       slug: `access-uzman-${role}-${seq}-${stamp}`,
-      user: person.id,
+      // "user" senaryosu bağsız kalmalı: uzmana bağlanan hesabın rolü uzmana çekilir.
+      ...(role === 'user' ? {} : { user: person.id }),
     } as never,
     overrideAccess: true,
   })
@@ -131,9 +135,10 @@ describe('rol yetki matrisi (ADR 0029)', () => {
     }
   })
 
-  it('yazıyı yalnız admin ve uzman açar, silmeyi yalnız admin yapar', async () => {
+  it('yazıyı yalnız admin ve uzman açar, silmeyi admin ve yazının sahibi uzman yapar', async () => {
     const createAllowed: Record<Role, boolean> = { admin: true, editor: false, expert: true, user: false }
-    const deleteAllowed: Record<Role, boolean> = { admin: true, editor: false, expert: false, user: false }
+    // ADR 0030: uzman kendi yazısını siler (aşağıdaki yazı o uzmanın).
+    const deleteAllowed: Record<Role, boolean> = { admin: true, editor: false, expert: true, user: false }
 
     for (const role of ROLES) {
       const { expert, user } = await userFor(role)

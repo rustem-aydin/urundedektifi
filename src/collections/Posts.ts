@@ -60,8 +60,8 @@ export const Posts: CollectionConfig = {
   },
   access: {
     read: readAccess,
-    // Yazı açma uzmanın işidir; editör yazı üretemez. Her yazıyı silme yetkisi yalnız adminde
-    // (uzman kendi yazısını silmez, yayından kaldırır).
+    // Yazı açma uzmanın işidir; editör yazı üretemez. Silme: admin her yazıyı,
+    // uzman yalnız kendi yazısını siler (ADR 0030: hesap eşleşmesi belirginleşti).
     create: ({ req: { user } }) =>
       ['admin', 'expert'].includes((user as User | null)?.role ?? ''),
     update: async ({ req }) => {
@@ -72,7 +72,14 @@ export const Posts: CollectionConfig = {
       const expertId = await expertIdForUser(req.payload, user.id)
       return expertId ? { expert: { equals: expertId } } : false
     },
-    delete: ({ req: { user } }) => (user as User | null)?.role === 'admin',
+    delete: async ({ req }) => {
+      const user = req.user as User | null
+      if (!user) return false
+      if (user.role === 'admin') return true
+      if (user.role !== 'expert') return false
+      const expertId = await expertIdForUser(req.payload, user.id)
+      return expertId ? { expert: { equals: expertId } } : false
+    },
   },
   fields: [
     {
