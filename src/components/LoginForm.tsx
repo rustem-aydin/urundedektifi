@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -10,6 +11,7 @@ import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { TextField, WizardIntro } from '@/components/wizard/controls'
 import { ApiError } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 /** Payload hesabıyla web girişi (mobildeki Profil ekranının web karşılığı). */
 export function LoginForm() {
@@ -27,13 +29,15 @@ export function LoginForm() {
     setFailure(null)
     try {
       await signIn(email.trim(), password)
+      toast.success('Giriş yapıldı. Hoş geldin!')
       router.replace(next.startsWith('/') ? next : '/tara')
     } catch (error) {
-      setFailure(
+      const message =
         error instanceof ApiError && error.kind === 'unauthorized'
-          ? 'E-posta ya da şifre hatalı.'
-          : 'Giriş yapılamadı. Bağlantını kontrol edip tekrar dene.',
-      )
+          ? 'E-posta ya da şifre hatalı. Bilgilerini kontrol edip tekrar dene.'
+          : userMessage(error, 'Giriş yapılamadı. Bağlantını kontrol edip tekrar dene.')
+      setFailure(message)
+      toast.error(message)
     }
   }
 

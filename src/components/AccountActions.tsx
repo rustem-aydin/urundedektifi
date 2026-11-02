@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,7 @@ export function AccountActions({ profileId }: { profileId: string }) {
         size="sm"
         onClick={() => {
           signOut()
+          toast.success('Çıkış yapıldı. Tekrar görüşmek üzere!')
           router.replace('/giris')
         }}
       >

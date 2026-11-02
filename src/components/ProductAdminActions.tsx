@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
-import { ApiError, deleteProduct } from '@/lib/wizard/api'
+import { deleteProduct } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 /**
  * Ürün dosyasının kurumsal eylemleri (ADR 0009): yalnız admin/editör görür.
@@ -30,12 +32,13 @@ export function ProductAdminActions({ id, name }: { id: string; name: string }) 
     setFailure(null)
     try {
       await deleteProduct(id, token)
+      toast.success(`${name} silindi.`)
       router.push('/urunler')
       router.refresh()
     } catch (error) {
-      setFailure(
-        error instanceof ApiError || error instanceof Error ? error.message : 'Ürün silinemedi.',
-      )
+      const message = userMessage(error, 'Ürün silinemedi. Tekrar dene.')
+      setFailure(message)
+      toast.error(message)
     } finally {
       setDeleting(false)
     }

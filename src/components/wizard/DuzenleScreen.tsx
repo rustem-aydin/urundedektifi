@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -12,8 +13,7 @@ import { AnalysisSummary } from '@/components/wizard/AnalysisSummary'
 import { Chip, TextField, WizardIntro } from '@/components/wizard/controls'
 import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
-import { AiError } from '@/lib/wizard/ai'
-import { ApiError, fetchProductDoc, findProductByBarcode } from '@/lib/wizard/api'
+import { fetchProductDoc, findProductByBarcode } from '@/lib/wizard/api'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import { getPhotoBlob, putPhotoBlob } from '@/lib/wizard/photoStore'
 import {
@@ -29,10 +29,10 @@ import {
   saveProductEdits,
   type UploadablePhoto,
 } from '@/lib/wizard/productWrite'
+import { userMessage } from '@/lib/userMessages'
 
 function describe(error: unknown): string {
-  if (error instanceof AiError || error instanceof ApiError) return error.message
-  return error instanceof Error ? error.message : 'Bilinmeyen hata.'
+  return userMessage(error, 'Bilinmeyen hata. Tekrar dene.')
 }
 
 /**
@@ -108,7 +108,9 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       }
       setDraft((current) => (current ? { ...current, photos: [...current.photos, ...photos] } : current))
     } catch (error) {
-      setFailure(`Fotoğraf hazırlanamadı: ${describe(error)}`)
+      const message = `Fotoğraf hazırlanamadı: ${describe(error)}`
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }
@@ -124,21 +126,27 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       // bu ekranın sorunu değil); değiştiyse geçerlilik ve tekillik burada sınanır.
       if (digits !== originalBarcode) {
         if (!/^\d{8,14}$/.test(digits)) {
-          setFailure('Barkod 8–14 hane olmalı (yalnız rakam). Kaydetmeden önce düzelt.')
+          const message = 'Barkod 8–14 hane olmalı (yalnız rakam). Kaydetmeden önce düzelt.'
+          setFailure(message)
+          toast.error(message)
           return
         }
         // Barkod tekil: başka bir dosyaya ait kodu yazmak sunucuda unique hatası verir.
         // Hata mesajını anlaşılır kılmak için çakışma önceden sorulur.
         const clash = await findProductByBarcode(digits, token)
         if (clash && String(clash.id) !== String(draft.productId)) {
-          setFailure(`${digits} barkodu başka bir ürün dosyasında kayıtlı.`)
+          const message = `${digits} barkodu başka bir ürün dosyasında kayıtlı.`
+          setFailure(message)
+          toast.error(message)
           return
         }
       }
 
       const resolved = await resolveCreatedMasters(draft, token)
       if (resolved.errors.length) {
-        setFailure(`Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
+        const message = `Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`
+        setFailure(message)
+        toast.error(message)
         setDraft(resolved.draft)
         return
       }
@@ -161,9 +169,12 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         await forgetPhoto(photo)
       }
       setSaved({ barcode: resolved.draft.barcode, published: resolved.draft.form.isPublished })
+      toast.success('Değişiklikler kaydedildi.')
       router.refresh()
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }

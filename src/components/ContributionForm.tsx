@@ -3,13 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
-import { ApiError, submitContribution } from '@/lib/wizard/api'
+import { submitContribution } from '@/lib/wizard/api'
 import { resizeImage } from '@/lib/wizard/productWrite'
+import { userMessage } from '@/lib/userMessages'
 
 /** Katkı fotoğrafı sınırı (sunucu da `CONTRIBUTION_PHOTOS` ile aynı sınırı uygular). */
 const MAX_PHOTOS = 6
@@ -17,8 +19,7 @@ const MAX_PHOTOS = 6
 type Picked = { id: string; blob: Blob; url: string }
 
 function describe(error: unknown): string {
-  if (error instanceof ApiError) return error.message
-  return error instanceof Error ? error.message : 'Katkı gönderilemedi. Tekrar dene.'
+  return userMessage(error, 'Katkı gönderilemedi. Tekrar dene.')
 }
 
 /**
@@ -40,7 +41,9 @@ export function ContributionForm({ barcode }: { barcode: string }) {
     setFailure(null)
     const room = MAX_PHOTOS - photos.length
     if (room <= 0) {
-      setFailure(`En fazla ${MAX_PHOTOS} fotoğraf ekleyebilirsin.`)
+      const message = `En fazla ${MAX_PHOTOS} fotoğraf ekleyebilirsin.`
+      setFailure(message)
+      toast.error(message)
       return
     }
     setBusy(true)
@@ -57,10 +60,14 @@ export function ContributionForm({ barcode }: { barcode: string }) {
       }
       setPhotos((current) => [...current, ...next].slice(0, MAX_PHOTOS))
       if (Array.from(files).length > room) {
-        setFailure(`Yalnız ilk ${room} fotoğraf eklendi; en fazla ${MAX_PHOTOS} fotoğraf gönderilebilir.`)
+        const message = `Yalnız ilk ${room} fotoğraf eklendi; en fazla ${MAX_PHOTOS} fotoğraf gönderilebilir.`
+        setFailure(message)
+        toast.error(message)
       }
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
       if (galleryInput.current) galleryInput.current.value = ''
@@ -101,8 +108,11 @@ export function ContributionForm({ barcode }: { barcode: string }) {
       photos.forEach((photo) => URL.revokeObjectURL(photo.url))
       setPhotos([])
       setDone(true)
+      toast.success('Fotoğrafların incelemeye gönderildi. Onaylanınca profilinde görünecek.')
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
@@ -15,7 +16,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { ApiError, updateProfile, uploadMedia } from '@/lib/wizard/api'
+import { updateProfile, uploadMedia } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 /**
  * Kendi profilini düzenleme (yalnız profil sahibine görünür).
@@ -49,7 +51,9 @@ export function ProfileEditor({
   async function save() {
     setFailure(null)
     if (nextName.trim().length < 2) {
-      setFailure('Ad en az 2 karakter olmalı.')
+      const message = 'Ad en az 2 karakter olmalı.'
+      setFailure(message)
+      toast.error(message)
       return
     }
     setBusy(true)
@@ -73,12 +77,11 @@ export function ProfileEditor({
       router.refresh()
       setFile(null)
       setOpen(false)
+      toast.success('Profilin güncellendi.')
     } catch (error) {
-      setFailure(
-        error instanceof ApiError
-          ? error.message || 'Profil kaydedilemedi.'
-          : 'Profil kaydedilemedi. Tekrar dene.',
-      )
+      const message = userMessage(error, 'Profil kaydedilemedi. Tekrar dene.')
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }

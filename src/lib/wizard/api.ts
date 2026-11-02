@@ -16,6 +16,8 @@ import type {
   User,
 } from './types'
 import type { ExpertVerdict } from '@/lib/verdictEngine'
+import { friendlyServerMessage } from '@/lib/userMessages'
+
 import { normalizeText } from './match'
 
 /**
@@ -66,13 +68,13 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string |
   }
 
   if (response.status === 401) {
-    throw new ApiError('unauthorized', 401, 'Oturumun sona ermiş. Yeniden giriş yap.')
+    throw new ApiError('unauthorized', 401, friendlyServerMessage(null, 401))
   }
   if (response.status === 403) {
-    throw new ApiError('unauthorized', 403, 'Bu işlem için yetkin yok.')
+    throw new ApiError('unauthorized', 403, friendlyServerMessage(null, 403))
   }
   if (response.status === 404) {
-    throw new ApiError('notFound', 404, 'Kayıt bulunamadı.')
+    throw new ApiError('notFound', 404, friendlyServerMessage(null, 404))
   }
   if (!response.ok) {
     // Payload hata gövdesi: { errors: [{ message }] }; özel uçlar { error: 'cümle' } döner.
@@ -91,11 +93,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string |
         return null
       })
       .catch(() => null)
-    throw new ApiError(
-      'server',
-      response.status,
-      detail || `Sunucu yanıt veremedi (kod ${response.status}). Tekrar dene.`,
-    )
+    throw new ApiError('server', response.status, friendlyServerMessage(detail, response.status))
   }
 
   return (await response.json()) as T

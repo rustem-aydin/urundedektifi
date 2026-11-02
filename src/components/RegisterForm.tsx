@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -10,6 +11,7 @@ import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { TextField, WizardIntro } from '@/components/wizard/controls'
 import { ApiError } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 /**
  * Tüketici hesabı açma (web). Kayıt jeton döndürmez; kayıttan hemen sonra giriş yapılır.
@@ -31,16 +33,22 @@ export function RegisterForm() {
     setFailure(null)
     try {
       await signUp({ name: name.trim(), email: email.trim(), password })
+      toast.success('Hesabın açıldı. Hoş geldin!')
       router.replace(next.startsWith('/') ? next : '/')
     } catch (error) {
+      let message: string
       if (error instanceof ApiError && error.kind === 'server') {
-        const conflict = /already|mevcut|unique/i.test(error.message)
-        setFailure(conflict ? 'Bu e-posta ile bir hesap var.' : error.message)
+        const conflict = /already|mevcut|unique|zaten|kayıtlı/i.test(error.message)
+        message = conflict
+          ? 'Bu e-posta ile bir hesap var. Giriş yapmayı dene.'
+          : userMessage(error, 'Hesap açılamadı. Bilgilerini kontrol edip tekrar dene.')
       } else if (error instanceof ApiError && error.kind === 'unauthorized') {
-        setFailure('Hesap açıldı ama giriş yapılamadı. Giriş sayfasından tekrar dene.')
+        message = 'Hesap açıldı ama giriş yapılamadı. Giriş sayfasından tekrar dene.'
       } else {
-        setFailure('Hesap açılamadı. Bağlantını kontrol edip tekrar dene.')
+        message = userMessage(error, 'Hesap açılamadı. Bağlantını kontrol edip tekrar dene.')
       }
+      setFailure(message)
+      toast.error(message)
     }
   }
 

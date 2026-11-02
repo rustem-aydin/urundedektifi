@@ -11,7 +11,8 @@ import {
   PROFILE_VISIBLE_LIMIT,
   type ContributionKind,
 } from '@/lib/contributionLabels'
-import { ApiError, fetchMyContributions, type ContributionProduct } from '@/lib/wizard/api'
+import { fetchMyContributions, type ContributionProduct } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 const numberFormat = new Intl.NumberFormat('tr-TR')
 
@@ -152,7 +153,7 @@ export function ProfileContributions({
       })
       .catch((error: unknown) => {
         if (!active) return
-        setFailure(error instanceof ApiError ? error.message : 'Katkılar yüklenemedi.')
+        setFailure(userMessage(error, 'Katkıların yüklenemedi. Bağlantını kontrol edip tekrar dene.'))
       })
       .finally(() => {
         if (active) setLoading(false)

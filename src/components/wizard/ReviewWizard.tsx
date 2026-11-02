@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -14,9 +15,8 @@ import { MasterResolver } from '@/components/wizard/MasterResolver'
 import { PhotoRequests } from '@/components/wizard/PhotoRequests'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
 import { SaveReview } from '@/components/wizard/SaveReview'
-import { AiError, type PhotoRole } from '@/lib/wizard/ai'
+import { type PhotoRole } from '@/lib/wizard/ai'
 import {
-  ApiError,
   fetchProductDoc,
   fetchReviewQueue,
   restartAnalysis,
@@ -41,10 +41,10 @@ import {
   saveProduct,
   type UploadablePhoto,
 } from '@/lib/wizard/productWrite'
+import { userMessage } from '@/lib/userMessages'
 
 function describe(error: unknown): string {
-  if (error instanceof AiError || error instanceof ApiError) return error.message
-  return error instanceof Error ? error.message : 'Bilinmeyen hata.'
+  return userMessage(error, 'Bilinmeyen hata. Tekrar dene.')
 }
 
 /**
@@ -189,7 +189,9 @@ export function ReviewWizard({ productId }: { productId: string }) {
       }
       await update({ ...draft, photos: [...draft.photos, ...photos] })
     } catch (error) {
-      setFailure(`Fotoğraf hazırlanamadı: ${describe(error)}`)
+      const message = `Fotoğraf hazırlanamadı: ${describe(error)}`
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }
@@ -222,9 +224,13 @@ export function ReviewWizard({ productId }: { productId: string }) {
       await restartAnalysis(productId, token)
       setAiStatus('running')
       setAiProblem(null)
-      setNotice('Analiz yeniden başlatıldı. Bitince alanlar kendiliğinden dolar.')
+      const message = 'Analiz yeniden başlatıldı. Bitince alanlar kendiliğinden dolar.'
+      setNotice(message)
+      toast.success('Analiz yeniden başlatıldı.')
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }
@@ -251,7 +257,9 @@ export function ReviewWizard({ productId }: { productId: string }) {
     try {
       const resolved = await resolveCreatedMasters(draft, token)
       if (resolved.errors.length) {
-        setFailure(`Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`)
+        const message = `Bazı kayıtlar oluşturulamadı: ${resolved.errors.map((error) => error.message).join(' · ')}`
+        setFailure(message)
+        toast.error(message)
         await update(resolved.draft)
         return
       }
@@ -275,10 +283,13 @@ export function ReviewWizard({ productId }: { productId: string }) {
       setDropped(outcome.dropped)
       for (const photo of resolved.draft.photos) await forgetPhoto(photo)
       setDraft(null)
+      toast.success('Ürün kaydedildi. Sıradaki taslağa geçiliyor.')
       router.refresh()
       await advance()
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusy(false)
     }

@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useSession } from '@/components/session-provider'
 import { requestFollow } from '@/lib/followIntent'
+import { userMessage } from '@/lib/userMessages'
 import { cn } from '@/lib/utils'
 
 /**
@@ -77,12 +79,20 @@ export function FollowButton({
         onClick={async () => {
           setFailure(null)
           setPending(true)
+          const wasFollowing = following
           try {
             await toggleFollow(expertId)
+            toast.success(
+              wasFollowing
+                ? `${expertName ?? 'Uzman'} takibi bırakıldı.`
+                : `${expertName ?? 'Uzman'} takip edildi. Yazıları anasayfanda görünecek.`,
+            )
             // Sunucu-render edilen takipçi sayısı/profil verisi de tazelensin.
             router.refresh()
-          } catch {
-            setFailure('Takip güncellenemedi. Tekrar dene.')
+          } catch (error) {
+            const message = userMessage(error, 'Takip güncellenemedi. Tekrar dene.')
+            setFailure(message)
+            toast.error(message)
           } finally {
             setPending(false)
           }

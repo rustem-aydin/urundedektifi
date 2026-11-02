@@ -12,12 +12,14 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { VerdictStamp } from '@/components/VerdictStamp'
+import { userMessage } from '@/lib/userMessages'
 import {
   deleteFeedbackComment,
   fetchProductFeedback,
@@ -86,10 +88,6 @@ function useFeedback(): FeedbackContextValue {
   return value
 }
 
-function errorMessage(caught: unknown, fallback: string): string {
-  return caught instanceof Error && caught.message ? caught.message : fallback
-}
-
 export function ProductFeedbackProvider({
   barcode,
   children,
@@ -133,7 +131,7 @@ export function ProductFeedbackProvider({
         setError(null)
       })
       .catch((caught) => {
-        if (active) setError(errorMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
+        if (active) setError(userMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -169,8 +167,15 @@ export function ProductFeedbackProvider({
       try {
         await apply(await submitFeedbackVote(barcode, input, token))
         setOpenTarget(null)
+        toast.success(
+          input.verdict === 'confirm'
+            ? 'Doğrulaman kaydedildi. Teşekkürler!'
+            : 'İtirazın kaydedildi. Nedenini yazdığın için teşekkürler!',
+        )
       } catch (caught) {
-        setError(errorMessage(caught, 'Doğrulama gönderilemedi. Tekrar dene.'))
+        const message = userMessage(caught, 'Doğrulama gönderilemedi. Tekrar dene.')
+        setError(message)
+        toast.error(message)
         throw caught
       } finally {
         setPending(false)
@@ -182,8 +187,11 @@ export function ProductFeedbackProvider({
       setError(null)
       try {
         await apply(await submitFeedbackComment(barcode, text, token))
+        toast.success('Yorumun eklendi.')
       } catch (caught) {
-        setError(errorMessage(caught, 'Yorum eklenemedi. Tekrar dene.'))
+        const message = userMessage(caught, 'Yorum eklenemedi. Tekrar dene.')
+        setError(message)
+        toast.error(message)
         throw caught
       } finally {
         setPending(false)
@@ -195,8 +203,11 @@ export function ProductFeedbackProvider({
       setError(null)
       try {
         await apply(await deleteFeedbackComment(barcode, id, token))
+        toast.success('Yorumun silindi.')
       } catch (caught) {
-        setError(errorMessage(caught, 'Yorum silinemedi. Tekrar dene.'))
+        const message = userMessage(caught, 'Yorum silinemedi. Tekrar dene.')
+        setError(message)
+        toast.error(message)
         throw caught
       } finally {
         setPending(false)
@@ -206,7 +217,9 @@ export function ProductFeedbackProvider({
       const nextLimit = limit + 20
       setLimit(nextLimit)
       await load(nextLimit).catch((caught) => {
-        setError(errorMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
+        const message = userMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.')
+        setError(message)
+        toast.error(message)
       })
     },
     openVerify(target) {

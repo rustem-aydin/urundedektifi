@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -10,12 +11,12 @@ import { ImageLightbox, type LightboxImage } from '@/components/ImageLightbox'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import {
-  ApiError,
   fetchReviewQueue,
   markReviewed,
   rejectContribution,
   type ReviewItem,
 } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 const dateFormat = new Intl.DateTimeFormat('tr-TR', {
   day: '2-digit',
@@ -26,8 +27,7 @@ const dateFormat = new Intl.DateTimeFormat('tr-TR', {
 })
 
 function describe(error: unknown): string {
-  if (error instanceof ApiError) return error.message
-  return error instanceof Error ? error.message : 'İşlem tamamlanamadı.'
+  return userMessage(error, 'İşlem tamamlanamadı. Tekrar dene.')
 }
 
 /**
@@ -53,7 +53,9 @@ export function ReviewQueue() {
       setItems(await fetchReviewQueue(token))
       setFailure(null)
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -77,8 +79,11 @@ export function ReviewQueue() {
             return (a.createdAt ?? '') < (b.createdAt ?? '') ? -1 : 1
           }),
       )
+      toast.success(item.seen ? 'Katkı "görülmedi" olarak işaretlendi.' : 'Katkı görüldü olarak işaretlendi.')
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusyId(null)
     }
@@ -94,8 +99,11 @@ export function ReviewQueue() {
     try {
       await rejectContribution(item.id, token)
       setItems((current) => current.filter((row) => row.id !== item.id))
+      toast.success('Katkı reddedildi ve silindi. Katkı sahibinin profilinde görünmeyecek.')
     } catch (error) {
-      setFailure(describe(error))
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
     } finally {
       setBusyId(null)
     }

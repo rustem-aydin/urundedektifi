@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { WizardIntro } from '@/components/wizard/controls'
+import { userMessage } from '@/lib/userMessages'
 import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
 
 /**
@@ -29,8 +31,10 @@ export function SaglayiciForm() {
       .then((next) => {
         if (active) setStatus(next)
       })
-      .catch(() => {
-        if (active) setStatus({ configured: false, baseUrl: null, model: null })
+      .catch((error: unknown) => {
+        if (!active) return
+        setStatus({ configured: false, baseUrl: null, model: null })
+        toast.error(userMessage(error, 'Sağlayıcı durumu okunamadı. Tekrar dene.'))
       })
     return () => {
       active = false
