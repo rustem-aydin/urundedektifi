@@ -9,6 +9,7 @@ import { mcpPlugin } from '@payloadcms/plugin-mcp'
 import { tr } from '@payloadcms/translations/languages/tr'
 
 import { mcpProductsPluginOptions } from './lib/mcpOptions'
+import { mergeDuplicateCategories } from './lib/categoryMerges'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
@@ -90,6 +91,17 @@ export default buildConfig({
     prodMigrations: migrations,
     push: process.env.NODE_ENV !== 'production',
   }),
+  // Yinelenen kategori onarımı: inceleme ekranında "Yeni oluştur" ile açılan kopya
+  // kategoriler (ör. "Kedi maması" ↔ "Kedi & Köpek Maması") ürünleriyle birlikte
+  // taksonomi kaydına taşınır. Idempotent — kaynak slug yoksa hiçbir şey yazmaz.
+  onInit: async (payload) => {
+    try {
+      const merged = await mergeDuplicateCategories(payload)
+      if (merged) payload.logger.info(`Yinelenen kategori birleştirildi: ${merged}`)
+    } catch (error) {
+      payload.logger.error({ err: error, msg: 'Kategori birleştirme başarısız' })
+    }
+  },
   i18n: {
     supportedLanguages: { tr }, // default
   },

@@ -179,14 +179,10 @@ export const CATEGORY_TAXONOMY: TaxonomyNode[] = [
 ]
 
 /**
- * Aynı içeriği taşıyan yinelenen kategoriler (eski içe aktarımlardan kaldı).
+ * Aynı içeriği taşıyan yinelenen kategoriler (tek kaynak: `src/lib/categoryMerges.ts`).
  * Sol taraf silinir; ürünleri ve uzman kuralı referansları sağ tarafa taşınır.
  */
-export const DUPLICATE_CATEGORY_MERGES: Array<{ from: string; to: string }> = [
-  { from: 'i-cecekler', to: 'icecekler' },
-  { from: 'caylar', to: 'kahve-cay' },
-  { from: 'meyve-nektari', to: 'meyve-suyu' },
-]
+export { DUPLICATE_CATEGORY_MERGES } from '../../src/lib/categoryMerges'
 
 /** Taksonomiyi kökten yaprağa düz listeye açar (üst kayıtlar önce oluşsun). */
 export function flattenTaxonomy(
