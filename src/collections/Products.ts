@@ -493,7 +493,7 @@ export const Products: CollectionConfig = {
         {
           label: '📸 Görseller',
           description:
-            'Toplam en fazla 6 fotoğraf. Ön Yüz Fotoğrafı zorunludur; diğer 5 alan (3 kategorize + 2 ek) isteğe bağlıdır. Belirli kategoriler için ayrılmış alanlar sitede özel etiketle gösterilir.',
+            'Toplam en fazla 6 fotoğraf. Ön Yüz Fotoğrafı zorunludur; 3 kategorize alan (içindekiler, besin değerleri, geri dönüşüm) ve en fazla 5 ek fotoğraf isteğe bağlıdır. Belirli kategoriler için ayrılmış alanlar sitede özel etiketle gösterilir.',
           fields: [
             {
               name: 'frontImage',
