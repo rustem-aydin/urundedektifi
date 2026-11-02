@@ -38,7 +38,7 @@ kullanıcı maliyeti yok.
   - **Altyapı adları**: canlı API makinesi `urundedektifi.elharezmi.com`
     (`EXPO_PUBLIC_API_URL`, `SEED_API_URL`), `DATABASE_URL` veritabanı adı, S3 kök
     klasörü `urundedektifi`, repo dizin adı. Bunlar marka metni değil adres/kimliktir;
-    taşınmaları ayrı bir dağıtım işidir.
+    taşınmaları ayrı bir dağıtım işidir (alan adı geçişi ADR 0030'un konusudur).
   - **Depolama anahtarları** (`seffafurun.token`, `seffafurun.recent`,
     `seffafurun.cache`, `seffafurun.wizard`, `seffafurun.ai.*`). Kullanıcıya görünmez;
     yeniden adlandırmak oturumları düşürür, yarım taslakları ve önbelleği siler.
