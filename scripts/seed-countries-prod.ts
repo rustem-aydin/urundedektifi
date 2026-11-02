@@ -11,7 +11,7 @@ import { planCountrySeed, type ExistingCountryDoc } from '../src/lib/seed/countr
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/seed-countries-prod.ts
  *   (SEED_API_URL verilmezse üretim adresi kullanılır.)
  */
-const API = process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api'
+const API = process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api'
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 

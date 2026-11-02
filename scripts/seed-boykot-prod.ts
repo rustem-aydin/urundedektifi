@@ -15,7 +15,7 @@ import { createPayloadClient, type IdDoc } from './lib/payload-rest'
  *   (SEED_API_URL verilmezse üretim adresi kullanılır.)
  */
 
-const API = process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api'
+const API = process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api'
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 

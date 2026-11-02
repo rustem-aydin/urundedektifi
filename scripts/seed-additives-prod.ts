@@ -20,7 +20,7 @@ import { createPayloadClient } from './lib/payload-rest'
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/seed-additives-prod.ts --apply    # yazar
  */
 
-const API = process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api'
+const API = process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api'
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 const APPLY = process.argv.includes('--apply')

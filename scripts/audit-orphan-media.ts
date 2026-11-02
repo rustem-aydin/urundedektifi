@@ -21,7 +21,7 @@ import { createPayloadClient, type IdDoc, type PayloadClient } from './lib/paylo
  *   ... --json orphan-media.json --s3-base https://rusts.elharezmi.com/urundedektifi
  */
 
-const API = (process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api').replace(
+const API = (process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api').replace(
   /\/$/,
   '',
 )

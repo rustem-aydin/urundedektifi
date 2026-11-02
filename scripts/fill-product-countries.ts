@@ -17,7 +17,7 @@ import { detectCountryFromBarcode } from '../src/lib/barcodePrefixes'
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/fill-product-countries.ts
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/fill-product-countries.ts --apply --overwrite
  */
-const API = (process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api').replace(/\/$/, '')
+const API = (process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api').replace(/\/$/, '')
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 const APPLY = process.argv.includes('--apply')

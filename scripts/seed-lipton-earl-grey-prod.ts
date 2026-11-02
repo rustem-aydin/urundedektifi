@@ -14,7 +14,7 @@ import { createPayloadClient, type PayloadClient } from './lib/payload-rest'
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/seed-lipton-earl-grey-prod.ts
  */
 
-const API = (process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api').replace(
+const API = (process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api').replace(
   /\/$/,
   '',
 )
@@ -202,7 +202,7 @@ async function main() {
   }
 
   const product = await client.upsert('products', { barcode: { equals: BARCODE } }, data)
-  console.log(`  ürün: ${product.id} — https://urundedektifi.elharezmi.com/urun/${BARCODE}`)
+  console.log(`  ürün: ${product.id} — https://barkoddedektifi.com/urun/${BARCODE}`)
 
   const caseRes = await fetch(`${API}/products/case/${BARCODE}`)
   if (!caseRes.ok) throw new Error(`case okunamadı: ${caseRes.status}`)

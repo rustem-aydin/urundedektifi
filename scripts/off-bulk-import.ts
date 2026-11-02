@@ -36,7 +36,7 @@ import {
  *     [--until-done] [--retry-failed] [--backfill-images]
  */
 
-const API = process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api'
+const API = process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api'
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 /** OFF arama ucu anonim kullanıcıya kapalı; hesap bilgileri verilirse oturum açılır. */

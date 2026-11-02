@@ -16,7 +16,7 @@ import { DUPLICATE_CATEGORY_MERGES, flattenTaxonomy } from './lib/category-taxon
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/seed-categories-prod.ts [--dry]
  */
 
-const API = process.env.SEED_API_URL ?? 'https://urundedektifi.elharezmi.com/api'
+const API = process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api'
 const EMAIL = process.env.SEED_EMAIL ?? ''
 const PASSWORD = process.env.SEED_PASSWORD ?? ''
 const DRY = process.argv.includes('--dry')
