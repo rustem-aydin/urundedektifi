@@ -31,8 +31,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Şeffaf Ürün — Barkodu tara, kararı gör',
-    template: '%s · Şeffaf Ürün',
+    default: 'Barkod Dedektifi — Barkodu tara, kararı gör',
+    template: '%s · Barkod Dedektifi',
   },
   description:
     'Barkodu tara; uzman kurallarına göre ürünün boykot, sağlık ve helal hükmünü anında gör.',

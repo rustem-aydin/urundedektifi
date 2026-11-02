@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Gizlilik Politikası',
   description:
-    'Şeffaf Ürün uygulaması ve urundedektifi.com sitesi kişisel verilerinizi nasıl işler: ne toplar, neden toplar, kim görür.',
+    'Barkod Dedektifi uygulaması ve urundedektifi.com sitesi kişisel verilerinizi nasıl işler: ne toplar, neden toplar, kim görür.',
 }
 
 const VERILER = [
@@ -37,11 +37,11 @@ export default function GizlilikPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-12">
       <p className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-        DOSYA NO: ŞÜ-KVKK
+        DOSYA NO: BD-KVKK
       </p>
       <h1 className="mt-2 font-display text-3xl tracking-wide">Gizlilik Politikası</h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        Bu politika, Şeffaf Ürün mobil uygulaması ve urundedektifi.com web sitesi (&quot;hizmet&quot;)
+        Bu politika, Barkod Dedektifi mobil uygulaması ve urundedektifi.com web sitesi (&quot;hizmet&quot;)
         üzerinden işlenen kişisel veriler için geçerlidir. 6698 sayılı Kişisel Verilerin Korunması
         Kanunu (KVKK) kapsamında veri sorumlusu Rustem Aydın&apos;dır.
       </p>

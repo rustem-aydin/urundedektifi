@@ -58,7 +58,7 @@ export default async function HomePage() {
             Barkodu göster, delilleri topla, kararı gör.
           </h1>
           <p className="max-w-md text-muted-foreground">
-            Şeffaf Ürün, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
+            Barkod Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
             Geriye tek bakışta okunan bir hüküm kalır.
           </p>
           <BarcodeLookupForm />
@@ -76,7 +76,7 @@ export default async function HomePage() {
                 KANIT NO: 8690123456789
               </span>
               <span className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-                ŞÜ-2026
+                BD-2026
               </span>
             </div>
           </div>

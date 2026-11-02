@@ -52,7 +52,7 @@ export default buildConfig({
       },
     },
     meta: {
-      titleSuffix: ' — Şeffaf Ürün',
+      titleSuffix: ' — Barkod Dedektifi',
     },
   },
   // Yerelde mobil uygulamanın web hedefi (Expo web) API'ye başka porttan erişir.

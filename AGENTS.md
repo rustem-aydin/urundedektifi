@@ -1,4 +1,4 @@
-# Şeffaf Ürün
+# Barkod Dedektifi
 
 ## Agent skills
 

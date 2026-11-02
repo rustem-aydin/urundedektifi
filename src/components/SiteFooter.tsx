@@ -23,7 +23,7 @@ export function SiteFooter() {
               <span className="flex size-7 items-center justify-center rounded-sm bg-foreground text-background">
                 <ScanBarcode className="size-4" aria-hidden="true" />
               </span>
-              <span className="font-display text-base tracking-wide">Şeffaf Ürün</span>
+              <span className="font-display text-base tracking-wide">Barkod Dedektifi</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Barkodu okut; ürünün boykot, sağlık ve helal açısından hükmünü uzmanların yazdığı
@@ -50,7 +50,7 @@ export function SiteFooter() {
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border pt-4">
           <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-            DOSYA NO: ŞÜ-2026
+            DOSYA NO: BD-2026
           </p>
           <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
             Tüm hakları saklıdır

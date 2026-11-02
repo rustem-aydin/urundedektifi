@@ -77,7 +77,7 @@ export function SiteHeader() {
             <ScanBarcode className="size-4" aria-hidden="true" />
           </span>
           <span className="font-display text-base leading-none tracking-wide sm:text-lg">
-            Şeffaf Ürün
+            Barkod Dedektifi
           </span>
         </Link>
 

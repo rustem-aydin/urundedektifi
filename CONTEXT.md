@@ -1,4 +1,4 @@
-# Şeffaf Ürün
+# Barkod Dedektifi
 
 Barkodla sorgulanan ürünlerin güvenilirliğini (boykot, sağlık, helal, içerik) uzman kurallarına göre değerlendiren, "delil dosyası" anlatısıyla sunan bir tüketici uygulaması.
 
@@ -6,9 +6,9 @@ Barkodla sorgulanan ürünlerin güvenilirliğini (boykot, sağlık, helal, içe
 
 ### Ürün & Barkod
 
-**Şeffaf Ürün**:
-Uygulamanın adı (2026-10-28'e kadar "Ürün Dedektifi"). Marka metni, sayfa başlığı ve mağaza adıdır; koleksiyon/alan/rota adlarında kullanılmaz.
-_Avoid_: Ürün Dedektifi, urundedektifi (eski ad; yalnız ADR 0018 ve mevcut altyapı adlarında geçer)
+**Barkod Dedektifi**:
+Uygulamanın adı (2026-11-02'ye kadar "Şeffaf Ürün", öncesinde "Ürün Dedektifi"). Marka metni, sayfa başlığı ve mağaza adıdır; koleksiyon/alan/rota adlarında kullanılmaz.
+_Avoid_: Şeffaf Ürün, Ürün Dedektifi, urundedektifi (eski adlar; yalnız ADR 0018/0031 ve mevcut altyapı adlarında geçer)
 
 **Barkod**:
 GS1/EAN-13 (veya UPC/EAN-8) ürün kimliği. Hem okutma hem sorgulama anahtarıdır; aynı barkodla ikinci ürün kaydı olmaz.
