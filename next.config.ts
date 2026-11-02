@@ -9,11 +9,24 @@ const dirname = path.dirname(__filename)
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.1.101'],
   images: {
+    // Payload medyası kendi rotasından (`/api/media/file/<dosya>`) servis edilir;
+    // S3 deposu da aynı göreli URL'i döndürür.
     localPatterns: [
       {
         pathname: '/api/media/file/**',
       },
     ],
+    // Tarayıcı AVIF destekliyorsa AVIF, yoksa WebP alır: JPEG orijinallere göre
+    // liste sayfası ~3,2 MB yerine ~250 KB görsel indirir.
+    formats: ['image/avif', 'image/webp'],
+    // Kullanılan kaliteler açıkça listelenir (Next 16 bilinmeyen `quality` değerini reddeder).
+    qualities: [60, 75],
+    // Medya dosya adları içerikle birlikte değişmez (uuid/barkod); 7 gün optimize
+    // edilmiş çıktıyı diskte tutmak yeniden boyutlandırmayı tekrar tetiklemez.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    // Üretilen türev genişlikleri: kart (96–256 px), galeri (480–1024 px), tam ekran.
+    deviceSizes: [420, 640, 828, 1080, 1280, 1920],
+    imageSizes: [48, 64, 96, 128, 192, 256, 384],
   },
   // Turbopack'i kapat - Payload CMS şu an için Webpack ile daha stabil
   webpack: (webpackConfig) => {

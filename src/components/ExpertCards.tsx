@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useMemo, useState } from 'react'
 
 import { CaseCard } from '@/components/CaseCard'
@@ -75,9 +76,12 @@ export function ExpertCards({ experts }: { experts: ExpertCardData[] }) {
               <div className="pointer-events-none relative z-10 flex h-full flex-col gap-2 p-4">
                 <div className="flex items-center gap-3">
                   {expert.avatarUrl ? (
-                    <img
+                    <Image
                       src={expert.avatarUrl}
                       alt={expert.avatarAlt || expert.name}
+                      width={44}
+                      height={44}
+                      quality={60}
                       className="size-11 shrink-0 rounded-full border border-border object-cover"
                     />
                   ) : (

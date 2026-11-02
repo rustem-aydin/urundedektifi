@@ -1,4 +1,5 @@
 import { getPayload } from 'payload'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -91,10 +92,12 @@ export default async function CategoryDetailPage({
       <CaseCard className="mt-6 border-l-4">
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start">
           {category.iconUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- CMS ikonu, küçük türev
-            <img
+            <Image
               src={category.iconUrl}
               alt={category.iconAlt || ''}
+              width={64}
+              height={64}
+              quality={60}
               className="size-16 shrink-0 rounded-sm border border-border bg-card object-contain p-1"
             />
           ) : (

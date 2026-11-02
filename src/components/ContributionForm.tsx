@@ -181,6 +181,8 @@ export function ContributionForm({ barcode }: { barcode: string }) {
             key={photo.id}
             className="relative overflow-hidden rounded-md border border-border bg-muted"
           >
+            {/* Yerel önizleme (blob: URL): next/image yalnız sunucudaki medyayı optimize eder. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo.url} alt={`Katkı fotoğrafı ${index + 1}`} className="aspect-square w-full object-cover" />
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-background/85 px-1.5 py-1">
               <span className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-muted-foreground">

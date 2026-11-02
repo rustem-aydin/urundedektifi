@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -212,11 +213,14 @@ function ExpertAvatarImage({
       </span>
     )
   }
+  const pixels = large ? 48 : 44
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- medya URL'i Payload'dan göreli gelir; galeri ve uzman sayfaları da düz img kullanır
-    <img
+    <Image
       src={avatar.url}
       alt={avatar.alt || name}
+      width={pixels}
+      height={pixels}
+      quality={60}
       className={`${size} shrink-0 rounded-[4px] border border-border object-cover`}
     />
   )

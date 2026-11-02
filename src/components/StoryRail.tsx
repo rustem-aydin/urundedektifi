@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useSession } from '@/components/session-provider'
@@ -133,12 +134,15 @@ export function StoryRail() {
                     : 'block size-16 shrink-0 rounded-full bg-border p-[2.5px]'
                 }
               >
-                <span className="block size-full overflow-hidden rounded-full bg-background p-[2px]">
+                <span className="relative block size-full overflow-hidden rounded-full bg-background p-[2px]">
                   {typeof story.expert.avatar === 'object' && story.expert.avatar?.url ? (
-                    <img
+                    <Image
                       src={story.expert.avatar.url}
                       alt={story.expert.avatar.alt || story.expert.name}
-                      className="aspect-square w-full rounded-full object-cover"
+                      fill
+                      quality={60}
+                      sizes="64px"
+                      className="rounded-full object-cover"
                     />
                   ) : (
                     <span

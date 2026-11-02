@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 import {
@@ -69,11 +70,16 @@ export function ImageLightbox({
             if (event.target === event.currentTarget) onOpenChange(false)
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/*
+            `fill` + `object-contain`: görsel kendi oranını korur, tam ekranı kaplar.
+            `pointer-events-none` görselin altındaki karartıya tıklamayı korur.
+          */}
+          <Image
             src={current.url}
             alt={current.alt}
-            className="max-h-full max-w-full object-contain"
+            fill
+            sizes="100vw"
+            className="pointer-events-none object-contain p-3 sm:p-6"
           />
 
           {images.length > 1 && (

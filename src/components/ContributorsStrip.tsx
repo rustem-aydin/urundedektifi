@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -74,10 +75,13 @@ export function ContributorsStrip({
                 style={{ zIndex: VISIBLE_AVATARS - index }}
               >
                 {contributor.avatarUrl ? (
-                  <img
+                  <Image
                     src={contributor.avatarUrl}
                     alt={contributor.avatarAlt || contributor.name}
-                    className="size-full object-cover"
+                    fill
+                    quality={60}
+                    sizes="36px"
+                    className="object-cover"
                   />
                 ) : (
                   <Initials name={contributor.name} className="size-full text-[0.6rem]" />
@@ -114,9 +118,12 @@ export function ContributorsStrip({
                   className="flex items-start gap-3 rounded-xl bg-card px-3 py-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/40 hover:ring-foreground/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   {contributor.avatarUrl ? (
-                    <img
+                    <Image
                       src={contributor.avatarUrl}
                       alt={contributor.avatarAlt || contributor.name}
+                      width={40}
+                      height={40}
+                      quality={60}
                       className="size-10 shrink-0 rounded-full border border-border object-cover"
                     />
                   ) : (

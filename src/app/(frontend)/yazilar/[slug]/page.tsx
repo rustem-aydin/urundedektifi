@@ -1,4 +1,5 @@
 import { getPayload } from 'payload'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -112,9 +113,12 @@ export default async function PostPage({ params }: Params) {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {expert.avatar && typeof expert.avatar === 'object' && expert.avatar.url ? (
-              <img
+              <Image
                 src={expert.avatar.url}
                 alt={expert.avatar.alt || expert.name}
+                width={44}
+                height={44}
+                quality={60}
                 className="size-11 rounded-full border border-border object-cover"
               />
             ) : (
@@ -169,9 +173,12 @@ export default async function PostPage({ params }: Params) {
       </header>
 
       {cover?.url ? (
-        <img
+        <Image
           src={cover.url}
           alt={cover.alt || post.title}
+          width={cover.width ?? 1200}
+          height={cover.height ?? 630}
+          sizes="(min-width: 1024px) 1024px, 100vw"
           className="mt-8 w-full rounded-md border border-border object-cover"
         />
       ) : (

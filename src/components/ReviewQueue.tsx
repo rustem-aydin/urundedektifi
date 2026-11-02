@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -184,11 +185,13 @@ export function ReviewQueue() {
                   aria-label={`${item.barcode ?? 'Katkı'} fotoğraflarını tam boyut aç`}
                   className="group relative size-20 shrink-0 cursor-zoom-in overflow-hidden rounded-md border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={item.photos[0].url}
                     alt={item.frontImageAlt || item.barcode || 'Katkı fotoğrafı'}
-                    className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
+                    fill
+                    quality={60}
+                    sizes="80px"
+                    className="object-cover transition-transform duration-200 group-hover:scale-105"
                   />
                   {item.photos.length > 1 ? (
                     <span className="pointer-events-none absolute right-0 bottom-0 rounded-tl-sm bg-foreground/80 px-1 py-0.5 font-mono text-[0.6rem] text-background">

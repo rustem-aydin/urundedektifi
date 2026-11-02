@@ -34,8 +34,10 @@ export const PRODUCT_PAGE_SIZE = 24
  * burada çalıştırılmaz: 3.900+ kuralın 24 ürüne uygulanması liste sayfasını dakikalara
  * çıkarıyordu; kart rozetleri ayrı uçtan (`match-counts`) gelir.
  *
- * `select` ürünün bir-çok tablolarını (fiyat, içindekiler, uyarı...) sorgu dışında
- * bırakır: bunlar olmadan `depth` yalnız marka/kategori/görsel ilişkilerini çözer.
+ * `select` ürünün ağır bir-çok tablolarını (fiyat, içindekiler satırları, uyarı...)
+ * sorgu dışında bırakır: bunlar olmadan `depth` yalnız marka/kategori/görsel
+ * ilişkilerini çözer. `additionalImages` yalnız kapak yedeği için seçilir; satır başına
+ * en fazla 5 hafif kayıt döner.
  */
 export const PRODUCT_CARD_SELECT = {
   name: true,
@@ -44,7 +46,52 @@ export const PRODUCT_CARD_SELECT = {
   brand: true,
   category: true,
   frontImage: true,
+  // Kapak yedeği: ön yüz fotoğrafı olmayan ürünlerde (OFF aktarımında kalanlar)
+  // sıradaki ilk fotoğraf gösterilir. `additionalImages` hafif bir dizi; kart
+  // başına en fazla 5 satır döner.
+  ingredientsImage: true,
+  nutritionImage: true,
+  recyclingImage: true,
+  additionalImages: true,
 } as const
+
+/** Payload medya ilişkisinden yalnız karta gereken iki alanı çıkarır. */
+function mediaOf(value: unknown): { url: string; alt: string | null } | null {
+  if (!value || typeof value !== 'object') return null
+  const record = value as { url?: unknown; alt?: unknown }
+  if (typeof record.url !== 'string' || record.url.length === 0) return null
+  return { url: record.url, alt: typeof record.alt === 'string' ? record.alt : null }
+}
+
+type CoverSource = {
+  frontImage?: unknown
+  ingredientsImage?: unknown
+  nutritionImage?: unknown
+  recyclingImage?: unknown
+  additionalImages?: { image?: unknown }[] | null
+}
+
+/**
+ * Kart kapağı. Ön yüz fotoğrafı yoksa ürünün diğer fotoğrafları sırayla denenir:
+ * detay sayfasında görünen bir fotoğraf listede "Görsel yok" olarak kalmamalı.
+ */
+function coverOf(product: CoverSource): { url: string; alt: string | null } | null {
+  const extras = Array.isArray(product.additionalImages)
+    ? product.additionalImages.map((row) => row?.image)
+    : []
+  const candidates = [
+    product.frontImage,
+    product.ingredientsImage,
+    product.nutritionImage,
+    product.recyclingImage,
+    ...extras,
+  ]
+  for (const candidate of candidates) {
+    const media = mediaOf(candidate)
+    if (media) return media
+  }
+  return null
+}
 
 /** Sorgudan dönen ürün satırını karta çevirir (sayfa ve ana sayfa aynı biçimi kullanır). */
 export function productCardFromDoc(product: {
@@ -54,16 +101,12 @@ export function productCardFromDoc(product: {
   goruntulenme?: number | null
   brand?: unknown
   category?: unknown
-  frontImage?: unknown
-}): ProductCardData {
-  const front =
-    product.frontImage && typeof product.frontImage === 'object' ? product.frontImage : null
+} & CoverSource): ProductCardData {
   const brand = product.brand && typeof product.brand === 'object' ? product.brand : null
   const category = product.category && typeof product.category === 'object' ? product.category : null
   const barcode = product.barcode != null ? String(product.barcode) : null
   const name = product.name || 'İsimsiz ürün'
-  const frontUrl = front && 'url' in front && typeof front.url === 'string' ? front.url : null
-  const frontAlt = front && 'alt' in front && typeof front.alt === 'string' ? front.alt : null
+  const cover = coverOf(product)
   const brandName = brand && 'name' in brand && typeof brand.name === 'string' ? brand.name : null
   const categoryName =
     category && 'name' in category && typeof category.name === 'string' ? category.name : null
@@ -75,8 +118,8 @@ export function productCardFromDoc(product: {
     brandName,
     categoryName,
     barcode,
-    imageUrl: frontUrl,
-    imageAlt: frontAlt || name,
+    imageUrl: cover?.url ?? null,
+    imageAlt: cover?.alt || name,
     viewCount: Math.max(0, Math.trunc(Number(product.goruntulenme ?? 0)) || 0),
   }
 }

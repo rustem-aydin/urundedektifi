@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -37,11 +38,14 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
           aria-label={`${current.label} görselini tam boyut aç`}
           className="group absolute inset-0 z-0 cursor-zoom-in focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-ring"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={current.url}
             alt={current.alt}
-            className="size-full p-6 object-contain transition-transform duration-200 group-hover:scale-[1.015]"
+            fill
+            // Detay sayfasının LCP görseli: ilk fotoğraf öncelikli indirilir.
+            priority={safeActive === 0}
+            sizes="(min-width: 1024px) 560px, 100vw"
+            className="object-contain p-6 transition-transform duration-200 group-hover:scale-[1.015]"
           />
         </button>
 
@@ -92,8 +96,15 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
                   : 'border-border hover:border-foreground/50',
               )}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={g.url} alt="" className="absolute inset-0 size-full p-1 object-contain" />
+              {/* Küçük türev: 80 px kutuya 48–96 px arası optimize dosya yeter. */}
+              <Image
+                src={g.url}
+                alt=""
+                fill
+                quality={60}
+                sizes="80px"
+                className="object-contain p-1"
+              />
             </button>
           ))}
         </div>

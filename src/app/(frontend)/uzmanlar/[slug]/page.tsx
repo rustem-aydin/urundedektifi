@@ -1,4 +1,5 @@
 import { getPayload, type Where } from 'payload'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -171,10 +172,13 @@ export default async function ExpertDetailPage({
       <header>
         <div className="relative h-36 overflow-hidden rounded-b-md border border-t-0 border-border bg-tape-yellow/15 sm:h-48">
           {cover?.url ? (
-            <img
+            <Image
               src={cover.url}
               alt={cover.alt || expert.name}
-              className="size-full object-cover"
+              fill
+              priority
+              sizes="(min-width: 1024px) 1024px, 100vw"
+              className="object-cover"
             />
           ) : (
             <div aria-hidden="true" className="flex size-full items-center justify-center">
@@ -188,9 +192,12 @@ export default async function ExpertDetailPage({
         <div className="flex flex-col gap-5 px-1 pt-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex min-w-0 items-end gap-4">
             {typeof expert.avatar === 'object' && expert.avatar?.url ? (
-              <img
+              <Image
                 src={expert.avatar.url}
                 alt={expert.avatar.alt || expert.name}
+                width={96}
+                height={96}
+                quality={75}
                 className="-mt-14 size-24 shrink-0 rounded-full border-4 border-background object-cover shadow-sm sm:-mt-16"
               />
             ) : (
@@ -306,9 +313,13 @@ export default async function ExpertDetailPage({
                           <Link key={post.id} href={`/yazilar/${post.slug}`} className="group">
                             <CaseCard className="flex h-full flex-col gap-2 p-4 transition-shadow group-hover:shadow-md">
                               {postCover?.url ? (
-                                <img
+                                <Image
                                   src={postCover.url}
                                   alt={postCover.alt || post.title}
+                                  width={640}
+                                  height={360}
+                                  quality={60}
+                                  sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 100vw"
                                   className="h-28 w-full rounded-sm border border-border object-cover"
                                 />
                               ) : (

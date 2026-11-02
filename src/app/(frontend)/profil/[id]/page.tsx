@@ -1,4 +1,5 @@
 import { getPayload } from 'payload'
+import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
@@ -61,9 +62,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
       {/* KİMLİK */}
       <header className="flex flex-col gap-5 rounded-xl border border-border bg-card px-5 py-6 sm:flex-row sm:items-start">
         {profile.avatarUrl ? (
-          <img
+          <Image
             src={profile.avatarUrl}
             alt={profile.avatarAlt || profile.name}
+            width={96}
+            height={96}
+            quality={75}
             className="size-20 shrink-0 rounded-full border border-border object-cover sm:size-24"
           />
         ) : (
@@ -148,9 +152,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                   className="flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pr-4 pl-1.5 transition-colors hover:border-foreground/30 hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   {expert.avatarUrl ? (
-                    <img
+                    <Image
                       src={expert.avatarUrl}
                       alt={expert.avatarAlt || expert.name}
+                      width={32}
+                      height={32}
+                      quality={60}
                       className="size-8 rounded-full border border-border object-cover"
                     />
                   ) : (

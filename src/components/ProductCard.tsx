@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { Eye } from 'lucide-react'
 
@@ -51,11 +52,13 @@ export function ProductCard({
       <div className="flex h-full gap-3 p-3 sm:flex-col sm:gap-4 sm:p-0">
         <div className="relative w-24 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/50 sm:aspect-[4/3] sm:w-auto sm:rounded-none sm:border-0 sm:border-b">
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={imageUrl}
               alt={imageAlt || name}
-              className="absolute inset-0 size-full object-contain p-2 sm:p-4"
+              fill
+              quality={60}
+              sizes="(min-width: 1024px) 256px, (min-width: 640px) 45vw, 96px"
+              className="object-contain p-2 sm:p-4"
             />
           ) : (
             <span className="absolute inset-0 flex items-center justify-center p-1 text-center font-mono text-[0.6rem] leading-tight tracking-[0.1em] text-faded uppercase sm:text-[0.65rem] sm:tracking-[0.2em]">

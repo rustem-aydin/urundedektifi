@@ -1,4 +1,5 @@
 import { getPayload } from 'payload'
+import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ChevronRight, Package } from 'lucide-react'
@@ -20,12 +21,15 @@ const numberFormat = new Intl.NumberFormat('tr-TR')
 
 function CategoryIcon({ category, size }: { category: CategoryNode; size: 'lg' | 'sm' }) {
   const box = size === 'lg' ? 'size-10' : 'size-8'
+  const pixels = size === 'lg' ? 40 : 32
   if (category.iconUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- CMS ikonu, sabit boyutlu küçük görsel
-      <img
+      <Image
         src={category.iconUrl}
         alt={category.iconAlt || ''}
+        width={pixels}
+        height={pixels}
+        quality={60}
         className={`${box} shrink-0 rounded-sm border border-border bg-card object-contain p-1`}
       />
     )

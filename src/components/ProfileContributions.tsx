@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 
 import { CaseSection } from '@/components/CaseSection'
@@ -64,9 +65,12 @@ function ContributionCardView({ card }: { card: ContributionCard }) {
   const body = (
     <>
       {card.frontImageUrl ? (
-        <img
+        <Image
           src={card.frontImageUrl}
           alt={card.frontImageAlt || card.barcode || card.name}
+          width={64}
+          height={64}
+          quality={60}
           className="size-16 shrink-0 rounded-md border border-border object-cover"
         />
       ) : (

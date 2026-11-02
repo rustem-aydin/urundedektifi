@@ -1,4 +1,5 @@
 import { getPayload } from 'payload'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import Link from 'next/link'
@@ -116,9 +117,12 @@ export default async function TopicPage({
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       {e.avatar?.url && (
-                        <img
+                        <Image
                           src={e.avatar.url}
                           alt={e.name}
+                          width={40}
+                          height={40}
+                          quality={60}
                           className="size-10 rounded-full border border-border object-cover"
                         />
                       )}

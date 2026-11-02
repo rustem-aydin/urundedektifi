@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { PRODUCT_CARD_SELECT } from '@/lib/productCardData'
+import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -133,26 +133,9 @@ export default async function IngredientDetailPage({
           </p>
         ) : (
           <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {products.docs.map((product) => {
-              const image = product.frontImage && typeof product.frontImage === 'object' ? product.frontImage : null
-              return (
-                <ProductCard
-                  key={product.id}
-                  href={product.barcode ? `/urun/${product.barcode}` : null}
-                  name={product.name || 'İsimsiz ürün'}
-                  brandName={
-                    product.brand && typeof product.brand === 'object' ? product.brand.name : null
-                  }
-                  categoryName={
-                    product.category && typeof product.category === 'object'
-                      ? product.category.name
-                      : null
-                  }
-                  imageUrl={image?.url || null}
-                  imageAlt={image?.alt || product.name}
-                />
-              )
-            })}
+            {products.docs.map((product) => (
+              <ProductCard key={product.id} {...productCardFromDoc(product)} />
+            ))}
           </div>
         )}
       </section>

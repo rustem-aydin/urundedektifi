@@ -91,6 +91,8 @@ export function PhotoTray({ photos, disabled, onAdd, onRemove, onRole }: Props) 
             aria-label={`Fotoğraf ${index + 1} görselini tam boyut aç`}
             className="group size-20 shrink-0 cursor-zoom-in overflow-hidden rounded-sm bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
+            {/* Yerel önizleme (blob: URL): next/image sunucudaki medyayı optimize eder. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.url}
               alt={`Fotoğraf ${index + 1}`}
