@@ -241,12 +241,20 @@ export async function uploadDraftPhotos(
         ids.recyclingImage ??= id
         break
       case 'additional':
-        if (ids.additional.length < 2) ids.additional.push(id)
+        ids.additional.push(id)
         break
       default:
         break
     }
   }
+  // Toplam 6 görsel sınırı: kategorize alanlar önceliklidir, ek fotoğraflar kalan yeri doldurur.
+  const categorized = [
+    ids.frontImage,
+    ids.ingredientsImage,
+    ids.nutritionImage,
+    ids.recyclingImage,
+  ].filter(Boolean).length
+  ids.additional = ids.additional.slice(0, Math.max(0, Math.min(5, 6 - categorized)))
   return ids
 }
 

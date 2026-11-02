@@ -489,7 +489,7 @@ export interface Product {
    */
   recyclingImage?: (number | null) | Media;
   /**
-   * İsteğe bağlı ek fotoğraflar: arka yüz, kullanım örneği, sertifika, garanti belgesi vb. Maksimum 2 ek fotoğraf. Ön Yüz + 3 kategorize + 2 ek = toplam en fazla 6 fotoğraf.
+   * İsteğe bağlı ek fotoğraflar: arka yüz, kullanım örneği, sertifika, garanti belgesi vb. Maksimum 5 ek fotoğraf; kategori ayrımı yapılmayan katkılarda (ön yüz + 5 ek) toplam 6 fotoğrafa kadar kullanılır. Toplam sınır her durumda 6 fotoğraftır.
    */
   additionalImages?:
     | {
