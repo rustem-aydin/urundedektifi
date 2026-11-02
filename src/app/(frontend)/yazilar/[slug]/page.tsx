@@ -29,7 +29,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     collection: 'posts',
     where: { and: [{ slug: { equals: slug } }, { status: { equals: 'published' } }] },
     limit: 1,
-    depth: 1,
+    depth: 0,
+    // Meta etiketleri yalnız başlık ve özete bakar.
+    select: { title: true, excerpt: true },
   })
   const post = result.docs[0]
   if (!post) return { title: 'Yazı bulunamadı' }
@@ -57,6 +59,18 @@ export default async function PostPage({ params }: Params) {
     where: { and: [{ slug: { equals: slug } }, { status: { equals: 'published' } }] },
     limit: 1,
     depth: 2,
+    // Gövde + kapak + konu şeridi + yazar künyesi; yazının kalan alanları çekilmez.
+    select: {
+      title: true,
+      slug: true,
+      excerpt: true,
+      body: true,
+      cover: true,
+      topics: true,
+      expert: true,
+      publishedAt: true,
+      createdAt: true,
+    },
   })
   const post = result.docs[0]
   if (!post) notFound()
@@ -76,6 +90,7 @@ export default async function PostPage({ params }: Params) {
     sort: '-publishedAt',
     limit: 3,
     depth: 1,
+    select: { title: true, slug: true, excerpt: true, cover: true, publishedAt: true, createdAt: true },
   })
 
   const cover = typeof post.cover === 'object' ? post.cover : null

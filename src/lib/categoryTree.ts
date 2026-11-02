@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
@@ -35,6 +36,16 @@ export type CategoryTree = {
 }
 
 type CategoryRow = Pick<Category, 'id' | 'name' | 'slug' | 'description' | 'icon' | 'parent' | 'order'>
+
+/** Ağaç yalnız bu alanları okur; kategori belgesinin tamamı (ör. ileride eklenecek alanlar) çekilmez. */
+const CATEGORY_TREE_SELECT = {
+  name: true,
+  slug: true,
+  description: true,
+  icon: true,
+  parent: true,
+  order: true,
+} as const
 
 function relationId(value: unknown): string | null {
   if (value == null) return null
@@ -103,9 +114,21 @@ function sortNodes(nodes: CategoryNode[]): void {
   for (const node of nodes) sortNodes(node.children)
 }
 
-export async function loadCategoryTree(payload: Payload): Promise<CategoryTree> {
+/**
+ * Kategori ağacı — istek başına bir kez okunur.
+ *
+ * Kategori detay sayfası ağacı hem `generateMetadata` hem sayfa gövdesinde istiyor;
+ * React `cache` aynı istekteki ikinci çağrıyı bellekten karşılar (tek sorgu + tek sayım).
+ */
+export const loadCategoryTree = cache(async (payload: Payload): Promise<CategoryTree> => {
   const [categories, counts] = await Promise.all([
-    payload.find({ collection: 'categories', limit: 500, pagination: false, depth: 1 }),
+    payload.find({
+      collection: 'categories',
+      limit: 500,
+      pagination: false,
+      depth: 1,
+      select: CATEGORY_TREE_SELECT,
+    }),
     categoryProductCounts(payload),
   ])
 
@@ -155,7 +178,7 @@ export async function loadCategoryTree(payload: Payload): Promise<CategoryTree> 
     byId,
     bySlug: new Map(all.map((node) => [node.slug, node])),
   }
-}
+})
 
 /** Kategori kendisi + tüm torunları (ürün süzgeci için). */
 export function categoryDescendantIds(node: CategoryNode): string[] {

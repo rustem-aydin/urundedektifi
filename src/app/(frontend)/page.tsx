@@ -12,6 +12,7 @@ import { CaseCard } from '@/components/CaseCard'
 import { ProductGrid } from '@/components/ProductGrid'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
 import { ruleStats } from '@/lib/ruleStats'
 
 const STEPS = [
@@ -25,7 +26,14 @@ export default async function HomePage() {
   const payload = await getPayload({ config: payloadConfig })
 
   const [topics, stats, latestProducts] = await Promise.all([
-    payload.find({ collection: 'topics', limit: 100, sort: 'order', depth: 0 }),
+    // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
+    payload.find({
+      collection: 'topics',
+      limit: 100,
+      sort: 'order',
+      depth: 0,
+      select: { name: true, slug: true, description: true, icon: true, color: true, order: true },
+    }),
     // Kural sayıları tek GROUP BY sorgusundan gelir; 3.900 kural satırı çekilmez.
     ruleStats(payload),
     payload.find({
@@ -33,7 +41,8 @@ export default async function HomePage() {
       where: { status: { equals: 'published' } },
       sort: '-createdAt',
       limit: 6,
-      depth: 2,
+      depth: 1,
+      select: PRODUCT_CARD_SELECT,
     }),
   ])
 
@@ -111,20 +120,7 @@ export default async function HomePage() {
           <div className="mt-6">
             <ProductGrid
               className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4"
-              products={(latestProducts.docs as any[]).map((p: any) => {
-                const frontImage = typeof p.frontImage === 'object' ? p.frontImage : null
-                return {
-                  id: String(p.id),
-                  href: p.barcode ? `/urun/${p.barcode}` : null,
-                  name: p.name || 'İsimsiz ürün',
-                  brandName: typeof p.brand === 'object' ? (p.brand?.name ?? null) : null,
-                  categoryName: typeof p.category === 'object' ? (p.category?.name ?? null) : null,
-                  barcode: p.barcode ?? null,
-                  imageUrl: frontImage?.url || null,
-                  imageAlt: frontImage?.alt || p.name,
-                  viewCount: Number(p.goruntulenme ?? 0),
-                }
-              })}
+              products={latestProducts.docs.map(productCardFromDoc)}
             />
           </div>
         </section>

@@ -30,6 +30,8 @@ export default async function ExpertsPage({
     limit: 100,
     sort: 'order',
     depth: 0,
+    // Çipler yalnız ad + slug + simge çizer.
+    select: { name: true, slug: true, icon: true },
   })
 
   let selectedTopic: any = null
@@ -38,6 +40,8 @@ export default async function ExpertsPage({
       collection: 'topics',
       where: { slug: { equals: params.konu } },
       limit: 1,
+      depth: 0,
+      select: { name: true },
     })
     selectedTopic = t.docs[0]
   }
@@ -49,6 +53,17 @@ export default async function ExpertsPage({
     },
     sort: 'name',
     depth: 1,
+    // Kart yalnız bu alanları çizer; uzman belgesinin tamamı (sosyal bağlantılar,
+    // kimlik bilgileri...) listeye taşınmıyor.
+    select: {
+      name: true,
+      slug: true,
+      title: true,
+      bio: true,
+      avatar: true,
+      verified: true,
+      isPublic: true,
+    },
   })
 
   // Kural sayıları ve konuya göre uzman süzgeci tek GROUP BY sonucundan gelir

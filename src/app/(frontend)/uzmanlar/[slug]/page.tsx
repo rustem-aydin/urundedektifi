@@ -87,6 +87,8 @@ export default async function ExpertDetailPage({
     where: { expert: { equals: expert.id } },
     sort: 'order',
     depth: 0,
+    // Derece çipleri yalnız ad, renk ve açıklama gösterir.
+    select: { name: true, color: true, description: true, order: true },
   })
   const ratingOptions = ratings.docs.map((rating: any) => ({
     id: rating.id as string | number,
@@ -112,6 +114,9 @@ export default async function ExpertDetailPage({
       limit: RULE_PAGE_SIZE,
       page: rulePage,
       depth: 1,
+      // Kural kartı ad, tip, derece ve konu rozetini çizer; kanıt/kaynak listeleri
+      // bu sayfaya taşınmaz.
+      select: { name: true, rating: true, ruleType: true, topic: true },
     }),
     payload.count({
       collection: 'expert-rules',
@@ -123,6 +128,8 @@ export default async function ExpertDetailPage({
       sort: '-publishedAt',
       limit: 3,
       depth: 1,
+      // Yazı kartı yalnız bu alanları çizer.
+      select: { title: true, slug: true, excerpt: true, cover: true, publishedAt: true, createdAt: true },
     }),
     payload.count({
       collection: 'users',

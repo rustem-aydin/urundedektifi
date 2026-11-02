@@ -36,6 +36,8 @@ export default async function TopicPage({
     where: { slug: { equals: slug } },
     limit: 1,
     depth: 0,
+    // Başlık yalnız ad, slug, simge, açıklama ve rengi çizer.
+    select: { name: true, slug: true, icon: true, description: true, color: true },
   })
 
   const topic = t.docs[0]
@@ -51,6 +53,9 @@ export default async function TopicPage({
       limit: RULE_PAGE_SIZE,
       page: rulePage,
       depth: 1,
+      // Kural kartı yalnız ad, açıklama, derece ve uzmanı çizer; kanıt/kaynak
+      // listeleri bu sayfaya taşınmaz.
+      select: { name: true, description: true, rating: true, expert: true },
     }),
     // Uzman şeridi kural satırlarından türetilmez: 3.900+ kuralda ilk sayfa yanıltırdı.
     topicExperts(payload, topic.id),
@@ -70,6 +75,7 @@ export default async function TopicPage({
             ],
           },
           depth: 1,
+          select: { name: true, slug: true, title: true, avatar: true, verified: true },
         })
       : { docs: [] }
 

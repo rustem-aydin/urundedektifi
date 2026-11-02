@@ -104,11 +104,11 @@ export default function BarcodeScanner() {
         return
       }
 
-      const result = await getProduct(barcodeNumber)
+      const found = await getProduct(barcodeNumber)
 
       await stopScanner()
 
-      if (result && result.docs && result.docs.length > 0) {
+      if (found) {
         setCameraStatus('Ürün bulundu.')
         toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${barcodeText}`)

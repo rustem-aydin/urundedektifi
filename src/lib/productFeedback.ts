@@ -172,6 +172,16 @@ async function loadFeedback(payload: Payload, productId: string | number): Promi
     limit: FEEDBACK_LOAD_LIMIT,
     depth: 0,
     overrideAccess: true,
+    // Özet yalnız bu kolonları okur; yazar adı ayrı hafif sorguyla (`authorNames`) eşlenir.
+    select: {
+      product: true,
+      target: true,
+      kind: true,
+      verdict: true,
+      text: true,
+      author: true,
+      createdAt: true,
+    },
   })
 
   const docs = result.docs as {

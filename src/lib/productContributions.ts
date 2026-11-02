@@ -248,8 +248,24 @@ export async function buildPublicProfile(
   payload: Payload,
   userId: string | number,
 ): Promise<PublicProfile | null> {
+  // Profil yalnız kimlik, avatar ve takip kimliklerini kullanır. Eski `depth: 2` takip
+  // edilen uzmanları (ve avatar türevlerini) belgenin içinde çözüyordu; kimlikler yeterli
+  // ve uzmanlar aşağıda tek sorguyla, yalnız gereken alanlarla okunuyor.
   const user = (await payload
-    .findByID({ collection: 'users', id: userId, depth: 2, overrideAccess: true })
+    .findByID({
+      collection: 'users',
+      id: userId,
+      depth: 0,
+      overrideAccess: true,
+      select: {
+        name: true,
+        bio: true,
+        role: true,
+        avatar: true,
+        following: true,
+        createdAt: true,
+      },
+    })
     .catch(() => null)) as UserDoc | null
   if (!user) return null
 
@@ -287,6 +303,9 @@ export async function buildPublicProfile(
       ? await findAllDocs<ProductDoc>(payload, 'products', {
           where: { id: { in: topIds } },
           depth: 1,
+          // Profil kartı yalnız ad, barkod, kapak ve sayaç çizer; ürünün bir-çok
+          // tabloları (fiyat, içindekiler, uyarılar) bu sayfada hiç kullanılmıyor.
+          select: { name: true, barcode: true, frontImage: true, goruntulenme: true },
         })
       : []
 
@@ -334,6 +353,7 @@ export async function buildPublicProfile(
       ? await findAllDocs<ExpertDoc>(payload, 'experts', {
           where: { id: { in: followingIds } },
           depth: 1,
+          select: { name: true, slug: true, title: true, isPublic: true, avatar: true },
         })
       : []
 
@@ -352,7 +372,27 @@ export async function buildPublicProfile(
     })
     .filter((expert) => expert.slug)
 
-  const avatar = mediaOf(user.avatar)
+  // Avatar depth 0'da kimlik gelir; tek kolonluk medya okuması belge içinde çözmekten ucuz.
+  const avatarRef = user.avatar
+  let avatarId: string | number | null = null
+  if (typeof avatarRef === 'string' || typeof avatarRef === 'number') {
+    avatarId = avatarRef
+  } else if (avatarRef && typeof avatarRef === 'object' && 'id' in avatarRef) {
+    const refId = avatarRef.id
+    avatarId = typeof refId === 'string' || typeof refId === 'number' ? refId : null
+  }
+  const avatarDoc = avatarId
+    ? await payload
+        .findByID({
+          collection: 'media',
+          id: avatarId,
+          depth: 0,
+          overrideAccess: true,
+          select: { url: true, alt: true },
+        })
+        .catch(() => null)
+    : null
+  const avatar = mediaOf(avatarDoc)
 
   return {
     id: String(user.id),
@@ -383,6 +423,7 @@ export async function contributorsForBarcode(
     limit: 1,
     depth: 0,
     overrideAccess: true,
+    select: { barcode: true },
   })
   const product = found.docs[0]
   if (!product) return null

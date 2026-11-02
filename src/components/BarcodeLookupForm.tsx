@@ -24,8 +24,8 @@ export function BarcodeLookupForm() {
     }
     setIsChecking(true)
     try {
-      const result = await getProduct(Number(digits))
-      if (result && result.docs && result.docs.length > 0) {
+      const found = await getProduct(Number(digits))
+      if (found) {
         toast.success('Ürün bulundu — dosyası açılıyor.')
         router.push(`/urun/${digits}`)
       } else {

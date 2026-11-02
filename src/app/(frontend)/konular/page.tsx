@@ -24,6 +24,8 @@ export default async function TopicsListPage() {
       limit: 100,
       sort: 'order',
       depth: 0,
+      // Kart yalnız ad, slug, açıklama, simge ve renk çizer.
+      select: { name: true, slug: true, description: true, icon: true, color: true },
     }),
     // Konu başına kural/uzman sayısı SQL'de gruplanır (bkz. ruleStats).
     ruleStats(payload),

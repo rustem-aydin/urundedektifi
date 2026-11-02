@@ -120,6 +120,8 @@ export default async function ProductDetailPage({
       where: { slug: { in: expertSlugs } },
       limit: 100,
       depth: 1,
+      // Yalnız satırdaki avatar eşlemesi için gereken alanlar.
+      select: { slug: true, avatar: true },
     })
     for (const expert of experts.docs) {
       const avatar = typeof expert.avatar === 'object' && expert.avatar ? expert.avatar : null

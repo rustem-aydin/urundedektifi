@@ -93,6 +93,17 @@ async function readProduct(payload: Payload, productId: string) {
     depth: 1,
     overrideAccess: true,
     disableErrors: true,
+    // Analiz yalnız fotoğraf ilişkileriyle durum/çıktı alanlarını okur; ürünün
+    // bir-çok tabloları (fiyat, içindekiler, besin...) burada hiç kullanılmıyor.
+    select: {
+      aiStatus: true,
+      aiAnalysis: true,
+      frontImage: true,
+      ingredientsImage: true,
+      nutritionImage: true,
+      recyclingImage: true,
+      additionalImages: true,
+    },
   })
 }
 

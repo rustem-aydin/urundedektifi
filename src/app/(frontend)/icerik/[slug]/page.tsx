@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { PRODUCT_CARD_SELECT } from '@/lib/productCardData'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -28,6 +29,7 @@ export default async function IngredientDetailPage({
     where: { slug: { equals: slug } },
     limit: 1,
     depth: 0,
+    select: { name: true, slug: true, description: true },
   })
   const ingredient = ingredientResult.docs[0]
   if (!ingredient) notFound()
@@ -38,9 +40,11 @@ export default async function IngredientDetailPage({
       where: {
         and: [{ ingredient: { equals: ingredient.id } }, { isActive: { equals: true } }],
       },
-      depth: 2,
+      depth: 1,
       limit: 100,
       sort: 'name',
+      // Liste yalnız ad, tip, derece, uzman ve konu çizer.
+      select: { name: true, ruleType: true, rating: true, expert: true, topic: true },
     }),
     payload.find({
       collection: 'products',
@@ -50,6 +54,8 @@ export default async function IngredientDetailPage({
       depth: 1,
       limit: 100,
       sort: 'name',
+      // Ürün kartı yalnız künyeyi çizer; tam belge (fiyat, besin, uyarı...) çekilmez.
+      select: PRODUCT_CARD_SELECT,
     }),
   ])
 

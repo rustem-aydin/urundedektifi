@@ -12,6 +12,7 @@ import * as migration_20261029_210000_add_profiles_and_contributions from './202
 import * as migration_20261031_090000_ai_settings from './20261031_090000_ai_settings';
 import * as migration_20261031_120000_drop_brand_boycott_fields from './20261031_120000_drop_brand_boycott_fields';
 import * as migration_20261101_140000_product_ai_analysis from './20261101_140000_product_ai_analysis';
+import * as migration_20261102_090000_products_view_sort_index from './20261102_090000_products_view_sort_index';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20261101_140000_product_ai_analysis.up,
     down: migration_20261101_140000_product_ai_analysis.down,
     name: '20261101_140000_product_ai_analysis',
+  },
+  {
+    up: migration_20261102_090000_products_view_sort_index.up,
+    down: migration_20261102_090000_products_view_sort_index.down,
+    name: '20261102_090000_products_view_sort_index',
   },
 ];

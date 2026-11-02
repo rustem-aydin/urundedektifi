@@ -35,7 +35,13 @@ export default async function ProductsPage({
 
   const [categories, products] = await Promise.all([
     // Süzgeç çipleri tüm kategorileri gösterir; katalog 33–50 aralığında, tavan güvenlik payı.
-    payload.find({ collection: 'categories', limit: 200, sort: 'name', depth: 0 }),
+    payload.find({
+      collection: 'categories',
+      limit: 200,
+      sort: 'name',
+      depth: 0,
+      select: { name: true },
+    }),
     // Marka listesi sunucuda çekilmez: 3.950 marka tek istekte 10 sn'ye yaklaşıyordu.
     // Süzgeç, yazdıkça `/api/brands` üzerinden ilk 20 eşleşmeyi arar (bkz. BrandCombobox).
     listProductCards(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
@@ -43,7 +49,10 @@ export default async function ProductsPage({
 
   // Seçili markanın adı: tek kayıt, süzgeç düğmesinde görünür.
   const selectedBrand =
-    brand && (await payload.findByID({ collection: 'brands', id: brand, depth: 0 }).catch(() => null))
+    brand &&
+    (await payload
+      .findByID({ collection: 'brands', id: brand, depth: 0, select: { name: true } })
+      .catch(() => null))
 
   const docs = products.docs
 

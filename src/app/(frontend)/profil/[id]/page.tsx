@@ -1,6 +1,7 @@
 import { getPayload } from 'payload'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -27,11 +28,12 @@ const dateFormat = new Intl.DateTimeFormat('tr-TR', {
   year: 'numeric',
 })
 
-async function loadProfile(id: string) {
+/** Profil hem meta etiketlerinde hem gövdede istenir; React `cache` aynı istekte tek kez kurar. */
+const loadProfile = cache(async (id: string) => {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
   return buildPublicProfile(payload, id)
-}
+})
 
 export async function generateMetadata({
   params,
