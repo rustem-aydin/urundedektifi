@@ -4,6 +4,8 @@
 - Tarih: 2026-11-02
 - İlgili: ADR 0011 (uzman yazıları), ADR 0029 (rol yetki matrisi), `src/collections/Users.ts`,
   `src/collections/Experts.ts`, `src/lib/expertAccounts.ts`
+- Yerini aldığı: ADR 0029 §2'nin "uzman `products.update` yapabilir" maddesi ile ADR 0029 §3'ün
+  "uzman kendi yazısını silmez" maddesi
 
 ## Bağlam
 
