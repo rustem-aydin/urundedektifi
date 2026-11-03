@@ -75,13 +75,40 @@ export function generateExpertPassword(): string {
   return crypto.randomBytes(24).toString('base64url')
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Panelde girilen e-postayı tek biçime indirir; geçersizse 400. */
+export function normalizeExpertEmail(raw: string): string {
+  const email = raw.trim().toLowerCase()
+  if (!EMAIL_PATTERN.test(email)) {
+    throw new APIError('Geçerli bir e-posta adresi girin (ör. ad@alanadi.com).', 400)
+  }
+  return email
+}
+
 /** Uzman için panel hesabı açar; hesap kimliğini döner. */
 export async function createExpertAccount(
   payload: Payload,
   name: string,
   req?: PayloadRequest,
+  preferredEmail?: string,
 ): Promise<number> {
-  const email = await availableExpertEmail(payload, name, req)
+  const email = preferredEmail
+    ? normalizeExpertEmail(preferredEmail)
+    : await availableExpertEmail(payload, name, req)
+  if (preferredEmail) {
+    const taken = await payload.find({
+      collection: 'users',
+      where: { email: { equals: email } },
+      limit: 1,
+      depth: 0,
+      overrideAccess: true,
+      ...(req ? { req } : {}),
+    })
+    if (taken.docs.length > 0) {
+      throw new APIError('Bu e-posta başka bir hesapta kullanılıyor.', 400)
+    }
+  }
   const account = await payload.create({
     collection: 'users',
     data: {
@@ -96,6 +123,57 @@ export async function createExpertAccount(
     ...(req ? { req } : {}),
   })
   return Number(account.id)
+}
+
+/**
+ * Uzmanın panel hesabının e-postasını değiştirir (ADR 0032 §2: türetilmiş ad
+ * yalnız varsayılandır, admin değiştirebilir). Aynı e-posta ikinci hesaba verilemez.
+ */
+export async function setExpertAccountEmail(
+  payload: Payload,
+  userId: number,
+  rawEmail: string,
+  req?: PayloadRequest,
+): Promise<void> {
+  const email = normalizeExpertEmail(rawEmail)
+  const clash = await payload.find({
+    collection: 'users',
+    where: { and: [{ email: { equals: email } }, { id: { not_equals: userId } }] },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    ...(req ? { req } : {}),
+  })
+  if (clash.docs.length > 0) {
+    throw new APIError('Bu e-posta başka bir hesapta kullanılıyor.', 400)
+  }
+  await payload.update({
+    collection: 'users',
+    id: userId,
+    data: { email },
+    depth: 0,
+    overrideAccess: true,
+    context: EXPERT_ACCOUNT_CONTEXT,
+    ...(req ? { req } : {}),
+  })
+}
+
+/** Uzmanın bağlı hesabının e-postası (hesap yoksa null). */
+export async function expertAccountEmail(
+  payload: Payload,
+  userId: number,
+  req?: PayloadRequest,
+): Promise<string | null> {
+  const account = await payload
+    .findByID({
+      collection: 'users',
+      id: userId,
+      depth: 0,
+      overrideAccess: true,
+      ...(req ? { req } : {}),
+    })
+    .catch(() => null)
+  return (account as User | null)?.email ?? null
 }
 
 /**

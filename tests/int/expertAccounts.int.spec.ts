@@ -143,6 +143,153 @@ describe('uzman hesabı eşleşmesi (ADR 0032)', () => {
     expect(promoteStatus).toBe(400)
   })
 
+  it('admin panel e-posta adresini değiştirir; aynı adres ikinci hesaba verilemez', async () => {
+    const first = await makeExpert('posta-a')
+    const second = await makeExpert('posta-b')
+
+    await payload.update({
+      collection: 'experts',
+      id: first.id,
+      data: { accountEmail: `  Gercek.Adres-${stamp}@Example.COM ` } as never,
+      overrideAccess: true,
+    })
+
+    const account = await payload.findByID({
+      collection: 'users',
+      id: relationshipId(first.user) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(account.email).toBe(`gercek.adres-${stamp}@example.com`)
+
+    const clashStatus = await rejectionStatus(() =>
+      payload.update({
+        collection: 'experts',
+        id: second.id,
+        data: { accountEmail: `gercek.adres-${stamp}@example.com` } as never,
+        overrideAccess: true,
+      }),
+    )
+    expect(clashStatus).toBe(400)
+
+    const invalidStatus = await rejectionStatus(() =>
+      payload.update({
+        collection: 'experts',
+        id: second.id,
+        data: { accountEmail: 'gecersiz-adres' } as never,
+        overrideAccess: true,
+      }),
+    )
+    expect(invalidStatus).toBe(400)
+  })
+
+  it('okuma e-postayı sanal alanda döner, başka alanları değiştirmez', async () => {
+    const expert = await makeExpert('okuma')
+    await payload.update({
+      collection: 'experts',
+      id: expert.id,
+      data: { accountEmail: `okuma-${stamp}@example.com` } as never,
+      overrideAccess: true,
+    })
+
+    const admin = await payload.create({
+      collection: 'users',
+      data: {
+        name: 'okuma admin',
+        email: `okuma-admin-${stamp}@example.com`,
+        password: 'test-password-123',
+        role: 'admin',
+      },
+      overrideAccess: true,
+    })
+    created.push({ collection: 'users', id: admin.id })
+
+    const read = await payload.findByID({
+      collection: 'experts',
+      id: expert.id,
+      depth: 0,
+      overrideAccess: false,
+      user: admin as never,
+    })
+    expect((read as { accountEmail?: string }).accountEmail).toBe(`okuma-${stamp}@example.com`)
+    // Uzman adı değişince e-posta yeniden türetilmez: kullanıcının verdiği adres kalır.
+    await payload.update({
+      collection: 'experts',
+      id: expert.id,
+      data: { name: `hesap okuma yeni ${stamp}` } as never,
+      overrideAccess: true,
+    })
+    const account = await payload.findByID({
+      collection: 'users',
+      id: relationshipId(expert.user) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(account.email).toBe(`okuma-${stamp}@example.com`)
+  })
+
+  it('kayıt sırasında verilen e-posta hesabın giriş adresi olur', async () => {
+    const expert = await makeExpert('ilk-posta', {
+      accountEmail: ` Ilk.Adres-${stamp}@Example.com `,
+    })
+    const account = await payload.findByID({
+      collection: 'users',
+      id: relationshipId(expert.user) as number,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(account.email).toBe(`ilk.adres-${stamp}@example.com`)
+  })
+
+  it('kayıtta başka hesabın e-postası verilemez', async () => {
+    const first = await makeExpert('cakisan-a', {
+      accountEmail: `cakisan-${stamp}@example.com`,
+    })
+    expect(relationshipId(first.user)).not.toBeNull()
+
+    const status = await rejectionStatus(() =>
+      payload.create({
+        collection: 'experts',
+        data: {
+          name: `hesap cakisan b ${stamp}`,
+          slug: `hesap-cakisan-b-${stamp}`,
+          accountEmail: `cakisan-${stamp}@example.com`,
+        } as never,
+        overrideAccess: true,
+      }),
+    )
+    expect(status).toBe(400)
+  })
+
+  it('panel dışı hesap uzman hesabının e-postasını göremez', async () => {
+    const expert = await makeExpert('gizli')
+    const consumer = await payload.create({
+      collection: 'users',
+      data: {
+        name: 'gizli tuketici',
+        email: `gizli-tuketici-${stamp}@example.com`,
+        password: 'test-password-123',
+        role: 'user',
+      },
+      overrideAccess: true,
+    })
+    created.push({ collection: 'users', id: consumer.id })
+
+    for (const user of [
+      undefined,
+      { id: consumer.id, role: 'user', collection: 'users' } as never,
+    ]) {
+      const read = await payload.findByID({
+        collection: 'experts',
+        id: expert.id,
+        depth: 0,
+        overrideAccess: false,
+        ...(user ? { user } : {}),
+      })
+      expect((read as { accountEmail?: string }).accountEmail).toBeUndefined()
+    }
+  })
+
   it('uzman silinince otomatik açılan hesabı da silinir', async () => {
     const expert = await makeExpert('silinir')
     const accountId = relationshipId(expert.user) as number

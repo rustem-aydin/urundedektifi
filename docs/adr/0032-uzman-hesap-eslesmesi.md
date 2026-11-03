@@ -31,16 +31,20 @@
 Kurumsal uzmanlar (kişi olmayan, ör. Boykot Dedektifi) da hesap alır: hesap bir kişiye değil
 uzman kaydına aittir, personel devri panelden yapılır.
 
-### 2. Hesap açılışı: ad → e-posta, rastgele şifre
+### 2. Hesap açılışı: ad → e-posta (varsayılan), rastgele şifre
 
-- E-posta uzmanın adından türetilir: Türkçe karakterler ASCII'ye çevrilir, boşluklar `_` olur
-  (`Boykot Dedektifi` → `boykot_dedektifi@expert.local`). Aynı ad ikinci kez gelirse `-2`, `-3`…
-- Alan adı bilerek teslim edilemez bir alan (`.local`): hiçbir gerçek posta kutusuna düşmez,
-  böylece "şifremi unuttum" postası üçüncü şahsa gitmez. Biçim `uzman_adi@…` olarak korunur.
+- E-posta **varsayılan olarak** uzmanın adından türetilir: Türkçe karakterler ASCII'ye çevrilir,
+  boşluklar `_` olur (`Boykot Dedektifi` → `boykot_dedektifi@expert.local`). Aynı ad ikinci kez
+  gelirse `-2`, `-3`…
+- Varsayılan alan adı bilerek teslim edilemez bir alan (`.local`): hiçbir gerçek posta kutusuna
+  düşmez, böylece "şifremi unuttum" postası üçüncü şahsa gitmez.
+- **Admin e-postayı değiştirebilir.** Uzman formundaki `Panel E-posta Adresi` alanı (sanal alan,
+  DB'de kolon yok) bağlı hesabın `users.email` değerini okur ve yazar; gerçek adres verilebilir
+  (ör. `ahmet@ornek.com`). Girdi kırpılır + küçük harfe indirilir, biçim doğrulanır, aynı adres
+  ikinci bir hesaba verilemez (400). Uzman adı değişince e-posta yeniden türetilmez: admin'in
+  verdiği adres kalır.
 - Şifre rastgele üretilir ve hiçbir yerde saklanmaz/gösterilmez. İlk giriş şifresini admin
   Kullanıcılar ekranından belirleyip personele iletir.
-- E-posta değiştirilebilir (kimlik değil, giriş anahtarı); hesap adı değişince e-posta
-  otomatik yeniden türetilmez.
 
 ### 3. Rol seti ve tutarlılık
 

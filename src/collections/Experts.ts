@@ -4,7 +4,9 @@ import { expertRules, invalidateProductCaseCache, listProductsForRules } from '@
 import {
   createExpertAccount,
   ensureExpertAccountRole,
+  expertAccountEmail,
   relationshipId,
+  setExpertAccountEmail,
 } from '@/lib/expertAccounts'
 import type { User } from '@/payload-types'
 
@@ -120,7 +122,28 @@ export const Experts: CollectionConfig = {
         readOnly: true,
         position: 'sidebar',
         description:
-          'Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır: e-posta uzmanın adından türetilir (ör. boykot_dedektifi@expert.local), şifre Kullanıcılar ekranından admin tarafından belirlenir. 1 uzman = 1 hesap; elle değiştirilemez.',
+          'Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır. 1 uzman = 1 hesap; hesabın kendisi elle değiştirilemez, e-postası "Panel E-posta Adresi" alanından düzenlenir.',
+      },
+    },
+    {
+      // Hesabın giriş adresi: varsayılan uzmanın adından türetilir (ADR 0032 §2),
+      // admin bunu değiştirebilir. Veritabanında kolon yok; değer `users.email`te yaşar.
+      name: 'accountEmail',
+      type: 'email',
+      label: 'Panel E-posta Adresi',
+      virtual: true,
+      access: {
+        read: ({ req: { user } }) =>
+          ['admin', 'editor'].includes((user as User | null)?.role ?? ''),
+        update: ({ req: { user } }) =>
+          ['admin', 'editor'].includes((user as User | null)?.role ?? ''),
+      },
+      admin: {
+        position: 'sidebar',
+        // Payload sanal alanları varsayılan olarak salt okunur yapar; bu alan bilerek yazılabilir.
+        readOnly: false,
+        description:
+          'Uzmanın panele giriş e-postası. Boş bırakılırsa adından türetilir (ör. boykot_dedektifi@expert.local); buradan kendi gerçek adresiyle değiştirebilirsiniz. Şifre Kullanıcılar ekranından belirlenir.',
       },
     },
     {
@@ -278,6 +301,10 @@ export const Experts: CollectionConfig = {
       async ({ data, originalDoc, req }) => {
         const linked =
           relationshipId(data?.user) ?? relationshipId(originalDoc?.user)
+        const requestedEmail =
+          typeof data?.accountEmail === 'string' && data.accountEmail.trim()
+            ? data.accountEmail
+            : null
 
         if (linked) {
           // 1 uzman = 1 hesap: aynı hesap ikinci bir uzmana bağlanamaz.
@@ -302,6 +329,9 @@ export const Experts: CollectionConfig = {
           }
           data.user = linked
           await ensureExpertAccountRole(req.payload, linked, req)
+          if (requestedEmail) {
+            await setExpertAccountEmail(req.payload, linked, requestedEmail, req)
+          }
           return data
         }
 
@@ -314,8 +344,25 @@ export const Experts: CollectionConfig = {
         if (!name.trim()) {
           throw new APIError('Uzmanın adı olmadan panel hesabı açılamaz.', 400)
         }
-        data.user = await createExpertAccount(req.payload, name, req)
+        data.user = await createExpertAccount(
+          req.payload,
+          name,
+          req,
+          requestedEmail ?? undefined,
+        )
         return data
+      },
+    ],
+    // Panelde hesabın giriş adresini göster (sanal alan; veritabanında kolon yok).
+    afterRead: [
+      async ({ doc, req }) => {
+        const role = (req.user as User | null)?.role
+        if (role !== 'admin' && role !== 'editor') return doc
+        const linked = relationshipId(doc?.user)
+        if (!linked) return doc
+        const email = await expertAccountEmail(req.payload, linked, req)
+        if (email) doc.accountEmail = email
+        return doc
       },
     ],
     // Uzman adı/slug/avatarı ürün dosyasındaki hüküm satırlarında görünür: case önbelleği düşsün.
