@@ -18,7 +18,7 @@ import { createPayloadClient, type IdDoc, type PayloadClient } from './lib/paylo
  *
  * Kullanım:
  *   SEED_EMAIL=... SEED_PASSWORD=... node --import tsx/esm scripts/audit-orphan-media.ts
- *   ... --json orphan-media.json --s3-base https://rusts.elharezmi.com/urundedektifi
+ *   ... --json orphan-media.json --s3-base https://rusts.barkoddedektifi.com/urundedektifi
  */
 
 const API = (process.env.SEED_API_URL ?? 'https://barkoddedektifi.com/api').replace(
