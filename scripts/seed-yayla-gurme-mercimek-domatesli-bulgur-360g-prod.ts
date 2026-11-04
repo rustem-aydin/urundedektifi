@@ -239,7 +239,16 @@ async function main(): Promise<void> {
         key: 'Amazon Satış Biçimi',
         value: 'Tekli 360 g paket ("Tekli Paket" başlıkta belirtilmiş)',
       },
-      { key: 'Fiyat Kaynağı', value: 'Amazon.com.tr — 64,95 TL (4 Kasım 2026)' },
+      {
+        key: 'Saklama Notu',
+        value:
+          'Ambalaj: rutubetsiz, güneş almayan serin yerde, mümkünse bez torbada saklayın. Üretici bilgisi (Amazon “Üreticiden”): açıldıktan sonra buzdolabında (+4 °C) muhafaza edilmeli ve 2 gün içinde tüketilmelidir.',
+      },
+      {
+        key: 'Fiyat Kaynağı',
+        value:
+          'Amazon.com.tr — 4 Kasım 2026 itibarıyla bu ASIN “Şu anda mevcut değil” (satış teklifi yok, fiyat gösterilmiyor)',
+      },
     ],
     warnings: [
       {
@@ -250,14 +259,19 @@ async function main(): Promise<void> {
         severity: 'low' as const,
         text: 'Tavsiye edilen tüketim tarihi (TETT), parti no (PN) ve ürün yılı ambalaj üzerinde basılıdır; TETT geçmiş ürünü tüketmeyiniz.',
       },
+      {
+        severity: 'low' as const,
+        text: 'Açıldıktan sonra buzdolabında (+4 °C) muhafaza edilmeli ve 2 gün içinde tüketilmelidir (üretici bilgisi).',
+      },
     ],
     storage:
       'Rutubetsiz, güneş almayan serin bir yerde, mümkünse bez torbada saklayınız. Ürünler özenle seçilerek YAYLA tesislerinde el değmeden paketlenmiştir.',
     usage:
-      "1) Tencerede 3 yemek kaşığı (32 g) sıvı yağ ve 1 yemek kaşığı (20 g) tereyağı eritiniz. 2) Paketin tamamını tencereye boşaltıp 2 dakika orta ateşte kavurunuz ve 1,5 tatlı kaşığı (12 g) tuz ekleyiniz. 3) 4 su bardağı (800 ml) sıcak su ekleyerek 10 dakika suyunu çekene kadar orta-kısık ateşte pişiriniz. 10 dakika dinlendirip servis ediniz; isteğe göre baharat ekleyebilirsiniz.",
+      "1) Tencerede 3 yemek kaşığı (32 g) sıvı yağ ve 1 yemek kaşığı (20 g) tereyağı eritiniz. 2) Paketin tamamını tencereye boşaltıp 2 dakika orta ateşte kavurunuz ve 1,5 tatlı kaşığı (12 g) tuz ekleyiniz. 3) 4 su bardağı (800 ml) sıcak su ekleyerek 10 dakika suyunu çekene kadar orta-kısık ateşte pişiriniz. 10 dakika dinlendirip servis ediniz; isteğe göre baharat ekleyebilirsiniz. Mikrodalga fırında, sıcak suda bekletilerek ya da tencerede ısıtılarak da tüketilebilir (üretici önerisi).",
     model: ASIN,
     sku: `AMZ-${ASIN}`,
-    prices: [{ amount: 64.95, date: '2026-11-04T00:00:00.000Z' }],
+    // 4 Kasım 2026: Amazon.com.tr'de bu ASIN "Şu anda mevcut değil"; fiyat yok.
+    prices: [] as { amount: number; date: string }[],
     frontImage: media.front,
     ingredientsImage: media.ingredients,
     nutritionImage: media.nutrition,
