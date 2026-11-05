@@ -208,3 +208,20 @@
     animation: none !important;
   }
 }
+
+/* Tam ekran tarama: html5-qrcode #reader öğesine satır içi `position: relative`
+   yazar; tam ekran katmanında bu, kapsayıcının yüksekliğini videoya bırakır.
+   Kutu tam ekrana sabitlenir, <video> taşan kısmı kırparak doldurur. */
+.scanner-fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden;
+}
+
+.scanner-fullscreen video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center;
+}
+

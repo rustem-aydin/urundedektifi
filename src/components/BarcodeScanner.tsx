@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { Html5Qrcode as Html5QrcodeInstance } from 'html5-qrcode'
+import { X } from 'lucide-react'
 import { toast } from 'sonner'
 import { getProduct } from '@/actions/product'
 import { VerdictStamp } from '@/components/VerdictStamp'
@@ -29,9 +31,18 @@ const SCAN_CONFIG = {
   }),
 }
 
+/**
+ * Önizleme tam ekranı kapladığı için akışı ekran oranına yakın iste: oran
+ * tutmazsa görüntü `object-fit: cover` ile kırpılır ve barkod sensörde
+ * göründüğünden küçük kalır (dikey telefonda ~3× kayıp).
+ */
+function scanConfig() {
+  return { ...SCAN_CONFIG, aspectRatio: window.innerWidth / window.innerHeight }
+}
+
 export default function BarcodeScanner() {
   const router = useRouter()
-  const scannerRef = useRef<any>(null)
+  const scannerRef = useRef<Html5QrcodeInstance | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor…')
@@ -50,9 +61,17 @@ export default function BarcodeScanner() {
     }
   }
 
-  useEffect(() => {
-    let Html5QrcodeModule: any
+  /** Tam ekran tarayıcıdan çıkış: kamera kapatılır, kullanıcı geldiği yere döner. */
+  const handleClose = async () => {
+    await stopScanner()
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push('/')
+    }
+  }
 
+  useEffect(() => {
     const initScanner = async () => {
       try {
         setCameraStatus('Kamera izni isteniyor…')
@@ -60,21 +79,22 @@ export default function BarcodeScanner() {
         stream.getTracks().forEach((track) => track.stop())
 
         setCameraStatus('Tarayıcı hazırlanıyor…')
-        const module = await import('html5-qrcode')
-        Html5QrcodeModule = module.Html5Qrcode
-        const formats = SCAN_FORMATS.map(
-          (name) => module.Html5QrcodeSupportedFormats[name],
-        ).filter((value: unknown) => typeof value === 'number')
-        scannerRef.current = new Html5QrcodeModule('reader', {
+        // html5-qrcode tarayıcı API'lerine dokunur: SSR kapalı olduğundan ve ilk
+        // yükleme maliyeti tarama dışında ödenmesin diye izinden sonra yüklenir.
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
+        const formats = SCAN_FORMATS.map((name) => Html5QrcodeSupportedFormats[name])
+        scannerRef.current = new Html5Qrcode('reader', {
+          verbose: false,
           formatsToSupport: formats.length > 0 ? formats : undefined,
         })
         setIsReady(true)
         setCameraStatus('Hazır — barkodu kameraya göster.')
-      } catch (err: any) {
+      } catch (err) {
         console.error('Başlangıç hatası:', err)
-        if (err.name === 'NotAllowedError') {
+        setCameraStatus('Kamera açılamadı.')
+        if (err instanceof Error && err.name === 'NotAllowedError') {
           setError('Kamera izni verilmedi. Tarayıcı ayarlarından bu siteye kamera izni ver.')
-        } else if (err.name === 'NotFoundError') {
+        } else if (err instanceof Error && err.name === 'NotFoundError') {
           setError('Kamera bulunamadı. Cihaza bir kamera bağlı olduğundan emin ol.')
         } else {
           setError('Kamera açılamadı. Sayfayı yenileyip tekrar dene.')
@@ -88,6 +108,15 @@ export default function BarcodeScanner() {
       if (scannerRef.current) {
         void stopScanner()
       }
+    }
+  }, [])
+
+  // Tam ekran katmanı açıkken sayfa arkada kaymasın.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
     }
   }, [])
 
@@ -140,7 +169,7 @@ export default function BarcodeScanner() {
     try {
       await scannerRef.current.start(
         { facingMode: 'environment' },
-        SCAN_CONFIG,
+        scanConfig(),
         (decodedText: string) => {
           handleBarcodeScanned(decodedText)
         },
@@ -158,13 +187,14 @@ export default function BarcodeScanner() {
   }
 
   useEffect(() => {
-    if (!isReady || !scannerRef.current) return
+    const scanner = scannerRef.current
+    if (!isReady || !scanner) return
 
     const startScanner = async () => {
       try {
-        await scannerRef.current.start(
+        await scanner.start(
           { facingMode: 'environment' },
-          SCAN_CONFIG,
+          scanConfig(),
           (decodedText: string) => {
             handleBarcodeScanned(decodedText)
           },
@@ -174,7 +204,7 @@ export default function BarcodeScanner() {
             }
           },
         )
-      } catch (err: any) {
+      } catch (err) {
         console.error('Kamera başlatma hatası:', err)
         setError('Kamera başlatılamadı. Kamera iznini kontrol edip tekrar dene.')
       }
@@ -190,42 +220,60 @@ export default function BarcodeScanner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady])
 
-  // Hata durumu
-  if (error) {
-    return (
-      <div className="mx-auto flex w-full max-w-md flex-col items-start gap-4 rounded-md border border-border bg-card p-5">
-        <VerdictStamp variant="danger">Hata</VerdictStamp>
-        <p className="text-sm text-muted-foreground">{error}</p>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Tekrar dene
-        </Button>
-      </div>
-    )
-  }
-
-  // Tarayıcı aktif
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-center gap-3">
-        <span
-          className={`font-mono text-xs tracking-[0.18em] uppercase ${
-            isChecking ? 'text-stamp' : 'text-muted-foreground'
-          }`}
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Barkod tarama"
+      className="fixed inset-0 z-[60] overflow-hidden overscroll-none bg-black touch-none"
+    >
+      {/* Kamera sahnesi: html5-qrcode <video> öğesini buraya enjekte eder. */}
+      <div id="reader" className="scanner-fullscreen absolute inset-0" />
+
+      {/* Üst şerit: durum + tam ekrandan çıkış */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start gap-3 bg-gradient-to-b from-black/75 via-black/35 to-transparent px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-10">
+        <div className="flex min-w-0 flex-1 items-center gap-3 self-center">
+          <span className="truncate font-mono text-xs tracking-[0.18em] text-white/85 uppercase [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
+            {cameraStatus}
+          </span>
+          {isChecking ? (
+            <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-b-white" />
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Taramayı kapat"
+          className="pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-black/40 text-white outline-offset-2 hover:bg-black/60 focus-visible:outline-2 focus-visible:outline-white"
         >
-          {cameraStatus}
-        </span>
-        {isChecking && (
-          <span className="size-4 animate-spin rounded-full border-2 border-border border-b-stamp" />
-        )}
+          <X className="size-5" aria-hidden="true" />
+        </button>
       </div>
-      <div className="relative w-full max-w-[500px]">
-        <div id="reader" className="w-full overflow-hidden rounded-md border border-border" />
-        <span
-          aria-hidden="true"
-          className="animate-scanline pointer-events-none absolute inset-x-3 top-0 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100%]"
-        />
-      </div>
-      <EvidenceTag>Barkodu kameraya göster</EvidenceTag>
+
+      {error ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/95 px-5 py-24">
+          <div className="flex w-full max-w-sm flex-col items-start gap-4 rounded-md border border-border bg-card p-5 shadow-lg">
+            <VerdictStamp variant="danger">Hata</VerdictStamp>
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Tekrar dene
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <span
+            aria-hidden="true"
+            className="animate-scanline pointer-events-none absolute inset-x-6 top-0 z-10 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100svh]"
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pt-12 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center">
+            <EvidenceTag variant="tape">Barkodu çerçeveye getir</EvidenceTag>
+            <p className="max-w-sm text-xs text-white/75">
+              Ürün kayıtlıysa dosyası açılır; kayıtlı değilse ilk dosyayı sen açarsın.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   )
 }
