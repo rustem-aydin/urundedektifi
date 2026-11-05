@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { CameraCapture } from '@/components/CameraCapture'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
@@ -33,11 +34,11 @@ export function ContributionForm({ barcode }: { barcode: string }) {
   const [busy, setBusy] = useState(false)
   const [failure, setFailure] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [cameraOpen, setCameraOpen] = useState(false)
   const galleryInput = useRef<HTMLInputElement>(null)
-  const cameraInput = useRef<HTMLInputElement>(null)
 
-  async function addFiles(files: FileList | null) {
-    if (!files || files.length === 0) return
+  async function addFiles(picked: File[]) {
+    if (picked.length === 0) return
     setFailure(null)
     const room = MAX_PHOTOS - photos.length
     if (room <= 0) {
@@ -49,7 +50,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
     setBusy(true)
     try {
       const next: Picked[] = []
-      for (const file of Array.from(files).slice(0, room)) {
+      for (const file of picked.slice(0, room)) {
         if (!file.type.startsWith('image/')) continue
         const resized = await resizeImage(file)
         next.push({
@@ -59,7 +60,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
         })
       }
       setPhotos((current) => [...current, ...next].slice(0, MAX_PHOTOS))
-      if (Array.from(files).length > room) {
+      if (picked.length > room) {
         const message = `Yalnız ilk ${room} fotoğraf eklendi; en fazla ${MAX_PHOTOS} fotoğraf gönderilebilir.`
         setFailure(message)
         toast.error(message)
@@ -71,7 +72,6 @@ export function ContributionForm({ barcode }: { barcode: string }) {
     } finally {
       setBusy(false)
       if (galleryInput.current) galleryInput.current.value = ''
-      if (cameraInput.current) cameraInput.current.value = ''
     }
   }
 
@@ -222,20 +222,12 @@ export function ContributionForm({ barcode }: { barcode: string }) {
       </ul>
 
       <input
-        ref={cameraInput}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(event) => void addFiles(event.target.files)}
-      />
-      <input
         ref={galleryInput}
         type="file"
         accept="image/*"
         multiple
         className="hidden"
-        onChange={(event) => void addFiles(event.target.files)}
+        onChange={(event) => void addFiles(Array.from(event.target.files ?? []))}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -243,7 +235,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
           type="button"
           variant="outline"
           disabled={busy || photos.length >= MAX_PHOTOS}
-          onClick={() => cameraInput.current?.click()}
+          onClick={() => setCameraOpen(true)}
         >
           Fotoğraf çek
         </Button>
@@ -271,6 +263,16 @@ export function ContributionForm({ barcode }: { barcode: string }) {
       <Button type="button" disabled={busy || photos.length === 0} onClick={() => void send()}>
         {busy ? 'Gönderiliyor…' : 'Fotoğrafları gönder'}
       </Button>
+
+      <CameraCapture
+        open={cameraOpen}
+        max={Math.max(0, MAX_PHOTOS - photos.length)}
+        onClose={() => setCameraOpen(false)}
+        onDone={(files) => {
+          setCameraOpen(false)
+          void addFiles(files)
+        }}
+      />
     </CaseCard>
   )
 }

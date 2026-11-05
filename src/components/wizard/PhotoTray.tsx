@@ -3,6 +3,7 @@
 import { ImagePlus, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
+import { CameraCapture } from '@/components/CameraCapture'
 import { Button } from '@/components/ui/button'
 import { ImageLightbox } from '@/components/ImageLightbox'
 import type { PhotoRole } from '@/lib/wizard/ai'
@@ -13,6 +14,8 @@ import { cn } from '@/lib/utils'
 import { Chip } from './controls'
 
 const ROLES: PhotoRole[] = ['front', 'ingredients', 'nutrition', 'recycling', 'additional', 'unknown']
+/** Ürüne bağlanabilecek en fazla görsel — katkı akışıyla aynı sınır. */
+const MAX_PHOTOS = 6
 
 type Props = {
   photos: DraftPhoto[]
@@ -24,52 +27,42 @@ type Props = {
 
 /** Fotoğraf toplama: kamera + dosya seçimi, rol etiketleri. Eksik fotoğraf talebi ayrı kartta. */
 export function PhotoTray({ photos, disabled, onAdd, onRemove, onRole }: Props) {
-  const cameraInput = useRef<HTMLInputElement>(null)
   const libraryInput = useRef<HTMLInputElement>(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
   // Tam boyut görüntüleyici: küçük önizlemeye tıklamak fotoğrafı ekran boyu açar.
   const [viewerId, setViewerId] = useState<string | null>(null)
   const zoomable = photos.filter((photo): photo is DraftPhoto & { url: string } => Boolean(photo.url))
   const viewerIndex = viewerId ? zoomable.findIndex((photo) => photo.id === viewerId) : -1
+  const remaining = Math.max(0, MAX_PHOTOS - photos.length)
 
-  function take(input: React.RefObject<HTMLInputElement | null>, source: 'camera' | 'library') {
-    return (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files ?? [])
-      event.target.value = ''
-      if (files.length) onAdd(files, source)
-      if (input.current) input.current.value = ''
-    }
+  function takeLibrary(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? [])
+    event.target.value = ''
+    if (files.length) onAdd(files, 'library')
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={disabled} onClick={() => cameraInput.current?.click()}>
+        <Button type="button" disabled={disabled || remaining === 0} onClick={() => setCameraOpen(true)}>
           <ImagePlus aria-hidden="true" />
           Fotoğraf çek
         </Button>
         <Button
           type="button"
           variant="outline"
-          disabled={disabled}
+          disabled={disabled || remaining === 0}
           onClick={() => libraryInput.current?.click()}
         >
           Galeriden seç
         </Button>
-        <input
-          ref={cameraInput}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={take(cameraInput, 'camera')}
-        />
         <input
           ref={libraryInput}
           type="file"
           accept="image/*"
           multiple
           className="hidden"
-          onChange={take(libraryInput, 'library')}
+          onChange={takeLibrary}
         />
       </div>
 
@@ -140,6 +133,16 @@ export function PhotoTray({ photos, disabled, onAdd, onRemove, onRole }: Props) 
         open={viewerIndex >= 0}
         onOpenChange={(open) => {
           if (!open) setViewerId(null)
+        }}
+      />
+
+      <CameraCapture
+        open={cameraOpen}
+        max={remaining}
+        onClose={() => setCameraOpen(false)}
+        onDone={(files) => {
+          setCameraOpen(false)
+          onAdd(files, 'camera')
         }}
       />
     </div>
