@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Html5Qrcode as Html5QrcodeInstance } from 'html5-qrcode'
-import { X } from 'lucide-react'
+import { Focus, Minimize2, X, Zap, ZapOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { getProduct } from '@/actions/product'
 import { VerdictStamp } from '@/components/VerdictStamp'
@@ -12,33 +12,36 @@ import { Button } from '@/components/ui/button'
 export const dynamic = 'force-dynamic'
 
 /**
- * Tarama ayarları — 1D barkodlar (EAN-13) için kritik:
+ * Tarama ayarları:
  *
- * Sabit `qrbox` (ör. 250×250) çerçeveyi ortadan kırpıyor; EAN-13'ün 95 modülü
- * o pencereye sığmadığı için hiçbir kare çözülemiyordu (izin verilse bile
- * tarama sessizce başarısız). Kamera görüntüsünün %90'ı taranır, yükseklik
- * manzara/dikey orana göre daraltılır.
+ * - `qrbox` yok: önizleme artık kırpılmadan gösterildiği için kutu, karenin
+ *   kendisinden başka bir şeyi kırpmıyordu.
+ * - `aspectRatio` yok: tarayıcı akışı istenen orana KIRPARAK uyarlıyor; dikey
+ *   telefonda bu, sensörün görüş açısını ~3× yakınlaştırıyordu. Akışın doğal
+ *   oranı korunur, görüntü kırpılmadan ekrana sığdırılır (bkz. index.css
+ *   `.scanner-fullscreen video`).
+ * - Yalnız genişlik istenir: genişlik + yükseklik birlikte istenirse tarayıcı
+ *   yine o orana kırpar; yükseklik cihazın doğal oranından gelir.
  */
 const SCAN_FORMATS = ['EAN_13', 'EAN_8', 'UPC_A', 'UPC_E', 'CODE_128', 'QR_CODE'] as const
 
-const SCAN_CONFIG = {
-  fps: 10,
-  qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
-    width: Math.round(viewfinderWidth * 0.9),
-    height: Math.round(
-      viewfinderHeight * (viewfinderWidth >= viewfinderHeight ? 0.6 : 0.45),
-    ),
-  }),
+/** DOM `MediaTrackCapabilities` tipinde tanımlı olmayan cihaz yetenekleri. */
+type CameraCapabilities = MediaTrackCapabilities & {
+  torch?: boolean | boolean[]
+  focusMode?: string[]
+  zoom?: { min: number; max: number; step?: number }
 }
 
-/**
- * Önizleme tam ekranı kapladığı için akışı ekran oranına yakın iste: oran
- * tutmazsa görüntü `object-fit: cover` ile kırpılır ve barkod sensörde
- * göründüğünden küçük kalır (dikey telefonda ~3× kayıp).
- */
-function scanConfig() {
-  return { ...SCAN_CONFIG, aspectRatio: window.innerWidth / window.innerHeight }
+const SCAN_CONFIG = {
+  fps: 10,
+  videoConstraints: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920 },
+  } as MediaTrackConstraints,
 }
+
+const ICON_BUTTON_CLASS =
+  'pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-black/40 text-white outline-offset-2 hover:bg-black/60 focus-visible:outline-2 focus-visible:outline-white'
 
 export default function BarcodeScanner() {
   const router = useRouter()
@@ -47,6 +50,10 @@ export default function BarcodeScanner() {
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor…')
   const [isChecking, setIsChecking] = useState(false)
+  const [torchSupported, setTorchSupported] = useState(false)
+  const [torchOn, setTorchOn] = useState(false)
+  const [focusSupported, setFocusSupported] = useState(false)
+  const [zoomSupported, setZoomSupported] = useState(false)
 
   /**
    * Tarayıcıyı durdurur. html5-qrcode zaten durmuş tarayıcı için hata fırlatır
@@ -59,6 +66,114 @@ export default function BarcodeScanner() {
     } catch {
       // tarayıcı zaten durmuş
     }
+    setTorchOn(false)
+  }
+
+  /**
+   * `torch`/`focusMode`/`zoom` gibi gelişmiş kısıtları `advanced` içinde uygular
+   * (masaüstü tarayıcıların uyguladığı tek biçim). Desteklenmeyen cihazda
+   * `applyConstraints` reddeder; çağıranlar bunu yakalar.
+   */
+  const applyAdvanced = async (
+    scanner: Html5QrcodeInstance,
+    constraints: Record<string, unknown>,
+  ) => {
+    await scanner.applyVideoConstraints({
+      advanced: [constraints],
+    } as unknown as MediaTrackConstraints)
+  }
+
+  /**
+   * Tarama başladıktan sonra cihazın yeteneklerini okur ve kamerayı geniş açıya
+   * çeker: bazı cihazlar dijital zoom'la açıldığı için görüntü yakın görünür.
+   */
+  const syncCameraFeatures = async (scanner: Html5QrcodeInstance) => {
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as CameraCapabilities
+      const settings = scanner.getRunningTrackSettings() as MediaTrackSettings & {
+        zoom?: number
+      }
+      const torch = capabilities.torch
+      setTorchSupported(torch === true || (Array.isArray(torch) && torch.includes(true)))
+      setFocusSupported(
+        Array.isArray(capabilities.focusMode) &&
+          (capabilities.focusMode.includes('continuous') ||
+            capabilities.focusMode.includes('single-shot')),
+      )
+      setZoomSupported(typeof capabilities.zoom?.min === 'number')
+      if (typeof capabilities.zoom?.min === 'number' && settings.zoom !== capabilities.zoom.min) {
+        await applyAdvanced(scanner, { zoom: capabilities.zoom.min })
+      }
+    } catch (err) {
+      // Yetenek API'si olmayan tarayıcılarda önizleme yine çalışır.
+      console.warn('Kamera yetenekleri okunamadı:', err)
+    }
+  }
+
+  const toggleTorch = async () => {
+    const scanner = scannerRef.current
+    if (!scanner) return
+    const next = !torchOn
+    try {
+      await applyAdvanced(scanner, { torch: next })
+      setTorchOn(next)
+    } catch {
+      setTorchSupported(false)
+      toast.error('Flaş açılamadı: bu tarayıcı kameranın flaşını denetlemiyor.')
+    }
+  }
+
+  const resetZoom = async () => {
+    const scanner = scannerRef.current
+    if (!scanner) return
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as CameraCapabilities
+      if (typeof capabilities.zoom?.min !== 'number') return
+      await applyAdvanced(scanner, { zoom: capabilities.zoom.min })
+      setCameraStatus('Geniş açı — barkodu kameraya göster.')
+    } catch {
+      toast.error('Yakınlaştırma ayarlanamadı.')
+    }
+  }
+
+  const refocus = async () => {
+    const scanner = scannerRef.current
+    if (!scanner) return
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as CameraCapabilities
+      const focusModes = capabilities.focusMode ?? []
+      const focusMode = focusModes.includes('continuous') ? 'continuous' : 'single-shot'
+      if (!focusModes.includes(focusMode)) {
+        setFocusSupported(false)
+        toast.error('Odak ayarlanamadı: kamera otomatik odak denetimini sunmuyor.')
+        return
+      }
+      setCameraStatus('Odaklanıyor…')
+      await applyAdvanced(scanner, { focusMode })
+      setCameraStatus('Odaklandı — barkodu kameraya göster.')
+    } catch {
+      setCameraStatus('Hazır — barkodu kameraya göster.')
+      toast.error('Odak ayarlanamadı. Kamerayı barkodun üstünde tutup tekrar dene.')
+    }
+  }
+
+  /** Taramayı başlatır; ardından flaş/odak/zoom durumunu eşitler. */
+  const startScanner = async (scanner: Html5QrcodeInstance) => {
+    await scanner.start(
+      { facingMode: 'environment' },
+      SCAN_CONFIG,
+      (decodedText: string) => {
+        void handleBarcodeScanned(decodedText)
+      },
+      (errorMessage: string) => {
+        if (!errorMessage.includes('No MultiFormat Readers')) {
+          console.warn(errorMessage)
+        }
+      },
+    )
+    await syncCameraFeatures(scanner)
+    setCameraStatus('Hazır — barkodu kameraya göster.')
+    setError('')
   }
 
   /** Tam ekran tarayıcıdan çıkış: kamera kapatılır, kullanıcı geldiği yere döner. */
@@ -164,25 +279,17 @@ export default function BarcodeScanner() {
   }
 
   const restartScanner = async () => {
-    if (!scannerRef.current) return
+    const scanner = scannerRef.current
+    if (!scanner) return
 
     try {
-      await scannerRef.current.start(
-        { facingMode: 'environment' },
-        scanConfig(),
-        (decodedText: string) => {
-          handleBarcodeScanned(decodedText)
-        },
-        (errorMessage: string) => {
-          if (!errorMessage.includes('No MultiFormat Readers')) {
-            console.warn(errorMessage)
-          }
-        },
-      )
-      setCameraStatus('Hazır — barkodu kameraya göster.')
-      setError('')
+      // `start()` çalışan tarayıcıyı temizlemez ("Cannot clear while scan is
+      // ongoing"): hata sonrası yeniden başlatmadan önce durdurmak gerekir.
+      await stopScanner()
+      await startScanner(scanner)
     } catch (err) {
       console.error('Yeniden başlatma hatası:', err)
+      setError('Kamera yeniden başlatılamadı. Sayfayı yenileyip tekrar dene.')
     }
   }
 
@@ -190,27 +297,16 @@ export default function BarcodeScanner() {
     const scanner = scannerRef.current
     if (!isReady || !scanner) return
 
-    const startScanner = async () => {
+    const start = async () => {
       try {
-        await scanner.start(
-          { facingMode: 'environment' },
-          scanConfig(),
-          (decodedText: string) => {
-            handleBarcodeScanned(decodedText)
-          },
-          (errorMessage: string) => {
-            if (!errorMessage.includes('No MultiFormat Readers')) {
-              console.warn(errorMessage)
-            }
-          },
-        )
+        await startScanner(scanner)
       } catch (err) {
         console.error('Kamera başlatma hatası:', err)
         setError('Kamera başlatılamadı. Kamera iznini kontrol edip tekrar dene.')
       }
     }
 
-    startScanner()
+    void start()
 
     return () => {
       if (scannerRef.current) {
@@ -230,7 +326,7 @@ export default function BarcodeScanner() {
       {/* Kamera sahnesi: html5-qrcode <video> öğesini buraya enjekte eder. */}
       <div id="reader" className="scanner-fullscreen absolute inset-0" />
 
-      {/* Üst şerit: durum + tam ekrandan çıkış */}
+      {/* Üst şerit: durum + kamera kontrolleri + tam ekrandan çıkış */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start gap-3 bg-gradient-to-b from-black/75 via-black/35 to-transparent px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-10">
         <div className="flex min-w-0 flex-1 items-center gap-3 self-center">
           <span className="truncate font-mono text-xs tracking-[0.18em] text-white/85 uppercase [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
@@ -240,14 +336,51 @@ export default function BarcodeScanner() {
             <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-b-white" />
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="Taramayı kapat"
-          className="pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full bg-black/40 text-white outline-offset-2 hover:bg-black/60 focus-visible:outline-2 focus-visible:outline-white"
-        >
-          <X className="size-5" aria-hidden="true" />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {isReady && torchSupported ? (
+            <button
+              type="button"
+              onClick={toggleTorch}
+              aria-label={torchOn ? 'Flaşı kapat' : 'Flaşı aç'}
+              aria-pressed={torchOn}
+              className={`${ICON_BUTTON_CLASS} ${torchOn ? 'bg-white text-black hover:bg-white/90' : ''}`}
+            >
+              {torchOn ? (
+                <ZapOff className="size-5" aria-hidden="true" />
+              ) : (
+                <Zap className="size-5" aria-hidden="true" />
+              )}
+            </button>
+          ) : null}
+          {isReady && focusSupported ? (
+            <button
+              type="button"
+              onClick={refocus}
+              aria-label="Odağı yenile"
+              className={ICON_BUTTON_CLASS}
+            >
+              <Focus className="size-5" aria-hidden="true" />
+            </button>
+          ) : null}
+          {isReady && zoomSupported ? (
+            <button
+              type="button"
+              onClick={resetZoom}
+              aria-label="Geniş açıya dön"
+              className={ICON_BUTTON_CLASS}
+            >
+              <Minimize2 className="size-5" aria-hidden="true" />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Taramayı kapat"
+            className={ICON_BUTTON_CLASS}
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -267,7 +400,12 @@ export default function BarcodeScanner() {
             className="animate-scanline pointer-events-none absolute inset-x-6 top-0 z-10 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100svh]"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pt-12 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center">
-            <EvidenceTag variant="tape">Barkodu çerçeveye getir</EvidenceTag>
+            <EvidenceTag
+              variant="tape"
+              className="border-tape-yellow/70 bg-black/55 text-white"
+            >
+              Barkodun tamamı görünsün
+            </EvidenceTag>
             <p className="max-w-sm text-xs text-white/75">
               Ürün kayıtlıysa dosyası açılır; kayıtlı değilse ilk dosyayı sen açarsın.
             </p>
