@@ -14,6 +14,7 @@ import { StatsStrip } from '@/components/StatsStrip'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
+import { totalProductScans } from '@/lib/productScans'
 import { ruleStats } from '@/lib/ruleStats'
 
 const STEPS = [
@@ -26,7 +27,7 @@ export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const [topics, stats, latestProducts, publishedProducts, brandCount, contributions] =
+  const [topics, stats, latestProducts, publishedProducts, brandCount, contributions, totalScans] =
     await Promise.all([
       // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
       payload.find({
@@ -50,10 +51,12 @@ export default async function HomePage() {
       payload.count({ collection: 'products', where: { status: { equals: 'published' } } }),
       payload.count({ collection: 'brands' }),
       payload.count({ collection: 'product-contributions' }),
+      totalProductScans(payload),
     ])
 
   const siteStats = [
     { label: 'Taranabilir ürün', value: publishedProducts.totalDocs },
+    { label: 'Toplam tarama', value: totalScans },
     { label: 'Aktif kural', value: stats.total },
     { label: 'Marka', value: brandCount.totalDocs },
     { label: 'Katkı kaydı', value: contributions.totalDocs },
@@ -61,7 +64,10 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
-      <section aria-labelledby="hero-heading" className="grid gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:items-center">
+      <section
+        aria-labelledby="hero-heading"
+        className="grid gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:items-center"
+      >
         <div className="flex flex-col items-start gap-5">
           <EvidenceTag variant="evidence">VAKA DOSYASI · TÜKETİCİ</EvidenceTag>
           <h1
@@ -81,9 +87,7 @@ export default async function HomePage() {
           <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 group-hover:rotate-0">
             <span className="absolute -top-2 left-1/2 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
             <Barcode value="8690123456789" height={120} className="w-full text-foreground" />
-            <span
-              className="animate-scanline pointer-events-none absolute top-6 right-6 left-6 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:120px]"
-            />
+            <span className="animate-scanline pointer-events-none absolute top-6 right-6 left-6 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:120px]" />
             <div className="mt-4 flex items-center justify-between border-t border-dashed border-border pt-3">
               <span className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
                 KANIT NO: 8690123456789
@@ -162,7 +166,11 @@ export default async function HomePage() {
             {topics.docs.map((t: any) => {
               const ruleCount = stats.byTopic.get(String(t.id))?.rules ?? 0
               return (
-                <Link key={t.id} href={`/konu/${t.slug}`} className="group rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
+                <Link
+                  key={t.id}
+                  href={`/konu/${t.slug}`}
+                  className="group rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+                >
                   <CaseCard
                     className="h-full border-l-4 transition-shadow group-hover:shadow-md"
                     // CMS renkleri serbest biçimde gelir; token dışı tek renk burada, inline stil ile uygulanır
