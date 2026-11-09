@@ -76,15 +76,11 @@ export function StatsStrip({ stats, className }: { stats: SiteStat[]; className?
       <h2 id="stats-heading" className="sr-only">
         Site istatistikleri
       </h2>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-7 md:grid-cols-5">
-        {stats.map((stat, index) => (
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-4">
+        {stats.map((stat) => (
           <div
             key={stat.label}
-            className={cn(
-              'flex flex-col-reverse gap-1 border-l-2 border-stamp/25 pl-3',
-              // Tek sayıda sayaçta son hücre mobilde satırı tamamlar, md üstünde normal sütun olur.
-              index === stats.length - 1 && stats.length % 2 === 1 && 'col-span-2 md:col-span-1',
-            )}
+            className="flex flex-col-reverse gap-1 border-l-2 border-stamp/25 pl-3"
           >
             <dt className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
               {stat.label}

@@ -27,7 +27,7 @@ export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const [topics, stats, latestProducts, publishedProducts, brandCount, contributions, totalScans] =
+  const [topics, stats, latestProducts, publishedProducts, brandCount, totalScans] =
     await Promise.all([
       // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
       payload.find({
@@ -50,7 +50,6 @@ export default async function HomePage() {
       // İstatistik şeridi yalnız sayı gösterir; belge çekilmez.
       payload.count({ collection: 'products', where: { status: { equals: 'published' } } }),
       payload.count({ collection: 'brands' }),
-      payload.count({ collection: 'product-contributions' }),
       totalProductScans(payload),
     ])
 
@@ -59,7 +58,6 @@ export default async function HomePage() {
     { label: 'Toplam tarama', value: totalScans },
     { label: 'Aktif kural', value: stats.total },
     { label: 'Marka', value: brandCount.totalDocs },
-    { label: 'Katkı kaydı', value: contributions.totalDocs },
   ]
 
   return (
