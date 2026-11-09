@@ -10,6 +10,7 @@ import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
 import { ProductGrid } from '@/components/ProductGrid'
+import { StatsStrip } from '@/components/StatsStrip'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
@@ -25,26 +26,41 @@ export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
 
-  const [topics, stats, latestProducts] = await Promise.all([
-    // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
-    payload.find({
-      collection: 'topics',
-      limit: 100,
-      sort: 'order',
-      depth: 0,
-      select: { name: true, slug: true, description: true, icon: true, color: true, order: true },
-    }),
-    // Kural sayıları tek GROUP BY sorgusundan gelir; 3.900 kural satırı çekilmez.
-    ruleStats(payload),
-    payload.find({
-      collection: 'products',
-      where: { status: { equals: 'published' } },
-      sort: '-createdAt',
-      limit: 6,
-      depth: 1,
-      select: PRODUCT_CARD_SELECT,
-    }),
-  ])
+  const [topics, stats, latestProducts, publishedProducts, publicExperts, contributions] =
+    await Promise.all([
+      // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
+      payload.find({
+        collection: 'topics',
+        limit: 100,
+        sort: 'order',
+        depth: 0,
+        select: { name: true, slug: true, description: true, icon: true, color: true, order: true },
+      }),
+      // Kural sayıları tek GROUP BY sorgusundan gelir; 3.900 kural satırı çekilmez.
+      ruleStats(payload),
+      payload.find({
+        collection: 'products',
+        where: { status: { equals: 'published' } },
+        sort: '-createdAt',
+        limit: 6,
+        depth: 1,
+        select: PRODUCT_CARD_SELECT,
+      }),
+      // İstatistik şeridi yalnız sayı gösterir; belge çekilmez.
+      payload.count({ collection: 'products', where: { status: { equals: 'published' } } }),
+      payload.count({
+        collection: 'experts',
+        where: { and: [{ isPublic: { equals: true } }, { verified: { equals: true } }] },
+      }),
+      payload.count({ collection: 'product-contributions' }),
+    ])
+
+  const siteStats = [
+    { label: 'Taranabilir ürün', value: publishedProducts.totalDocs },
+    { label: 'Aktif kural', value: stats.total },
+    { label: 'Herkese açık uzman', value: publicExperts.totalDocs },
+    { label: 'Katkı kaydı', value: contributions.totalDocs },
+  ]
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
@@ -82,6 +98,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <StatsStrip stats={siteStats} />
 
       {/* Takip edilen uzmanların yazıları: oturum + takip yoksa kendini gizler. */}
       <StoryRail />
