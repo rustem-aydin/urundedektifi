@@ -397,7 +397,7 @@ export default function BarcodeScanner() {
         <>
           <span
             aria-hidden="true"
-            className="animate-scanline pointer-events-none absolute inset-x-6 top-0 z-10 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:100svh]"
+            className="animate-scanline pointer-events-none absolute inset-x-6 top-0 z-10 hidden h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent lg:block [--scan-height:100svh]"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pt-12 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center">
             <EvidenceTag
