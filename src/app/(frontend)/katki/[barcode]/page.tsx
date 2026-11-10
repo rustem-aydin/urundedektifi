@@ -25,10 +25,10 @@ export default async function KatkiPage({
         <EvidenceTag variant="stamp">GEÇERSİZ BARKOD</EvidenceTag>
         <h1 className="mt-2 font-display text-2xl">Barkod okunamadı</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          8–14 haneli bir barkodla tekrar tara.
+          8–14 haneli bir barkodla tekrar dene.
         </p>
-        <Link href="/tara" className="mt-6 inline-block text-sm underline">
-          Taramaya dön
+        <Link href="/" className="mt-6 inline-block text-sm underline">
+          Ana sayfaya dön
         </Link>
       </div>
     )

@@ -30,7 +30,7 @@ export function LoginForm() {
     try {
       await signIn(email.trim(), password)
       toast.success('Giriş yapıldı. Hoş geldin!')
-      router.replace(next.startsWith('/') ? next : '/tara')
+      router.replace(next.startsWith('/') ? next : '/')
     } catch (error) {
       const message =
         error instanceof ApiError && error.kind === 'unauthorized'

@@ -12,7 +12,6 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { fetchReviewCount } from '@/lib/wizard/api'
 
 const NAV_ITEMS = [
-  { href: '/tara', label: 'Tara' },
   { href: '/urunler', label: 'Ürünler' },
   { href: '/kategoriler', label: 'Kategoriler' },
   { href: '/konular', label: 'Konular' },

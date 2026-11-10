@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, PackageSearch, ScanBarcode } from 'lucide-react'
+import { ArrowLeft, PackageSearch } from 'lucide-react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 
@@ -14,21 +14,14 @@ export default function NotFound() {
           Bu adreste bir dosya yok
         </h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Bağlantı eskimiş ya da dosya adı değişmiş olabilir. Barkodu okutarak aradığın ürünü
+          Bağlantı eskimiş ya da dosya adı değişmiş olabilir. Ürün listesinden aradığın dosyayı
           bulabilirsin.
         </p>
       </div>
       <div className="flex flex-wrap gap-3">
         <Link
-          href="/tara"
-          className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
-        >
-          <ScanBarcode className="size-4" aria-hidden="true" />
-          Barkod tara
-        </Link>
-        <Link
           href="/urunler"
-          className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+          className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
         >
           <PackageSearch className="size-4" aria-hidden="true" />
           Ürünlere göz at

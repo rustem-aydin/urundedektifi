@@ -10,8 +10,8 @@ import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 
 /**
- * Katkı girişi (ADR 0024): barkod biliniyorsa elle yazılır, bilinmiyorsa kamerayla taranır.
- * Ürün kayıtlıysa dosyası açılır; değilse fotoğraf formuna geçilir.
+ * Katkı girişi (ADR 0024): barkod elle yazılır; ürün kayıtlıysa dosyası açılır,
+ * değilse fotoğraf formuna geçilir.
  */
 export function ContributionEntry() {
   const router = useRouter()
@@ -55,9 +55,6 @@ export function ContributionEntry() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" className="h-11" asChild>
-          <Link href="/tara">Kamerayla tara</Link>
-        </Button>
         {user ? (
           <Button type="button" variant="ghost" className="h-11" asChild>
             <Link href={`/profil/${user.id}`}>Katkılarım</Link>

@@ -4,7 +4,6 @@ import { ScanBarcode } from 'lucide-react'
 import { BrandName } from '@/components/BrandName'
 
 const FOOTER_NAV = [
-  { href: '/tara', label: 'Tara' },
   { href: '/urunler', label: 'Ürünler' },
   { href: '/kategoriler', label: 'Kategoriler' },
   { href: '/konular', label: 'Konular' },

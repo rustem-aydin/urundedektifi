@@ -134,7 +134,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
             </Button>
           ) : null}
           <Button asChild variant="outline">
-            <Link href="/tara">Taramaya dön</Link>
+            <Link href="/">Ana sayfaya dön</Link>
           </Button>
         </div>
       </CaseCard>

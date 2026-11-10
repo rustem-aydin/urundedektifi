@@ -139,12 +139,12 @@ export default async function ProductsPage({
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Henüz yayında ürün yok. Barkodu okutup ilk dosyayı sen aç.
+                Henüz yayında ürün yok. Fotoğrafla ilk dosyayı sen aç.
               </p>
               <Button asChild>
-                <Link href="/tara">
+                <Link href="/katki">
                   <Plus aria-hidden="true" />
-                  Barkod okut
+                  Katkı ver
                 </Link>
               </Button>
             </>

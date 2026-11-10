@@ -28,7 +28,7 @@ import { totalProductScans } from '@/lib/productScans'
 import { ruleStats } from '@/lib/ruleStats'
 
 const STEPS = [
-  { no: '01', title: 'Tara', desc: 'Barkodu kameraya göster ya da numarasını yaz.' },
+  { no: '01', title: 'Sorgula', desc: 'Barkod numarasını yaz; ürün dosyası anında açılır.' },
   { no: '02', title: 'Kurallar eşleşir', desc: 'Uzman kuralları ürünle otomatik karşılaştırılır.' },
   { no: '03', title: 'Kararı gör', desc: 'Boykot, sağlık ve helal hükmü tek bakışta oku.' },
 ]

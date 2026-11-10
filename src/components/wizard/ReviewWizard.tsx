@@ -311,9 +311,6 @@ export function ReviewWizard({ productId }: { productId: string }) {
           <Button asChild className="w-fit">
             <Link href="/katki">Fotoğrafla katkı ver</Link>
           </Button>
-          <Button asChild variant="outline" className="w-fit">
-            <Link href="/tara">Kamerayla tara</Link>
-          </Button>
         </div>
       </CaseCard>
     )
