@@ -168,10 +168,11 @@
 }
 
 @layer base {
-  /* Tema sınıf tabanlı (next-themes `attribute="class"`): tarayıcıya hangi tema
-     olduğunu burada söyleriz, böylece kaydırma çubuğu ve form kontrolleri de
-     sayfayla aynı tarafta kalır. `viewport.colorScheme` kullanılmıyor; o alan
-     Critical-CH ile ilk gezinmeyi baştan attırıyor (bkz. layout.tsx). */
+  /* Tema sınıf tabanlı (next-themes `attribute="class"`). `viewport.colorScheme`
+     meta etiketi sistem tercihini anlatır; uygulamanın teması ise sınıfla gelir.
+     CSS'teki `color-scheme` meta etiketini ezer, böylece kaydırma çubuğu ve form
+     kontrolleri de sayfayla aynı tarafta kalır (sistem koyu + uygulama açık gibi
+     çelişkilerde yanlış görünümü önler). */
   html {
     color-scheme: light;
   }

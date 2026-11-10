@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
       {
         pathname: '/api/media/file/**',
       },
+      {
+        // Ana sayfa tanıtım filminin afişi public/ altında durur; optimize edilerek
+        // (AVIF/WebP) servis edilmesi için yol izin listesine eklenir.
+        pathname: '/video/**',
+      },
     ],
     // Tarayıcı AVIF destekliyorsa AVIF, yoksa WebP alır: JPEG orijinallere göre
     // liste sayfası ~3,2 MB yerine ~250 KB görsel indirir.
