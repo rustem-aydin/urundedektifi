@@ -5,7 +5,7 @@ Ana sayfa hero'sundaki tanıtım videosunun kaynağı. Film iki araçla üretili
 1. **Remotion** (`video/remotion`) — uygulamanın kendi arayüz demosu: barkod okuma, ürün
    dosyası, uzman delilleri ve hüküm damgası. React bileşenleri, 1280×720, 30 fps, 10 sn.
 2. **HyperFrames** (`video/hyperframes`) — film: açılış kartı, Remotion klibi, üç adım,
-   kapanış kartı. HTML + GSAP kompozisyonu, 22 sn, tek MP4.
+   kapanış kartı. HTML + GSAP kompozisyonu, 20,4 sn, tek MP4.
 
 Yayınlanan dosya `public/video/barkod-dedektifi-tanitim.mp4` (1,6 MB, H.264, sessiz);
 hero'da `src/components/HeroVideo.tsx` oynatır.
@@ -15,7 +15,7 @@ hero'da `src/components/HeroVideo.tsx` oynatır.
 ```bash
 pnpm video:clip     # Remotion → video/hyperframes/assets/ui-demo.mp4
 pnpm video:hero     # HyperFrames → public/video/barkod-dedektifi-tanitim.mp4
-pnpm video:poster   # 3,4. saniyeden afiş → public/video/...-poster.jpg
+pnpm video:poster   # 1,5. saniyeden afiş (açılış levhası) → public/video/...-poster.jpg
 ```
 
 Sıra önemli: HyperFrames kompozisyonu Remotion klibini `<video>` olarak gömer.

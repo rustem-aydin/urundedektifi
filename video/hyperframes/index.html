@@ -81,10 +81,10 @@
         border: 1px solid var(--stamp);
         color: var(--stamp);
         font-family: var(--mono);
-        font-size: 11px;
+        font-size: 12px;
         letter-spacing: 0.2em;
         text-transform: uppercase;
-        padding: 5px 9px;
+        padding: 6px 11px;
         border-radius: 3px;
       }
 
@@ -93,19 +93,25 @@
         color: var(--faded);
       }
 
-      /* ---------- 1. sahne: başlık ---------- */
-      .pad {
+      /* ---------- 1. sahne: açılış levhası ---------- */
+      #t-stack {
         position: absolute;
-        left: 72px;
-        top: 118px;
-        width: 620px;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 0;
       }
 
       #t-title {
         font-family: var(--display);
-        font-size: 62px;
+        font-size: 56px;
         line-height: 1.14;
-        margin-top: 24px;
         letter-spacing: -0.01em;
       }
 
@@ -114,90 +120,35 @@
       }
 
       #t-sub {
-        margin-top: 26px;
-        max-width: 520px;
-        font-size: 18.5px;
-        line-height: 1.6;
+        margin-top: 22px;
+        max-width: 780px;
+        font-size: 26px;
+        line-height: 1.5;
         color: var(--faded);
       }
 
-      #t-topics {
-        position: absolute;
-        left: 72px;
-        bottom: 92px;
-        width: 660px;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 9px;
-      }
-
-      #t-topics .label {
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: var(--faded);
-        margin-right: 4px;
-      }
-
-      #t-card {
-        position: absolute;
-        right: 60px;
-        top: 168px;
-        width: 430px;
-        height: 296px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--card);
-        box-shadow: 0 18px 40px rgba(28, 27, 23, 0.14);
-        padding: 30px 34px;
-        transform-origin: 50% 50%;
-      }
-
-      #t-card .tape {
-        position: absolute;
-        top: -12px;
-        left: 50%;
-        width: 104px;
-        height: 26px;
-        margin-left: -52px;
-        background: rgba(232, 185, 60, 0.72);
-        transform: rotate(-3deg);
-        box-shadow: 0 1px 3px rgba(28, 27, 23, 0.12);
+      #t-strip {
+        position: relative;
+        margin-top: 34px;
+        width: 460px;
+        height: 74px;
       }
 
       #t-barcode {
         display: block;
         width: 100%;
-        height: 128px;
+        height: 74px;
       }
 
       #t-scan {
         position: absolute;
-        left: 34px;
-        right: 34px;
-        top: 40px;
+        left: -6px;
+        right: -6px;
+        top: 0;
         height: 2px;
         background: linear-gradient(90deg, transparent, var(--stamp), transparent);
         box-shadow: 0 0 14px var(--stamp);
         opacity: 0;
-      }
-
-      .card-foot {
-        position: absolute;
-        left: 34px;
-        right: 34px;
-        bottom: 26px;
-        display: flex;
-        justify-content: space-between;
-        border-top: 1px dashed var(--border);
-        padding-top: 12px;
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.2em;
-        color: var(--faded);
-        text-transform: uppercase;
       }
 
       /* ---------- 2. sahne: uygulama demosu ---------- */
@@ -218,7 +169,7 @@
 
       #steps-title {
         font-family: var(--display);
-        font-size: 38px;
+        font-size: 44px;
         margin-top: 18px;
       }
 
@@ -226,15 +177,15 @@
         position: absolute;
         left: 72px;
         right: 72px;
-        top: 342px;
+        top: 330px;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 34px;
+        gap: 36px;
       }
 
       .step {
         position: relative;
-        padding-top: 26px;
+        padding-top: 28px;
       }
 
       .step .rule {
@@ -249,7 +200,7 @@
 
       .step .no {
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
         letter-spacing: 0.18em;
         color: var(--stamp);
@@ -257,21 +208,21 @@
 
       .step h3 {
         font-family: var(--display);
-        font-size: 31px;
+        font-size: 36px;
         font-weight: 400;
-        margin-top: 10px;
+        margin-top: 12px;
       }
 
       .step p {
         margin-top: 12px;
-        font-size: 16.5px;
-        line-height: 1.55;
+        font-size: 21px;
+        line-height: 1.5;
         color: var(--faded);
       }
 
       .step .glyph {
-        margin-top: 24px;
-        height: 64px;
+        margin-top: 22px;
+        height: 56px;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -291,26 +242,25 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0;
       }
 
       #end-mark {
         font-family: var(--display);
-        font-size: 58px;
+        font-size: 64px;
         letter-spacing: -0.01em;
       }
 
       #end-barcode {
-        width: 380px;
+        width: 400px;
         height: 84px;
-        margin-top: 26px;
+        margin-top: 28px;
       }
 
       #end-url {
-        margin-top: 20px;
+        margin-top: 22px;
         font-family: var(--mono);
-        font-size: 13px;
-        letter-spacing: 0.26em;
+        font-size: 16px;
+        letter-spacing: 0.24em;
         text-transform: uppercase;
         color: var(--faded);
       }
@@ -320,14 +270,14 @@
       }
 
       #end-cta {
-        margin-top: 26px;
+        margin-top: 28px;
         border: 2px solid var(--stamp);
         color: var(--stamp);
         font-family: var(--mono);
-        font-size: 12px;
-        letter-spacing: 0.22em;
+        font-size: 14px;
+        letter-spacing: 0.2em;
         text-transform: uppercase;
-        padding: 10px 20px;
+        padding: 11px 22px;
         border-radius: 3px;
       }
 
@@ -358,43 +308,22 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="22"
+      data-duration="20.4"
       data-width="1280"
       data-height="720"
     >
       <div id="grid"></div>
 
-      <section id="scene-title" class="clip" data-start="0" data-duration="4.3" data-track-index="1">
-        <div class="pad">
-          <div class="chip" id="t-chip">Vaka dosyası · Tüketici</div>
+      <section id="scene-title" class="clip" data-start="0" data-duration="2.6" data-track-index="1">
+        <div id="t-stack">
           <h1 id="t-title">
-            <span class="line">Barkodu göster,</span>
-            <span class="line">delilleri topla,</span>
-            <span class="line">kararı gör.</span>
+            <span class="line">Ürün dosyası,</span>
+            <span class="line">tek taramada.</span>
           </h1>
-          <p id="t-sub">
-            Uzmanların yazdığı boykot, sağlık ve helal kuralları ürüne uygulanır. Geriye tek bakışta
-            okunacak net bir hüküm kalır.
-          </p>
-        </div>
-
-        <div id="t-topics">
-          <span class="label">Değerlendirme konuları</span>
-          <span class="chip muted">Boykot</span>
-          <span class="chip muted">Sağlık</span>
-          <span class="chip muted">Helal</span>
-          <span class="chip muted">Vegan</span>
-          <span class="chip muted">Çevre</span>
-          <span class="chip muted">Katkı</span>
-        </div>
-
-        <div id="t-card">
-          <span class="tape"></span>
-          <svg id="t-barcode" viewBox="0 0 95 40" preserveAspectRatio="none" aria-hidden="true"></svg>
-          <div id="t-scan"></div>
-          <div class="card-foot">
-            <span>Kanıt no: 8690123456789</span>
-            <span>BD-2026</span>
+          <p id="t-sub">İçindekiler, besin, alerjen, menşe ve uzman delilleri tek ekranda.</p>
+          <div id="t-strip">
+            <svg id="t-barcode" viewBox="0 0 95 18" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <div id="t-scan"></div>
           </div>
         </div>
 
@@ -404,17 +333,17 @@
       <video
         id="demo"
         src="./assets/ui-demo.mp4"
-        data-start="4.3"
+        data-start="2.6"
         data-duration="10"
         data-track-index="0"
         muted
         playsinline
       ></video>
 
-      <section id="scene-steps" class="clip" data-start="14.3" data-duration="4.2" data-track-index="1">
+      <section id="scene-steps" class="clip" data-start="12.6" data-duration="4.3" data-track-index="1">
         <div id="steps-head">
           <div class="chip muted">Nasıl çalışır</div>
-          <h2 id="steps-title">Üç adımda hüküm</h2>
+          <h2 id="steps-title">Üç adımda sonuç</h2>
         </div>
         <div class="steps">
           <div class="step">
@@ -428,21 +357,21 @@
             <span class="rule"></span>
             <div class="no">02</div>
             <h3>Kurallar eşleşir</h3>
-            <p>Uzman kuralları ürünle otomatik karşılaştırılır, eşleşen her kural bir delil olur.</p>
+            <p>Uzman kuralları ürünle karşılaştırılır, eşleşen her kural delil olur.</p>
             <div class="glyph" data-glyph="rules"></div>
           </div>
           <div class="step">
             <span class="rule"></span>
             <div class="no">03</div>
             <h3>Kararı gör</h3>
-            <p>Boykot, sağlık ve helal hükmü tek bakışta okunur.</p>
+            <p>Boykot, sağlık ve helal değerlendirmesi tek bakışta okunur.</p>
             <div class="glyph" data-glyph="stamp"></div>
           </div>
         </div>
         <div class="wipe"></div>
       </section>
 
-      <section id="scene-end" class="clip" data-start="18.5" data-duration="3.5" data-track-index="1">
+      <section id="scene-end" class="clip" data-start="16.9" data-duration="3.5" data-track-index="1">
         <div id="end">
           <div class="chip muted" id="end-chip">Tüketici vaka dosyası</div>
           <div id="end-mark">Barkod Dedektifi</div>
@@ -490,98 +419,90 @@
         svg.setAttribute('viewBox', `0 0 95 ${height}`)
       }
 
-      paintBarcode(document.getElementById('t-barcode'), '8690123456789', 40)
+      paintBarcode(document.getElementById('t-barcode'), '8690123456789', 18)
       paintBarcode(document.getElementById('end-barcode'), '8690123456789', 24)
 
       // Adım glifleri: çubuklar, kural satırları, damga.
-      document.querySelectorAll('.glyph').forEach((glyph, index) => {
+      document.querySelectorAll('.glyph').forEach((glyph) => {
         const kind = glyph.dataset.glyph
         if (kind === 'bars') {
           ;[3, 7, 2, 5, 8, 3, 6, 2, 7, 4, 5].forEach((w, i) => {
             const bar = document.createElement('i')
             bar.style.width = w + 'px'
-            bar.style.height = '44px'
+            bar.style.height = '42px'
             bar.style.opacity = 0.9 - i * 0.02
             glyph.appendChild(bar)
           })
         } else if (kind === 'rules') {
-          ;[96, 74, 86].forEach((w, i) => {
+          ;[104, 78, 92].forEach((w, i) => {
             const row = document.createElement('i')
             row.style.width = w + 'px'
-            row.style.height = '5px'
+            row.style.height = '6px'
             row.style.marginRight = '7px'
             row.style.opacity = 0.85 - i * 0.22
             glyph.appendChild(row)
           })
         } else {
           const stamp = document.createElement('div')
-          stamp.textContent = 'HÜKÜM'
+          stamp.textContent = 'SONUÇ'
           stamp.style.border = '3px solid #b3341e'
           stamp.style.color = '#b3341e'
           stamp.style.fontFamily = 'var(--display)'
-          stamp.style.fontSize = '19px'
+          stamp.style.fontSize = '20px'
           stamp.style.letterSpacing = '0.14em'
-          stamp.style.padding = '6px 12px 4px'
+          stamp.style.padding = '7px 13px 5px'
           stamp.style.transform = 'rotate(-6deg)'
           glyph.appendChild(stamp)
         }
         glyph.style.opacity = 0
-        void index
       })
 
       const tl = gsap.timeline({ paused: true })
 
-      // 1. sahne
+      // 1. sahne — açılış levhası
       tl.fromTo('.wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 0)
-      tl.fromTo('#t-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.18)
       tl.fromTo(
         '#t-title .line',
         { y: 26, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.11, ease: 'power3.out' },
-        0.3,
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out' },
+        0.2,
       )
-      tl.fromTo('#t-sub', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.85)
-      tl.fromTo('#t-topics', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 1.45)
-      tl.fromTo(
-        '#t-card',
-        { opacity: 0, scale: 0.94, rotate: 3 },
-        { opacity: 1, scale: 1, rotate: -1.5, duration: 0.7, ease: 'power3.out' },
-        0.55,
-      )
-      tl.fromTo('#t-scan', { opacity: 0, y: 0 }, { opacity: 1, duration: 0.15 }, 1.25)
-      tl.fromTo('#t-scan', { y: 0 }, { y: 138, duration: 1.9, ease: 'sine.inOut', immediateRender: false }, 1.3)
-      tl.to('#t-scan', { opacity: 0, duration: 0.2 }, 3.15)
+      tl.fromTo('#t-sub', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.52)
+      tl.fromTo('#t-strip', { opacity: 0, scaleX: 0.9 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: 'power2.out' }, 0.6)
+      tl.fromTo('#t-scan', { opacity: 0, y: 0 }, { opacity: 1, duration: 0.15 }, 0.9)
+      tl.fromTo('#t-scan', { y: 0 }, { y: 72, duration: 1.4, ease: 'sine.inOut', immediateRender: false }, 0.95)
+      tl.to('#t-scan', { opacity: 0, duration: 0.2 }, 2.3)
 
-      // 3. sahne
-      tl.fromTo('#scene-steps .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 14.3)
-      tl.fromTo('#steps-head', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 14.5)
+      // 3. sahne — üç adım
+      tl.fromTo('#scene-steps .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 12.6)
+      tl.fromTo('#steps-head', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 12.8)
       tl.fromTo(
         '#scene-steps .rule',
         { scaleX: 0 },
         { scaleX: 1, duration: 0.55, stagger: 0.12, ease: 'power2.out' },
-        14.6,
+        12.9,
       )
+      tl.fromTo('#scene-steps .step', { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.12 }, 12.92)
       tl.fromTo(
         '#scene-steps .step > .no, #scene-steps .step > h3, #scene-steps .step > p, #scene-steps .glyph',
         { y: 18, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.42, stagger: 0.05, ease: 'power2.out' },
-        14.7,
+        13.0,
       )
-      tl.fromTo('#scene-steps .step', { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.12 }, 14.62)
 
-      // 4. sahne
-      tl.fromTo('#scene-end .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 18.5)
-      tl.fromTo('#end-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, 18.7)
-      tl.fromTo('#end-mark', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 18.85)
-      tl.fromTo('#end-barcode', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 19.15)
-      tl.fromTo('#end-url', { opacity: 0 }, { opacity: 1, duration: 0.35 }, 19.35)
+      // 4. sahne — kapanış
+      tl.fromTo('#scene-end .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 16.9)
+      tl.fromTo('#end-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, 17.1)
+      tl.fromTo('#end-mark', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 17.25)
+      tl.fromTo('#end-barcode', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 17.55)
+      tl.fromTo('#end-url', { opacity: 0 }, { opacity: 1, duration: 0.35 }, 17.75)
       tl.fromTo(
         '#end-cta',
         { opacity: 0, scale: 0.94 },
         { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' },
-        19.5,
+        17.95,
       )
-      tl.fromTo('#end-fade', { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power1.inOut' }, 21.3)
+      tl.fromTo('#end-fade', { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power1.inOut' }, 19.5)
 
       window.__timelines = window.__timelines || {}
       window.__timelines['main'] = tl
