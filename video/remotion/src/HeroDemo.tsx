@@ -20,16 +20,53 @@ const RECENT: { name: string; rating: string; tone: Tone }[] = [
 const toneColor = (palette: Palette, tone: Tone) =>
   tone === 'clean' ? palette.evidence : tone === 'risk' ? palette.stamp : palette.doubt
 
-const toneTint = (palette: Palette, tone: Tone) =>
-  tone === 'clean' ? palette.tintClean : tone === 'risk' ? palette.tintRisk : palette.tintDoubt
+const toneOn = (palette: Palette, tone: Tone) =>
+  tone === 'clean' ? palette.onClean : tone === 'risk' ? palette.onRisk : palette.onDoubt
 
-const Chip: React.FC<{ children: React.ReactNode; color: string }> = ({ children, color }) => (
+/** Dolu rozet: tint + ince çizgi yerine doygun zemin; video küçükte de okunur. */
+const Badge: React.FC<{
+  label: string
+  bg: string
+  fg: string
+  size?: number
+  padding?: string
+  radius?: number
+  style?: React.CSSProperties
+}> = ({ label, bg, fg, size = 17, padding = '8px 18px', radius = 999, style }) => (
   <span
     style={{
       display: 'inline-block',
-      border: `1px solid ${color}`,
-      color,
+      background: bg,
+      color: fg,
       fontFamily: FONT.mono,
+      fontWeight: 700,
+      fontSize: size,
+      letterSpacing: '0.08em',
+      lineHeight: 1,
+      padding,
+      borderRadius: radius,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.28)',
+      ...style,
+    }}
+  >
+    {label}
+  </span>
+)
+
+const Chip: React.FC<{ children: React.ReactNode; color: string; solid?: boolean; text?: string }> = ({
+  children,
+  color,
+  solid = false,
+  text,
+}) => (
+  <span
+    style={{
+      display: 'inline-block',
+      border: `${solid ? 2 : 1.5}px solid ${color}`,
+      background: solid ? color : 'transparent',
+      color: solid ? (text ?? '#f7f4ee') : color,
+      fontFamily: FONT.mono,
+      fontWeight: solid ? 700 : 600,
       fontSize: 14,
       letterSpacing: '0.14em',
       padding: '6px 12px',
@@ -161,17 +198,9 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
                 right: 12,
                 opacity: locked ? Math.min(1, enter(80, 14) * 1.6) : 0,
                 transform: `scale(${locked ? 0.7 + 0.3 * enter(80, 14) : 0.7})`,
-                border: `1px solid ${p.evidence}`,
-                color: p.evidence,
-                background: p.tintClean,
-                fontFamily: FONT.mono,
-                fontSize: 13,
-                letterSpacing: '0.14em',
-                padding: '5px 10px',
-                borderRadius: 3,
               }}
             >
-              OKUNDU
+              <Badge label="OKUNDU" bg={p.evidence} fg={p.onClean} size={13} padding="5px 11px" radius={4} />
             </div>
           </div>
 
@@ -199,11 +228,14 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
                 }}
               >
                 <span style={{ fontSize: 18, color: p.ink }}>{item.name}</span>
-                <span
-                  style={{ fontFamily: FONT.mono, fontSize: 13, letterSpacing: '0.08em', color: toneColor(p, item.tone) }}
-                >
-                  {item.rating}
-                </span>
+                <Badge
+                  label={item.rating}
+                  bg={toneColor(p, item.tone)}
+                  fg={toneOn(p, item.tone)}
+                  size={11}
+                  padding="4px 9px"
+                  radius={999}
+                />
               </div>
             ))}
           </div>
@@ -264,7 +296,9 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Chip color={p.stamp}>Ürün Dosyası</Chip>
+            <Chip color={p.stamp} solid text={p.onRisk}>
+              Ürün Dosyası
+            </Chip>
             <Chip color={p.faded}>Örnek Kayıt</Chip>
           </div>
 
@@ -282,7 +316,6 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
               fps,
               config: { damping: 12, mass: 0.6, stiffness: 220 },
             })
-            const color = toneColor(p, item.tone)
             return (
               <div
                 key={item.topic}
@@ -300,22 +333,15 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
                   {item.topic}
                 </span>
                 <span style={{ flex: 1, fontSize: 30, color: p.ink }}>{item.reason}</span>
-                <span
+                <Badge
+                  label={item.rating}
+                  bg={toneColor(p, item.tone)}
+                  fg={toneOn(p, item.tone)}
                   style={{
-                    fontFamily: FONT.mono,
-                    fontSize: 15,
-                    letterSpacing: '0.1em',
-                    color,
-                    background: toneTint(p, item.tone),
-                    border: `1.5px solid ${color}`,
-                    borderRadius: 999,
-                    padding: '6px 14px',
                     transform: `scale(${0.7 + 0.3 * pillIn}) rotate(${(1 - pillIn) * -8}deg)`,
                     opacity: Math.min(1, pillIn * 2),
                   }}
-                >
-                  {item.rating}
-                </span>
+                />
               </div>
             )
           })}
@@ -341,20 +367,7 @@ export const HeroDemo: React.FC<{ theme?: ThemeName }> = ({ theme = 'light' }) =
               </div>
               <div style={{ fontFamily: FONT.display, fontSize: 38, marginTop: 4 }}>Dikkatli tüket</div>
             </div>
-            <span
-              style={{
-                fontFamily: FONT.mono,
-                fontSize: 16,
-                letterSpacing: '0.1em',
-                color: p.stamp,
-                background: p.tintRisk,
-                border: `2px solid ${p.stamp}`,
-                borderRadius: 999,
-                padding: '8px 18px',
-              }}
-            >
-              RİSKLİ
-            </span>
+            <Badge label="RİSKLİ" bg={p.stamp} fg={p.onRisk} size={18} padding="9px 20px" />
           </div>
         </div>
       </AbsoluteFill>

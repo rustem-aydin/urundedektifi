@@ -15,15 +15,15 @@ Yayınlanan dosyalar (H.264, sessiz):
 
 | Tema | Video | Afiş |
 |---|---|---|
-| Açık | `public/video/barkod-dedektifi-tanitim-v4.mp4` | `…-v4-poster.jpg` |
-| Koyu | `public/video/barkod-dedektifi-tanitim-v4-dark.mp4` | `…-v4-dark-poster.jpg` |
+| Açık | `public/video/barkod-dedektifi-tanitim-v5.mp4` | `…-v5-poster.jpg` |
+| Koyu | `public/video/barkod-dedektifi-tanitim-v5-dark.mp4` | `…-v5-dark-poster.jpg` |
 
 Hero'da `src/components/HeroVideo.tsx` oynatır: iki `<video>` birlikte basılır, görünürlüğü
 `dark:` sınıfı belirler, oynatma yalnız aktif olanda başlar (`preload="none"` sayesinde
 görünmeyen dosya indirilmez).
 
 Dosya adı sürümlüdür: tarayıcı ve CDN bu yolu 4 saat önbelleğe aldığı için videoyu her
-yeniden ürettiğinde soneki artır (`-v4` → `-v4`): `public/video`, `package.json` betikleri
+yeniden ürettiğinde soneki artır (`-v5` → `-v5`): `public/video`, `package.json` betikleri
 ve `HeroVideo.tsx` içindeki `SOURCES`.
 
 ## Yeniden üretme
@@ -31,8 +31,8 @@ ve `HeroVideo.tsx` içindeki `SOURCES`.
 ```bash
 pnpm video:clip        # Remotion → video/hyperframes/assets/ui-demo.mp4
 pnpm video:clip:dark   # Remotion (dark-props.json) → assets/ui-demo-dark.mp4
-pnpm video:hero        # HyperFrames → public/video/…-v4.mp4
-pnpm video:hero:dark   # HyperFrames (dark-variables.json) → …-v4-dark.mp4
+pnpm video:hero        # HyperFrames → public/video/…-v5.mp4
+pnpm video:hero:dark   # HyperFrames (dark-variables.json) → …-v5-dark.mp4
 pnpm video:poster      # 6. saniyeden iki afiş
 ```
 

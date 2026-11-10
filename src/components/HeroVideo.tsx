@@ -20,12 +20,12 @@ import { useEffect, useRef, useState } from 'react'
  */
 const SOURCES = {
   light: {
-    video: '/video/barkod-dedektifi-tanitim-v4.mp4',
-    poster: '/video/barkod-dedektifi-tanitim-v4-poster.jpg',
+    video: '/video/barkod-dedektifi-tanitim-v5.mp4',
+    poster: '/video/barkod-dedektifi-tanitim-v5-poster.jpg',
   },
   dark: {
-    video: '/video/barkod-dedektifi-tanitim-v4-dark.mp4',
-    poster: '/video/barkod-dedektifi-tanitim-v4-dark-poster.jpg',
+    video: '/video/barkod-dedektifi-tanitim-v5-dark.mp4',
+    poster: '/video/barkod-dedektifi-tanitim-v5-dark-poster.jpg',
   },
 } as const
 
