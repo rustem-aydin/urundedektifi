@@ -15,6 +15,7 @@ import {
 } from '@/lib/seo'
 import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
 import { Button } from '@/components/ui/button'
@@ -139,14 +140,12 @@ export default async function ProductsPage({
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Henüz yayında ürün yok. Fotoğrafla ilk dosyayı sen aç.
+                Henüz yayında ürün yok. Barkodu okutup ilk dosyayı sen aç.
               </p>
-              <Button asChild>
-                <Link href="/katki">
-                  <Plus aria-hidden="true" />
-                  Katkı ver
-                </Link>
-              </Button>
+              <BarcodeScanButton>
+                <Plus aria-hidden="true" />
+                Barkod okut
+              </BarcodeScanButton>
             </>
           )}
         </div>

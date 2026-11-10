@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { CameraCapture } from '@/components/CameraCapture'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -133,9 +134,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
               <Link href={`/profil/${user.id}`}>Profilime git</Link>
             </Button>
           ) : null}
-          <Button asChild variant="outline">
-            <Link href="/">Ana sayfaya dön</Link>
-          </Button>
+          <BarcodeScanButton variant="outline">Taramaya dön</BarcodeScanButton>
         </div>
       </CaseCard>
     )

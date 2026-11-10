@@ -4,14 +4,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 
 /**
- * Katkı girişi (ADR 0024): barkod elle yazılır; ürün kayıtlıysa dosyası açılır,
- * değilse fotoğraf formuna geçilir.
+ * Katkı girişi (ADR 0024): barkod biliniyorsa elle yazılır, bilinmiyorsa kamerayla taranır.
+ * Ürün kayıtlıysa dosyası açılır; değilse fotoğraf formuna geçilir.
  */
 export function ContributionEntry() {
   const router = useRouter()
@@ -55,6 +56,9 @@ export function ContributionEntry() {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <BarcodeScanButton variant="outline" className="h-11">
+          Kamerayla tara
+        </BarcodeScanButton>
         {user ? (
           <Button type="button" variant="ghost" className="h-11" asChild>
             <Link href={`/profil/${user.id}`}>Katkılarım</Link>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
@@ -311,6 +312,9 @@ export function ReviewWizard({ productId }: { productId: string }) {
           <Button asChild className="w-fit">
             <Link href="/katki">Fotoğrafla katkı ver</Link>
           </Button>
+          <BarcodeScanButton variant="outline" className="w-fit">
+            Kamerayla tara
+          </BarcodeScanButton>
         </div>
       </CaseCard>
     )

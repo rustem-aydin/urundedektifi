@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { ArrowLeft, PackageSearch } from 'lucide-react'
+import { ArrowLeft, PackageSearch, ScanBarcode } from 'lucide-react'
 
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { EvidenceTag } from '@/components/EvidenceTag'
 
 /** 404: durum kodu Next tarafından 404 döner, arama motoru yumuşak 404 görmez. */
@@ -14,14 +15,18 @@ export default function NotFound() {
           Bu adreste bir dosya yok
         </h1>
         <p className="max-w-xl text-sm text-muted-foreground">
-          Bağlantı eskimiş ya da dosya adı değişmiş olabilir. Ürün listesinden aradığın dosyayı
+          Bağlantı eskimiş ya da dosya adı değişmiş olabilir. Barkodu okutarak aradığın ürünü
           bulabilirsin.
         </p>
       </div>
       <div className="flex flex-wrap gap-3">
+        <BarcodeScanButton className="h-9 px-4">
+          <ScanBarcode aria-hidden="true" />
+          Barkod tara
+        </BarcodeScanButton>
         <Link
           href="/urunler"
-          className="inline-flex items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
+          className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
         >
           <PackageSearch className="size-4" aria-hidden="true" />
           Ürünlere göz at

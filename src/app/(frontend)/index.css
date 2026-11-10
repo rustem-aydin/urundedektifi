@@ -165,6 +165,29 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
+
+  --animate-scanline: scanline 2.4s ease-in-out infinite;
+
+  @keyframes scanline {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    50% {
+      transform: translateY(calc(var(--scan-height, 100%) - 2px));
+      opacity: 1;
+    }
+    92% {
+      opacity: 1;
+    }
+    99% {
+      opacity: 0;
+    }
+  }
 }
 
 @layer base {
@@ -189,6 +212,36 @@
     background: var(--tape-yellow);
     color: var(--foreground);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scanline {
+    animation: none !important;
+  }
+}
+
+/* Tam ekran tarama: html5-qrcode #reader öğesine satır içi `position: relative`
+   yazar; tam ekran katmanında bu, kapsayıcının yüksekliğini videoya bırakır.
+   Kutu tam ekrana sabitlenir. <video> KIRPILMAZ: sensörün tam görüş açısı
+   gösterilir (object-fit: cover dikey ekranda görüntüyü ~3× yakınlaştırıyordu).
+   Genişlik %100, yükseklik akışın kendi oranından gelir; böylece öğe kutusu ile
+   video karesi aynı oranda kalır ve html5-qrcode'un
+   qrRegion * (videoWidth/clientWidth) eşlemesi doğru çalışır. */
+.scanner-fullscreen {
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-fullscreen video {
+  flex: none;
+  width: 100% !important;
+  height: auto !important;
+  max-height: 100% !important;
+  object-fit: contain;
 }
 
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 
+import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { ContributionForm } from '@/components/ContributionForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { NOINDEX } from '@/lib/seo'
@@ -27,9 +27,9 @@ export default async function KatkiPage({
         <p className="mt-2 text-sm text-muted-foreground">
           8–14 haneli bir barkodla tekrar dene.
         </p>
-        <Link href="/" className="mt-6 inline-block text-sm underline">
-          Ana sayfaya dön
-        </Link>
+        <BarcodeScanButton variant="link" size="sm" className="mt-6 px-0 text-sm">
+          Barkodu tara
+        </BarcodeScanButton>
       </div>
     )
   }
