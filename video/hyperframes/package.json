@@ -1,0 +1,9 @@
+{
+  "name": "barkod-dedektifi-hero-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npx --yes hyperframes@0.9.29 check",
+    "render": "npx --yes hyperframes@0.9.29 render --output ../out/hero.mp4"
+  }
+}

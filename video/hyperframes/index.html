@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="tr" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, height=720" />
+    <title>Barkod Dedektifi — tanıtım</title>
+    <style>
+      @font-face {
+        font-family: 'Special Elite';
+        src: url('./assets/fonts/special-elite-latin.woff2') format('woff2');
+        font-weight: 400;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'Inter';
+        src: url('./assets/fonts/inter-latin.woff2') format('woff2');
+        font-weight: 400 800;
+        font-display: block;
+      }
+      @font-face {
+        font-family: 'JetBrains Mono';
+        src: url('./assets/fonts/jetbrains-mono-latin.woff2') format('woff2');
+        font-weight: 500 700;
+        font-display: block;
+      }
+
+      :root {
+        --paper: #f7f4ee;
+        --card: #fcfbf7;
+        --ink: #1c1b17;
+        --border: #d9d4c6;
+        --faded: #6e6a5e;
+        --stamp: #b3341e;
+        --tape: #e8b93c;
+        --green: #2e6b4f;
+        --display: 'Special Elite', 'JetBrains Mono', monospace;
+        --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+        --mono: 'JetBrains Mono', ui-monospace, monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+        overflow: hidden;
+        background: var(--paper);
+      }
+
+      #grid {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(28, 27, 23, 0.075) 1px, transparent 1px);
+        background-size: 26px 26px;
+        opacity: 0.55;
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      .chip {
+        display: inline-block;
+        border: 1px solid var(--stamp);
+        color: var(--stamp);
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 5px 9px;
+        border-radius: 3px;
+      }
+
+      .chip.muted {
+        border-color: var(--border);
+        color: var(--faded);
+      }
+
+      /* ---------- 1. sahne: başlık ---------- */
+      .pad {
+        position: absolute;
+        left: 72px;
+        top: 118px;
+        width: 620px;
+      }
+
+      #t-title {
+        font-family: var(--display);
+        font-size: 62px;
+        line-height: 1.14;
+        margin-top: 24px;
+        letter-spacing: -0.01em;
+      }
+
+      #t-title .line {
+        display: block;
+      }
+
+      #t-sub {
+        margin-top: 26px;
+        max-width: 520px;
+        font-size: 18.5px;
+        line-height: 1.6;
+        color: var(--faded);
+      }
+
+      #t-topics {
+        position: absolute;
+        left: 72px;
+        bottom: 92px;
+        width: 660px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+      }
+
+      #t-topics .label {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--faded);
+        margin-right: 4px;
+      }
+
+      #t-card {
+        position: absolute;
+        right: 60px;
+        top: 168px;
+        width: 430px;
+        height: 296px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--card);
+        box-shadow: 0 18px 40px rgba(28, 27, 23, 0.14);
+        padding: 30px 34px;
+        transform-origin: 50% 50%;
+      }
+
+      #t-card .tape {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        width: 104px;
+        height: 26px;
+        margin-left: -52px;
+        background: rgba(232, 185, 60, 0.72);
+        transform: rotate(-3deg);
+        box-shadow: 0 1px 3px rgba(28, 27, 23, 0.12);
+      }
+
+      #t-barcode {
+        display: block;
+        width: 100%;
+        height: 128px;
+      }
+
+      #t-scan {
+        position: absolute;
+        left: 34px;
+        right: 34px;
+        top: 40px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--stamp), transparent);
+        box-shadow: 0 0 14px var(--stamp);
+        opacity: 0;
+      }
+
+      .card-foot {
+        position: absolute;
+        left: 34px;
+        right: 34px;
+        bottom: 26px;
+        display: flex;
+        justify-content: space-between;
+        border-top: 1px dashed var(--border);
+        padding-top: 12px;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        color: var(--faded);
+        text-transform: uppercase;
+      }
+
+      /* ---------- 2. sahne: uygulama demosu ---------- */
+      #demo {
+        position: absolute;
+        inset: 0;
+        width: 1280px;
+        height: 720px;
+        object-fit: cover;
+      }
+
+      /* ---------- 3. sahne: adımlar ---------- */
+      #steps-head {
+        position: absolute;
+        left: 72px;
+        top: 126px;
+      }
+
+      #steps-title {
+        font-family: var(--display);
+        font-size: 38px;
+        margin-top: 18px;
+      }
+
+      .steps {
+        position: absolute;
+        left: 72px;
+        right: 72px;
+        top: 342px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 34px;
+      }
+
+      .step {
+        position: relative;
+        padding-top: 26px;
+      }
+
+      .step .rule {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: var(--border);
+        transform-origin: 0 50%;
+      }
+
+      .step .no {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: var(--stamp);
+      }
+
+      .step h3 {
+        font-family: var(--display);
+        font-size: 31px;
+        font-weight: 400;
+        margin-top: 10px;
+      }
+
+      .step p {
+        margin-top: 12px;
+        font-size: 16.5px;
+        line-height: 1.55;
+        color: var(--faded);
+      }
+
+      .step .glyph {
+        margin-top: 24px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .step .glyph i {
+        display: block;
+        background: var(--ink);
+        border-radius: 1px;
+      }
+
+      /* ---------- 4. sahne: kapanış ---------- */
+      #end {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+      }
+
+      #end-mark {
+        font-family: var(--display);
+        font-size: 58px;
+        letter-spacing: -0.01em;
+      }
+
+      #end-barcode {
+        width: 380px;
+        height: 84px;
+        margin-top: 26px;
+      }
+
+      #end-url {
+        margin-top: 20px;
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--faded);
+      }
+
+      #end-chip {
+        margin-bottom: 26px;
+      }
+
+      #end-cta {
+        margin-top: 26px;
+        border: 2px solid var(--stamp);
+        color: var(--stamp);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        padding: 10px 20px;
+        border-radius: 3px;
+      }
+
+      #end-fade {
+        position: absolute;
+        inset: 0;
+        background: var(--paper);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* ---------- geçiş ---------- */
+      .wipe {
+        position: absolute;
+        top: -40px;
+        bottom: -40px;
+        left: 0;
+        width: 300px;
+        background: var(--tape);
+        opacity: 0.9;
+        transform: translateX(-320px) skewX(-8deg);
+        z-index: 30;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="22"
+      data-width="1280"
+      data-height="720"
+    >
+      <div id="grid"></div>
+
+      <section id="scene-title" class="clip" data-start="0" data-duration="4.3" data-track-index="1">
+        <div class="pad">
+          <div class="chip" id="t-chip">Vaka dosyası · Tüketici</div>
+          <h1 id="t-title">
+            <span class="line">Barkodu göster,</span>
+            <span class="line">delilleri topla,</span>
+            <span class="line">kararı gör.</span>
+          </h1>
+          <p id="t-sub">
+            Uzmanların yazdığı boykot, sağlık ve helal kuralları ürüne uygulanır. Geriye tek bakışta
+            okunacak net bir hüküm kalır.
+          </p>
+        </div>
+
+        <div id="t-topics">
+          <span class="label">Değerlendirme konuları</span>
+          <span class="chip muted">Boykot</span>
+          <span class="chip muted">Sağlık</span>
+          <span class="chip muted">Helal</span>
+          <span class="chip muted">Vegan</span>
+          <span class="chip muted">Çevre</span>
+          <span class="chip muted">Katkı</span>
+        </div>
+
+        <div id="t-card">
+          <span class="tape"></span>
+          <svg id="t-barcode" viewBox="0 0 95 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div id="t-scan"></div>
+          <div class="card-foot">
+            <span>Kanıt no: 8690123456789</span>
+            <span>BD-2026</span>
+          </div>
+        </div>
+
+        <div class="wipe"></div>
+      </section>
+
+      <video
+        id="demo"
+        src="./assets/ui-demo.mp4"
+        data-start="4.3"
+        data-duration="10"
+        data-track-index="0"
+        muted
+        playsinline
+      ></video>
+
+      <section id="scene-steps" class="clip" data-start="14.3" data-duration="4.2" data-track-index="1">
+        <div id="steps-head">
+          <div class="chip muted">Nasıl çalışır</div>
+          <h2 id="steps-title">Üç adımda hüküm</h2>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <span class="rule"></span>
+            <div class="no">01</div>
+            <h3>Tara</h3>
+            <p>Barkodu kameraya göster ya da numarasını yaz.</p>
+            <div class="glyph" data-glyph="bars"></div>
+          </div>
+          <div class="step">
+            <span class="rule"></span>
+            <div class="no">02</div>
+            <h3>Kurallar eşleşir</h3>
+            <p>Uzman kuralları ürünle otomatik karşılaştırılır, eşleşen her kural bir delil olur.</p>
+            <div class="glyph" data-glyph="rules"></div>
+          </div>
+          <div class="step">
+            <span class="rule"></span>
+            <div class="no">03</div>
+            <h3>Kararı gör</h3>
+            <p>Boykot, sağlık ve helal hükmü tek bakışta okunur.</p>
+            <div class="glyph" data-glyph="stamp"></div>
+          </div>
+        </div>
+        <div class="wipe"></div>
+      </section>
+
+      <section id="scene-end" class="clip" data-start="18.5" data-duration="3.5" data-track-index="1">
+        <div id="end">
+          <div class="chip muted" id="end-chip">Tüketici vaka dosyası</div>
+          <div id="end-mark">Barkod Dedektifi</div>
+          <svg id="end-barcode" viewBox="0 0 95 24" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div id="end-url">barkoddedektifi.com</div>
+          <div id="end-cta">Barkodu tara →</div>
+        </div>
+        <div id="end-fade"></div>
+        <div class="wipe"></div>
+      </section>
+    </div>
+
+    <script src="./vendor/gsap.min.js"></script>
+    <script>
+      // EAN-13 kodlama tabloları: çubuklar gerçek kodlamadan üretilir.
+      const L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011']
+      const G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111']
+      const R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100']
+      const PARITY = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL']
+
+      const encodeEan13 = (value) => {
+        const digits = value.replace(/\D/g, '').padStart(13, '0').slice(0, 13)
+        const parity = PARITY[Number(digits[0])]
+        let bits = '101'
+        for (let i = 1; i <= 6; i++) bits += (parity[i - 1] === 'L' ? L : G)[Number(digits[i])]
+        bits += '01010'
+        for (let i = 7; i <= 12; i++) bits += R[Number(digits[i])]
+        return bits + '101'
+      }
+
+      const paintBarcode = (svg, value, height) => {
+        const bits = encodeEan13(value)
+        const ns = 'http://www.w3.org/2000/svg'
+        svg.innerHTML = ''
+        for (let i = 0; i < bits.length; i++) {
+          if (bits[i] !== '1') continue
+          const rect = document.createElementNS(ns, 'rect')
+          rect.setAttribute('x', String(i))
+          rect.setAttribute('y', '0')
+          rect.setAttribute('width', '1')
+          rect.setAttribute('height', String(height))
+          rect.setAttribute('fill', '#1c1b17')
+          svg.appendChild(rect)
+        }
+        svg.setAttribute('viewBox', `0 0 95 ${height}`)
+      }
+
+      paintBarcode(document.getElementById('t-barcode'), '8690123456789', 40)
+      paintBarcode(document.getElementById('end-barcode'), '8690123456789', 24)
+
+      // Adım glifleri: çubuklar, kural satırları, damga.
+      document.querySelectorAll('.glyph').forEach((glyph, index) => {
+        const kind = glyph.dataset.glyph
+        if (kind === 'bars') {
+          ;[3, 7, 2, 5, 8, 3, 6, 2, 7, 4, 5].forEach((w, i) => {
+            const bar = document.createElement('i')
+            bar.style.width = w + 'px'
+            bar.style.height = '44px'
+            bar.style.opacity = 0.9 - i * 0.02
+            glyph.appendChild(bar)
+          })
+        } else if (kind === 'rules') {
+          ;[96, 74, 86].forEach((w, i) => {
+            const row = document.createElement('i')
+            row.style.width = w + 'px'
+            row.style.height = '5px'
+            row.style.marginRight = '7px'
+            row.style.opacity = 0.85 - i * 0.22
+            glyph.appendChild(row)
+          })
+        } else {
+          const stamp = document.createElement('div')
+          stamp.textContent = 'HÜKÜM'
+          stamp.style.border = '3px solid #b3341e'
+          stamp.style.color = '#b3341e'
+          stamp.style.fontFamily = 'var(--display)'
+          stamp.style.fontSize = '19px'
+          stamp.style.letterSpacing = '0.14em'
+          stamp.style.padding = '6px 12px 4px'
+          stamp.style.transform = 'rotate(-6deg)'
+          glyph.appendChild(stamp)
+        }
+        glyph.style.opacity = 0
+        void index
+      })
+
+      const tl = gsap.timeline({ paused: true })
+
+      // 1. sahne
+      tl.fromTo('.wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 0)
+      tl.fromTo('#t-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'power2.out' }, 0.18)
+      tl.fromTo(
+        '#t-title .line',
+        { y: 26, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.11, ease: 'power3.out' },
+        0.3,
+      )
+      tl.fromTo('#t-sub', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.85)
+      tl.fromTo('#t-topics', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 1.45)
+      tl.fromTo(
+        '#t-card',
+        { opacity: 0, scale: 0.94, rotate: 3 },
+        { opacity: 1, scale: 1, rotate: -1.5, duration: 0.7, ease: 'power3.out' },
+        0.55,
+      )
+      tl.fromTo('#t-scan', { opacity: 0, y: 0 }, { opacity: 1, duration: 0.15 }, 1.25)
+      tl.fromTo('#t-scan', { y: 0 }, { y: 138, duration: 1.9, ease: 'sine.inOut', immediateRender: false }, 1.3)
+      tl.to('#t-scan', { opacity: 0, duration: 0.2 }, 3.15)
+
+      // 3. sahne
+      tl.fromTo('#scene-steps .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 14.3)
+      tl.fromTo('#steps-head', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 14.5)
+      tl.fromTo(
+        '#scene-steps .rule',
+        { scaleX: 0 },
+        { scaleX: 1, duration: 0.55, stagger: 0.12, ease: 'power2.out' },
+        14.6,
+      )
+      tl.fromTo(
+        '#scene-steps .step > .no, #scene-steps .step > h3, #scene-steps .step > p, #scene-steps .glyph',
+        { y: 18, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.42, stagger: 0.05, ease: 'power2.out' },
+        14.7,
+      )
+      tl.fromTo('#scene-steps .step', { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.12 }, 14.62)
+
+      // 4. sahne
+      tl.fromTo('#scene-end .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 18.5)
+      tl.fromTo('#end-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, 18.7)
+      tl.fromTo('#end-mark', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 18.85)
+      tl.fromTo('#end-barcode', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 19.15)
+      tl.fromTo('#end-url', { opacity: 0 }, { opacity: 1, duration: 0.35 }, 19.35)
+      tl.fromTo(
+        '#end-cta',
+        { opacity: 0, scale: 0.94 },
+        { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' },
+        19.5,
+      )
+      tl.fromTo('#end-fade', { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power1.inOut' }, 21.3)
+
+      window.__timelines = window.__timelines || {}
+      window.__timelines['main'] = tl
+      tl.seek(0)
+    </script>
+  </body>
+</html>

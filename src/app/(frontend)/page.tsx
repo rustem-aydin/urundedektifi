@@ -15,8 +15,8 @@ import {
   pageMetadata,
   websiteNode,
 } from '@/lib/seo'
-import { Barcode } from '@/components/Barcode'
 import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
+import { HeroVideo } from '@/components/HeroVideo'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
 import { ProductGrid } from '@/components/ProductGrid'
@@ -99,20 +99,11 @@ export default async function HomePage() {
           <BarcodeLookupForm />
         </div>
 
-        {/* Dekoratif barkod kartı yalnız masaüstü web'de: mobilde bölge tamamen kaldırılır, hero metni kalır. */}
-        <div className="group relative hidden items-center justify-center lg:flex" aria-hidden="true">
-          <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 group-hover:rotate-0">
-            <span className="absolute -top-2 left-1/2 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
-            <Barcode value="8690123456789" height={120} className="w-full text-foreground" />
-            <span className="animate-scanline pointer-events-none absolute top-6 right-6 left-6 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:120px]" />
-            <div className="mt-4 flex items-center justify-between border-t border-dashed border-border pt-3">
-              <span className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-                KANIT NO: 8690123456789
-              </span>
-              <span className="font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-                BD-2026
-              </span>
-            </div>
+        {/* Tanıtım videosu: mobilde formun altında tam genişlik, masaüstünde hero'nun sağ kolonu. */}
+        <div className="relative flex items-center justify-center">
+          <div className="group relative w-full max-w-md rotate-1 rounded-md border border-border bg-card p-2 shadow-md transition-transform duration-300 group-hover:rotate-0">
+            <span className="absolute -top-2 left-1/2 z-10 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
+            <HeroVideo />
           </div>
         </div>
       </section>
