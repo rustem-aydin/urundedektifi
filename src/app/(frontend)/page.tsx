@@ -64,7 +64,7 @@ export default async function HomePage() {
     <div className="mx-auto w-full max-w-5xl px-4">
       <section
         aria-labelledby="hero-heading"
-        className="grid gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:items-center"
+        className="grid gap-10 pt-6 pb-12 sm:py-16 lg:grid-cols-2 lg:items-center"
       >
         <div className="flex flex-col items-start gap-5">
           <EvidenceTag variant="evidence">VAKA DOSYASI · TÜKETİCİ</EvidenceTag>
