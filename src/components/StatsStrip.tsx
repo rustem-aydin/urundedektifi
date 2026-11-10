@@ -26,13 +26,10 @@ function useCountUp(target: number, duration = DEFAULT_DURATION) {
       return
     }
 
-    // Sayma animasyonu yalnız masaüstü web'de koşar: mobil görünümde sayı
-    // doğrudan son değeriyle yazılır (StatValue mobil span'ı).
     if (
       typeof window === 'undefined' ||
       typeof window.requestAnimationFrame !== 'function' ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      !window.matchMedia('(min-width: 1024px)').matches
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       setValue(target)
       return
@@ -57,18 +54,11 @@ function useCountUp(target: number, duration = DEFAULT_DURATION) {
 
 function StatValue({ value }: { value: number }) {
   const count = useCountUp(value)
-  const final = numberFormat.format(value)
 
   return (
     <>
-      {/* Mobil: animasyonsuz nihai değer; masaüstünde sayan değer görünür. */}
-      <span aria-hidden="true" className="lg:hidden">
-        {final}
-      </span>
-      <span aria-hidden="true" className="hidden lg:inline">
-        {numberFormat.format(count)}
-      </span>
-      <span className="sr-only">{final}</span>
+      <span aria-hidden="true">{numberFormat.format(count)}</span>
+      <span className="sr-only">{numberFormat.format(value)}</span>
     </>
   )
 }

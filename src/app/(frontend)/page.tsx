@@ -83,7 +83,7 @@ export default async function HomePage() {
 
         {/* Dekoratif barkod kartı yalnız masaüstü web'de: mobilde bölge tamamen kaldırılır, hero metni kalır. */}
         <div className="group relative hidden items-center justify-center lg:flex" aria-hidden="true">
-          <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 lg:group-hover:rotate-0">
+          <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 group-hover:rotate-0">
             <span className="absolute -top-2 left-1/2 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
             <Barcode value="8690123456789" height={120} className="w-full text-foreground" />
             <span className="animate-scanline pointer-events-none absolute top-6 right-6 left-6 h-0.5 bg-gradient-to-r from-transparent via-stamp to-transparent [--scan-height:120px]" />
