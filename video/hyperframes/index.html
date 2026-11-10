@@ -75,7 +75,6 @@
         opacity: 0.55;
       }
 
-      #t-barcode rect,
       #end-barcode rect {
         fill: var(--ink);
       }
@@ -102,65 +101,7 @@
         color: var(--faded);
       }
 
-      /* ---------- 1. sahne: açılış levhası ---------- */
-      #t-stack {
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        gap: 0;
-      }
-
-      #t-title {
-        font-family: var(--display);
-        font-size: 56px;
-        line-height: 1.14;
-        letter-spacing: -0.01em;
-      }
-
-      #t-title .line {
-        display: block;
-      }
-
-      #t-sub {
-        margin-top: 22px;
-        max-width: 780px;
-        font-size: 26px;
-        line-height: 1.5;
-        color: var(--faded);
-      }
-
-      #t-strip {
-        position: relative;
-        margin-top: 34px;
-        width: 460px;
-        height: 74px;
-      }
-
-      #t-barcode {
-        display: block;
-        width: 100%;
-        height: 74px;
-      }
-
-      #t-scan {
-        position: absolute;
-        left: -6px;
-        right: -6px;
-        top: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, var(--stamp), transparent);
-        box-shadow: 0 0 14px var(--stamp);
-        opacity: 0;
-      }
-
-      /* ---------- 2. sahne: uygulama demosu ---------- */
+      /* ---------- 1. sahne: uygulama demosu ---------- */
       #demo {
         position: absolute;
         inset: 0;
@@ -169,7 +110,7 @@
         object-fit: cover;
       }
 
-      /* ---------- 3. sahne: adımlar ---------- */
+      /* ---------- 2. sahne: adımlar ---------- */
       #steps-head {
         position: absolute;
         left: 72px;
@@ -243,7 +184,7 @@
         border-radius: 1px;
       }
 
-      /* ---------- 4. sahne: kapanış ---------- */
+      /* ---------- 3. sahne: kapanış ---------- */
       #end {
         position: absolute;
         inset: 0;
@@ -317,40 +258,26 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="20.4"
+      data-duration="17.8"
       data-width="1280"
       data-height="720"
     >
       <div id="grid"></div>
 
-      <section id="scene-title" class="clip" data-start="0" data-duration="2.6" data-track-index="1">
-        <div id="t-stack">
-          <h1 id="t-title">
-            <span class="line">Ürün dosyası,</span>
-            <span class="line">tek taramada.</span>
-          </h1>
-          <p id="t-sub">İçindekiler, besin, alerjen, menşe ve uzman delilleri tek ekranda.</p>
-          <div id="t-strip">
-            <svg id="t-barcode" viewBox="0 0 95 18" preserveAspectRatio="none" aria-hidden="true"></svg>
-            <div id="t-scan"></div>
-          </div>
-        </div>
-
-        <div class="wipe"></div>
-      </section>
+      <div class="wipe" id="intro-wipe"></div>
 
       <video
         id="demo"
         src="./assets/ui-demo.mp4"
         data-var-src="demoClip"
-        data-start="2.6"
+        data-start="0"
         data-duration="10"
         data-track-index="0"
         muted
         playsinline
       ></video>
 
-      <section id="scene-steps" class="clip" data-start="12.6" data-duration="4.3" data-track-index="1">
+      <section id="scene-steps" class="clip" data-start="10" data-duration="4.3" data-track-index="1">
         <div id="steps-head">
           <div class="chip muted">Nasıl çalışır</div>
           <h2 id="steps-title">Üç adımda sonuç</h2>
@@ -381,7 +308,7 @@
         <div class="wipe"></div>
       </section>
 
-      <section id="scene-end" class="clip" data-start="16.9" data-duration="3.5" data-track-index="1">
+      <section id="scene-end" class="clip" data-start="14.3" data-duration="3.5" data-track-index="1">
         <div id="end">
           <div class="chip muted" id="end-chip">Tüketici vaka dosyası</div>
           <div id="end-mark">Barkod Dedektifi</div>
@@ -428,7 +355,6 @@
         svg.setAttribute('viewBox', `0 0 95 ${height}`)
       }
 
-      paintBarcode(document.getElementById('t-barcode'), '8690123456789', 18)
       paintBarcode(document.getElementById('end-barcode'), '8690123456789', 24)
 
       // Adım glifleri: çubuklar, kural satırları, damga.
@@ -468,50 +394,39 @@
 
       const tl = gsap.timeline({ paused: true })
 
-      // 1. sahne — açılış levhası
-      tl.fromTo('.wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 0)
-      tl.fromTo(
-        '#t-title .line',
-        { y: 26, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: 'power3.out' },
-        0.2,
-      )
-      tl.fromTo('#t-sub', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 0.52)
-      tl.fromTo('#t-strip', { opacity: 0, scaleX: 0.9 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: 'power2.out' }, 0.6)
-      tl.fromTo('#t-scan', { opacity: 0, y: 0 }, { opacity: 1, duration: 0.15 }, 0.9)
-      tl.fromTo('#t-scan', { y: 0 }, { y: 72, duration: 1.4, ease: 'sine.inOut', immediateRender: false }, 0.95)
-      tl.to('#t-scan', { opacity: 0, duration: 0.2 }, 2.3)
+      // giriş: bant süpürmesi
+      tl.fromTo('#intro-wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 0)
 
-      // 3. sahne — üç adım
-      tl.fromTo('#scene-steps .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 12.6)
-      tl.fromTo('#steps-head', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 12.8)
+      // 2. sahne — üç adım
+      tl.fromTo('#scene-steps .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 10)
+      tl.fromTo('#steps-head', { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'power2.out' }, 10.2)
       tl.fromTo(
         '#scene-steps .rule',
         { scaleX: 0 },
         { scaleX: 1, duration: 0.55, stagger: 0.12, ease: 'power2.out' },
-        12.9,
+        10.3,
       )
-      tl.fromTo('#scene-steps .step', { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.12 }, 12.92)
+      tl.fromTo('#scene-steps .step', { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.12 }, 10.32)
       tl.fromTo(
         '#scene-steps .step > .no, #scene-steps .step > h3, #scene-steps .step > p, #scene-steps .glyph',
         { y: 18, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.42, stagger: 0.05, ease: 'power2.out' },
-        13.0,
+        10.4,
       )
 
-      // 4. sahne — kapanış
-      tl.fromTo('#scene-end .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 16.9)
-      tl.fromTo('#end-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, 17.1)
-      tl.fromTo('#end-mark', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 17.25)
-      tl.fromTo('#end-barcode', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 17.55)
-      tl.fromTo('#end-url', { opacity: 0 }, { opacity: 1, duration: 0.35 }, 17.75)
+      // 3. sahne — kapanış
+      tl.fromTo('#scene-end .wipe', { x: -320 }, { x: 1660, duration: 0.55, ease: 'power2.inOut' }, 14.3)
+      tl.fromTo('#end-chip', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, 14.5)
+      tl.fromTo('#end-mark', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power3.out' }, 14.65)
+      tl.fromTo('#end-barcode', { opacity: 0 }, { opacity: 1, duration: 0.4 }, 14.95)
+      tl.fromTo('#end-url', { opacity: 0 }, { opacity: 1, duration: 0.35 }, 15.15)
       tl.fromTo(
         '#end-cta',
         { opacity: 0, scale: 0.94 },
         { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' },
-        17.95,
+        15.35,
       )
-      tl.fromTo('#end-fade', { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power1.inOut' }, 19.5)
+      tl.fromTo('#end-fade', { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power1.inOut' }, 16.9)
 
       window.__timelines = window.__timelines || {}
       window.__timelines['main'] = tl

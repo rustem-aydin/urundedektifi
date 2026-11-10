@@ -6,8 +6,8 @@ Ana sayfa hero'sundaki tanıtım videosunun kaynağı. Film iki araçla üretili
    dosyası, uzman delilleri ve sonuç satırı. React bileşenleri, 1280×720, 30 fps, 10 sn.
    Tema bir prop'tur (`theme: 'light' | 'dark'`), paletler `src/theme.ts` içinde sitenin
    `index.css` değerleriyle aynıdır.
-2. **HyperFrames** (`video/hyperframes`) — film: açılış levhası, Remotion klibi, üç adım,
-   kapanış kartı. HTML + GSAP kompozisyonu, 20,4 sn, tek MP4. Renkler
+2. **HyperFrames** (`video/hyperframes`) — film: Remotion klibi (uygulama demosu), üç adım,
+   kapanış kartı. HTML + GSAP kompozisyonu, 17,8 sn, tek MP4; film doğrudan demoyla başlar. Renkler
    `data-composition-variables` ile dışarıdan verilir; koyu sürüm
    `dark-variables.json` dosyasıyla üretilir.
 
@@ -15,15 +15,15 @@ Yayınlanan dosyalar (H.264, sessiz):
 
 | Tema | Video | Afiş |
 |---|---|---|
-| Açık | `public/video/barkod-dedektifi-tanitim-v3.mp4` | `…-v3-poster.jpg` |
-| Koyu | `public/video/barkod-dedektifi-tanitim-v3-dark.mp4` | `…-v3-dark-poster.jpg` |
+| Açık | `public/video/barkod-dedektifi-tanitim-v4.mp4` | `…-v4-poster.jpg` |
+| Koyu | `public/video/barkod-dedektifi-tanitim-v4-dark.mp4` | `…-v4-dark-poster.jpg` |
 
 Hero'da `src/components/HeroVideo.tsx` oynatır: iki `<video>` birlikte basılır, görünürlüğü
 `dark:` sınıfı belirler, oynatma yalnız aktif olanda başlar (`preload="none"` sayesinde
 görünmeyen dosya indirilmez).
 
 Dosya adı sürümlüdür: tarayıcı ve CDN bu yolu 4 saat önbelleğe aldığı için videoyu her
-yeniden ürettiğinde soneki artır (`-v3` → `-v4`): `public/video`, `package.json` betikleri
+yeniden ürettiğinde soneki artır (`-v4` → `-v4`): `public/video`, `package.json` betikleri
 ve `HeroVideo.tsx` içindeki `SOURCES`.
 
 ## Yeniden üretme
@@ -31,9 +31,9 @@ ve `HeroVideo.tsx` içindeki `SOURCES`.
 ```bash
 pnpm video:clip        # Remotion → video/hyperframes/assets/ui-demo.mp4
 pnpm video:clip:dark   # Remotion (dark-props.json) → assets/ui-demo-dark.mp4
-pnpm video:hero        # HyperFrames → public/video/…-v3.mp4
-pnpm video:hero:dark   # HyperFrames (dark-variables.json) → …-v3-dark.mp4
-pnpm video:poster      # 1,5. saniyeden iki afiş
+pnpm video:hero        # HyperFrames → public/video/…-v4.mp4
+pnpm video:hero:dark   # HyperFrames (dark-variables.json) → …-v4-dark.mp4
+pnpm video:poster      # 6. saniyeden iki afiş
 ```
 
 Sıra önemli: HyperFrames kompozisyonu Remotion klibini `<video data-var-src="demoClip">`
