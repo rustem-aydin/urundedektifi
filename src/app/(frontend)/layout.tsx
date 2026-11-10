@@ -1,6 +1,6 @@
 import React from 'react'
 import type { Metadata, Viewport } from 'next'
-import { Inter, Special_Elite, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 
 import './index.css'
 
@@ -11,21 +11,29 @@ import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
 import { Toaster } from '@/components/ui/sonner'
 
-const inter = Inter({
-  subsets: ['latin', 'latin-ext'],
+/**
+ * Yazı tipleri yerelden servis edilir: `next/font/google` aileleri `latin` +
+ * `latin-ext` olarak indiriyor ve Türkçe için gereken altı harf yüzünden üç aile
+ * 267 KB tutuyordu (ilk boya öncesi baytların yarısı). `scripts/build-fonts.mjs`
+ * yalnız kullandığımız harf kümesini üretiyor: 123 KB, aynı görünüm.
+ */
+const inter = localFont({
+  src: './fonts/inter-variable.woff2',
+  weight: '100 900',
   variable: '--font-inter',
   display: 'swap',
 })
 
-const specialElite = Special_Elite({
+const specialElite = localFont({
+  src: './fonts/special-elite.woff2',
   weight: '400',
-  subsets: ['latin', 'latin-ext'],
   variable: '--font-special-elite',
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin', 'latin-ext'],
+const jetbrainsMono = localFont({
+  src: './fonts/jetbrains-mono-variable.woff2',
+  weight: '400 700',
   variable: '--font-jb-mono',
   display: 'swap',
 })
