@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
 
 import config from '@/payload.config'
 import { findAllDocs } from '@/lib/findAllDocs'
@@ -53,12 +53,29 @@ function slugPath(prefix: string, slug: string | null | undefined): string | nul
   return clean ? `${prefix}/${encodeURIComponent(clean)}` : null
 }
 
+function baseEntries(): MetadataRoute.Sitemap {
+  return [
+    entry('/', { changeFrequency: 'daily', priority: 1 }),
+    entry('/urunler', { changeFrequency: 'daily', priority: 0.9 }),
+    entry('/kategoriler', { changeFrequency: 'weekly', priority: 0.8 }),
+    entry('/konular', { changeFrequency: 'weekly', priority: 0.7 }),
+    entry('/uzmanlar', { changeFrequency: 'weekly', priority: 0.8 }),
+    entry('/tara', { changeFrequency: 'monthly', priority: 0.6 }),
+    entry('/gizlilik', { changeFrequency: 'yearly', priority: 0.2 }),
+  ]
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = Date.now()
   if (cache && now - cache.at < CACHE_TTL_MS) return cache.entries
 
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
+  let payload: Payload
+  try {
+    payload = await getPayload({ config: await config })
+  } catch {
+    // Veritabanı geçici olarak yoksa site haritası 500 yerine temel sayfaları döner.
+    return baseEntries()
+  }
 
   const [products, categories, topics, experts, posts, ingredients, rules] = await Promise.all([
     safeFind(() =>
@@ -109,15 +126,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
   ])
 
-  const entries: MetadataRoute.Sitemap = [
-    entry('/', { changeFrequency: 'daily', priority: 1 }),
-    entry('/urunler', { changeFrequency: 'daily', priority: 0.9 }),
-    entry('/kategoriler', { changeFrequency: 'weekly', priority: 0.8 }),
-    entry('/konular', { changeFrequency: 'weekly', priority: 0.7 }),
-    entry('/uzmanlar', { changeFrequency: 'weekly', priority: 0.8 }),
-    entry('/tara', { changeFrequency: 'monthly', priority: 0.6 }),
-    entry('/gizlilik', { changeFrequency: 'yearly', priority: 0.2 }),
-  ]
+  const entries = baseEntries()
 
   for (const product of products) {
     const barcode = (product.barcode ?? '').trim()
