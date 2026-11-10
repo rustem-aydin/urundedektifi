@@ -7,8 +7,12 @@ Ana sayfa hero'sundaki tanıtım videosunun kaynağı. Film iki araçla üretili
 2. **HyperFrames** (`video/hyperframes`) — film: açılış kartı, Remotion klibi, üç adım,
    kapanış kartı. HTML + GSAP kompozisyonu, 20,4 sn, tek MP4.
 
-Yayınlanan dosya `public/video/barkod-dedektifi-tanitim.mp4` (1,6 MB, H.264, sessiz);
+Yayınlanan dosya `public/video/barkod-dedektifi-tanitim-v2.mp4` (1,6 MB, H.264, sessiz);
 hero'da `src/components/HeroVideo.tsx` oynatır.
+
+Dosya adı sürümlüdür: tarayıcı ve CDN bu yolu 4 saat önbelleğe aldığı için videoyu her
+yeniden ürettiğinde `-v2` sonekini artır (`public/video`, `package.json` betikleri ve
+`HeroVideo.tsx` içindeki `VIDEO_BASE`).
 
 ## Yeniden üretme
 

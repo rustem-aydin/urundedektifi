@@ -11,7 +11,8 @@ import { useEffect, useRef, useState } from 'react'
  * engellenmez. Hareket azaltma tercihi açıksa ya da tarayıcı oynatmayı reddederse
  * video kendiliğinden başlamaz: afiş görünür ve kullanıcı düğmeyle başlatır.
  */
-const POSTER = '/video/barkod-dedektifi-tanitim-poster.jpg'
+const VIDEO_BASE = '/video/barkod-dedektifi-tanitim-v2'
+const POSTER = `${VIDEO_BASE}-poster.jpg`
 
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -60,7 +61,7 @@ export function HeroVideo() {
         poster={POSTER}
         aria-label="Barkod Dedektifi tanıtımı: barkodu göster, uzman kurallarının delillerini topla, hükmü gör."
       >
-        <source src="/video/barkod-dedektifi-tanitim.mp4" type="video/mp4" />
+        <source src={`${VIDEO_BASE}.mp4`} type="video/mp4" />
       </video>
       {needsTap && (
         <>
