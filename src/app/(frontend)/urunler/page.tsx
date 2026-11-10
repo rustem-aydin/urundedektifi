@@ -6,18 +6,40 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
 import { Button } from '@/components/ui/button'
 
-export const metadata: Metadata = {
-  title: 'Ürünler',
-  description: 'Yayındaki tüm ürün dosyalarını isim, kategori, marka ve etikete göre filtrele.',
-}
-
 type SearchParams = { q?: string; kategori?: string; marka?: string; etiket?: string | string[] }
+
+/**
+ * Süzgeçli liste adresleri (`?q=...`) kendi kanonik adresleri değildir: aynı
+ * listeyi binlerce varyasyonda üretmemek için yalnız temiz liste indekslenir.
+ */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}): Promise<Metadata> {
+  const params = await searchParams
+  const filtered = Boolean(params.q || params.kategori || params.marka || params.etiket)
+  return pageMetadata({
+    title: 'Ürünler',
+    description:
+      'Yayındaki tüm ürün dosyalarını isim, kategori, marka ve etikete göre filtrele.',
+    path: '/urunler',
+    noindex: filtered,
+  })
+}
 
 export default async function ProductsPage({
   searchParams,
@@ -68,6 +90,21 @@ export default async function ProductsPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: 'Ürünler',
+            description:
+              'Yayındaki tüm ürün dosyalarını isim, kategori, marka ve etikete göre filtrele.',
+            path: '/urunler',
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Ürünler', path: '/urunler' },
+          ]),
+        ])}
+      />
       <div className="flex flex-col items-start gap-2">
         <EvidenceTag>DOSYALAR</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Ürünler</h1>

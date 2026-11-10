@@ -6,6 +6,15 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  absoluteUrl,
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  personNode,
+  webPageNode,
+} from '@/lib/seo'
 import { expertRules, listProductsForRules } from '@/lib/productCase'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
@@ -16,8 +25,42 @@ import { ProductCard } from '@/components/ProductCard'
 import { RatingFilterBar } from '@/components/RatingFilterBar'
 import { VerdictStamp } from '@/components/VerdictStamp'
 
-export const metadata: Metadata = {
-  title: 'Uzman',
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ sekme?: string; urunDerece?: string; kuralDerece?: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const query = await searchParams
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+  const result = await payload.find({
+    collection: 'experts',
+    where: { and: [{ slug: { equals: slug } }, { isPublic: { equals: true } }] },
+    limit: 1,
+    depth: 1,
+    select: { name: true, slug: true, bio: true, title: true, avatar: true, cover: true },
+  })
+  const expert = result.docs[0]
+  if (!expert) return { title: 'Uzman', robots: { index: false, follow: true } }
+
+  const avatar = typeof expert.avatar === 'object' && expert.avatar ? expert.avatar : null
+  const cover = typeof expert.cover === 'object' && expert.cover ? expert.cover : null
+  const image = cover?.url ?? avatar?.url ?? null
+  const filtered = Boolean(query.sekme || query.urunDerece || query.kuralDerece)
+
+  return pageMetadata({
+    title: expert.name,
+    description:
+      expert.bio ??
+      `${expert.name}${expert.title ? ` — ${expert.title}` : ''}. Ürünlere yazdığı uzman kuralları ve hüküm verdiği dosyalar.`,
+    path: `/uzmanlar/${expert.slug}`,
+    images: image ? [{ url: image, alt: expert.name }] : [],
+    type: 'profile',
+    noindex: filtered,
+  })
 }
 
 const SOCIAL_LABELS: Record<string, string> = {
@@ -168,6 +211,31 @@ export default async function ExpertDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-12">
+      <JsonLd
+        data={jsonLdGraph([
+          personNode({
+            name: expert.name,
+            slug: expert.slug,
+            title: expert.title,
+            bio: expert.bio,
+            avatarUrl:
+              typeof expert.avatar === 'object' && expert.avatar ? expert.avatar.url : null,
+            socialLinks: expert.socialLinks,
+          }),
+          webPageNode({
+            type: 'ProfilePage',
+            name: expert.name,
+            description: expert.bio,
+            path: `/uzmanlar/${expert.slug}`,
+            mainEntityId: `${absoluteUrl(`/uzmanlar/${expert.slug}`)}#person`,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Uzmanlar', path: '/uzmanlar' },
+            { name: expert.name, path: `/uzmanlar/${expert.slug}` },
+          ]),
+        ])}
+      />
       {/* KAPAK + KİMLİK */}
       <header>
         <div className="relative h-36 overflow-hidden rounded-b-md border border-t-0 border-border bg-tape-yellow/15 sm:h-48">

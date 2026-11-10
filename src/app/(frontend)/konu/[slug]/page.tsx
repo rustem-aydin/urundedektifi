@@ -7,17 +7,46 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { topicExperts } from '@/lib/topicExperts'
 
-export const metadata: Metadata = {
-  title: 'Konu',
-}
-
 const RULE_PAGE_SIZE = 20
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+  const result = await payload.find({
+    collection: 'topics',
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    select: { name: true, slug: true, description: true },
+  })
+  const topic = result.docs[0]
+  if (!topic) return { title: 'Konu', robots: { index: false, follow: true } }
+  return pageMetadata({
+    title: topic.name,
+    description:
+      topic.description ??
+      `${topic.name} konusunda uzmanların yazdığı aktif kurallar ve bu alanda çalışan uzmanlar.`,
+    path: `/konu/${topic.slug}`,
+  })
+}
 
 export default async function TopicPage({
   params,
@@ -82,6 +111,28 @@ export default async function TopicPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: topic.name,
+            description:
+              topic.description ??
+              `${topic.name} konusunda uzmanların yazdığı aktif kurallar.`,
+            path: `/konu/${topic.slug}`,
+            items: experts.docs.map((expert) => ({
+              name: expert.name,
+              path: `/uzmanlar/${expert.slug}`,
+            })),
+            numberOfItems: experts.docs.length,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Konular', path: '/konular' },
+            { name: topic.name, path: `/konu/${topic.slug}` },
+          ]),
+        ])}
+      />
       <header
         className="rounded-md border border-border border-l-4 bg-card p-5 shadow-sm"
         // CMS renkleri serbest biçimde gelir; token dışı tek renk burada, inline stil ile uygulanır

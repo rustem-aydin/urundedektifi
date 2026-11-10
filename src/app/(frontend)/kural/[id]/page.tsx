@@ -5,14 +5,39 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { listProductsMatchingRule } from '@/lib/productCase'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProductCard } from '@/components/ProductCard'
 
-export const metadata: Metadata = {
-  title: 'Kural',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+  const rule = await payload
+    .findByID({ collection: 'expert-rules', id, depth: 1 })
+    .catch(() => null)
+  if (!rule || !rule.isActive) {
+    return { title: 'Kural', robots: { index: false, follow: true } }
+  }
+  const expert = typeof rule.expert === 'object' ? rule.expert : null
+  return pageMetadata({
+    title: rule.name,
+    description: `${rule.name}${expert?.name ? ` — ${expert.name}` : ''}: ${rule.description}`,
+    path: `/kural/${encodeURIComponent(String(rule.id))}`,
+  })
 }
 
 export default async function RuleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,6 +71,23 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            name: rule.name,
+            description: rule.description,
+            path: `/kural/${encodeURIComponent(String(rule.id))}`,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Uzmanlar', path: '/uzmanlar' },
+            ...(expert?.slug
+              ? [{ name: expert.name, path: `/uzmanlar/${expert.slug}` }]
+              : []),
+            { name: rule.name, path: `/kural/${encodeURIComponent(String(rule.id))}` },
+          ]),
+        ])}
+      />
       {expert?.slug ? (
         <Link
           href={`/uzmanlar/${expert.slug}`}

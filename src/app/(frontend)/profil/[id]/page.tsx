@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
 
+
 import config from '@/payload.config'
 import { AccountActions } from '@/components/AccountActions'
 import { CaseSection } from '@/components/CaseSection'
@@ -14,6 +15,7 @@ import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProfileContributions } from '@/components/ProfileContributions'
 import { ProfileEditor } from '@/components/ProfileEditor'
 import { buildPublicProfile } from '@/lib/productContributions'
+import { pageMetadata } from '@/lib/seo'
 
 const ROLE_LABELS: Record<string, string> = {
   admin: 'Yönetici',
@@ -43,13 +45,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params
   const profile = await loadProfile(id).catch(() => null)
-  if (!profile) return { title: 'Profil bulunamadı' }
-  return {
+  if (!profile) return { title: 'Profil bulunamadı', robots: { index: false, follow: true } }
+  return pageMetadata({
     title: `${profile.name} — Katkı profili`,
     description:
       profile.bio ??
       `${profile.name} adlı kullanıcının katkı sağladığı ürünler ve takip ettikleri.`,
-  }
+    path: `/profil/${encodeURIComponent(id)}`,
+    // Profil gövdeleri kullanıcıya ait ve ince içerikli; dizin şişmesin diye indekslenmez.
+    noindex: true,
+  })
 }
 
 export default async function ProfilePage({ params }: { params: Promise<{ id: string }> }) {

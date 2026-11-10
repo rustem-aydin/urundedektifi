@@ -3,10 +3,11 @@ import Link from 'next/link'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ReviewWizard } from '@/components/wizard/ReviewWizard'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Taslağı incele' }
+export const metadata: Metadata = { title: 'Taslağı incele', robots: NOINDEX_NOFOLLOW }
 
 export default async function IncelemeDetayPage({
   params,

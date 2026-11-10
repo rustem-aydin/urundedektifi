@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
+import { pageMetadata } from '@/lib/seo'
+
+export const metadata: Metadata = pageMetadata({
   title: 'Gizlilik Politikası',
   description:
-    'Barkod Dedektifi uygulaması ve urundedektifi.com sitesi kişisel verilerinizi nasıl işler: ne toplar, neden toplar, kim görür.',
-}
+    'Barkod Dedektifi uygulaması ve barkoddedektifi.com sitesi kişisel verilerinizi nasıl işler: ne toplar, neden toplar, kim görür.',
+  path: '/gizlilik',
+})
 
 const VERILER = [
   {
@@ -42,7 +45,7 @@ export default function GizlilikPage() {
       </p>
       <h1 className="mt-2 font-display text-3xl tracking-wide">Gizlilik Politikası</h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        Bu politika, Barkod Dedektifi mobil uygulaması ve urundedektifi.com web sitesi (&quot;hizmet&quot;)
+        Bu politika, Barkod Dedektifi mobil uygulaması ve barkoddedektifi.com web sitesi (&quot;hizmet&quot;)
         üzerinden işlenen kişisel veriler için geçerlidir. 6698 sayılı Kişisel Verilerin Korunması
         Kanunu (KVKK) kapsamında veri sorumlusu Rustem Aydın&apos;dır.
       </p>

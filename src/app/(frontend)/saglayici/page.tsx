@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { SaglayiciForm } from '@/components/SaglayiciForm'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Yapay zekâ sağlayıcısı' }
+export const metadata: Metadata = { title: 'Yapay zekâ sağlayıcısı', robots: NOINDEX_NOFOLLOW }
 
 export default function SaglayiciPage() {
   return (

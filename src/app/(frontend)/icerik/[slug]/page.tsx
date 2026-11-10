@@ -5,14 +5,44 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  absoluteUrl,
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProductCard } from '@/components/ProductCard'
 
-export const metadata: Metadata = {
-  title: 'İçerik',
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+  const result = await payload.find({
+    collection: 'ingredients',
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    select: { name: true, slug: true, description: true },
+  })
+  const ingredient = result.docs[0]
+  if (!ingredient) return { title: 'İçerik', robots: { index: false, follow: true } }
+  return pageMetadata({
+    title: ingredient.name,
+    description:
+      ingredient.description ??
+      `${ingredient.name} içeriği: hakkında yazılmış uzman kuralları ve bu içeriği taşıyan ürün dosyaları.`,
+    path: `/icerik/${ingredient.slug}`,
+  })
 }
 
 export default async function IngredientDetailPage({
@@ -61,6 +91,33 @@ export default async function IngredientDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          {
+            '@type': 'DefinedTerm',
+            name: ingredient.name,
+            ...(ingredient.description ? { description: ingredient.description } : {}),
+            url: absoluteUrl(`/icerik/${ingredient.slug}`),
+            inDefinedTermSet: {
+              '@type': 'DefinedTermSet',
+              name: 'İçindekiler',
+              url: absoluteUrl('/urunler'),
+            },
+          },
+          webPageNode({
+            name: ingredient.name,
+            description:
+              ingredient.description ??
+              `${ingredient.name} içeriği hakkında uzman kuralları ve ürün dosyaları.`,
+            path: `/icerik/${ingredient.slug}`,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Ürünler', path: '/urunler' },
+            { name: ingredient.name, path: `/icerik/${ingredient.slug}` },
+          ]),
+        ])}
+      />
       <Link
         href="/urunler"
         className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"

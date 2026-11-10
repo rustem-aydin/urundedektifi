@@ -3,10 +3,11 @@ import { Suspense } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { LoginForm } from '@/components/LoginForm'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Giriş' }
+export const metadata: Metadata = { title: 'Giriş', robots: NOINDEX_NOFOLLOW }
 
 export default function GirisPage() {
   return (

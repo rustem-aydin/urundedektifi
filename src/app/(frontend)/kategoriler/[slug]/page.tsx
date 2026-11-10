@@ -8,6 +8,13 @@ import { ChevronRight, PackageSearch } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
@@ -27,13 +34,17 @@ export async function generateMetadata({
   const payload = await getPayload({ config: payloadConfig })
   const tree = await loadCategoryTree(payload)
   const category = tree.bySlug.get(slug)
-  if (!category) return { title: 'Kategori' }
-  return {
+  if (!category) return { title: 'Kategori', robots: { index: false, follow: true } }
+  return pageMetadata({
     title: category.name,
     description:
       category.description ??
       `${category.name} kategorisindeki ürün dosyaları ve alt kategoriler.`,
-  }
+    path: `/kategoriler/${category.slug}`,
+    images: category.iconUrl
+      ? [{ url: category.iconUrl, alt: category.iconAlt || category.name }]
+      : [],
+  })
 }
 
 export default async function CategoryDetailPage({
@@ -63,6 +74,32 @@ export default async function CategoryDetailPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: category.name,
+            description:
+              category.description ??
+              `${category.name} kategorisindeki ürün dosyaları ve alt kategoriler.`,
+            path: `/kategoriler/${category.slug}`,
+            items: category.children.map((child) => ({
+              name: child.name,
+              path: `/kategoriler/${child.slug}`,
+            })),
+            numberOfItems: category.children.length,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Kategoriler', path: '/kategoriler' },
+            ...ancestors.map((ancestor) => ({
+              name: ancestor.name,
+              path: `/kategoriler/${ancestor.slug}`,
+            })),
+            { name: category.name, path: `/kategoriler/${category.slug}` },
+          ]),
+        ])}
+      />
       <nav aria-label="Kategori yolu" className="flex flex-wrap items-center gap-1 text-sm">
         <Link
           href="/kategoriler"

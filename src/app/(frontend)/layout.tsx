@@ -1,9 +1,10 @@
 import React from 'react'
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Special_Elite, JetBrains_Mono } from 'next/font/google'
 
 import './index.css'
 
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from '@/lib/seo'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from '@/components/session-provider'
 import { SiteHeader } from '@/components/SiteHeader'
@@ -30,12 +31,65 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Barkod Dedektifi — Barkodu tara, kararı gör',
-    template: '%s · Barkod Dedektifi',
+    default: SITE_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    'Barkodu tara; uzman kurallarına göre ürünün boykot, sağlık ve helal hükmünü anında gör.',
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: 'food',
+  openGraph: {
+    type: 'website',
+    locale: 'tr_TR',
+    siteName: SITE_NAME,
+    url: '/',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: '/og',
+        width: 1200,
+        height: 630,
+        alt: SITE_TITLE,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ['/og'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  colorScheme: 'light dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f7f4ee' },
+    { media: '(prefers-color-scheme: dark)', color: '#1c1b17' },
+  ],
 }
 
 export default function RootLayout(props: { children: React.ReactNode }) {

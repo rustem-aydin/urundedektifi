@@ -2,10 +2,12 @@ import type { Metadata } from 'next'
 
 import { ContributionEntry } from '@/components/ContributionEntry'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { NOINDEX } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Ürün katkısı' }
+// Katkı formu işlem sayfasıdır; indekslenmez ama bağlantıları izlenir.
+export const metadata: Metadata = { title: 'Ürün katkısı', robots: NOINDEX }
 
 export default function KatkiGirisPage() {
   return (

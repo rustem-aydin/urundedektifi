@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { DuzenleScreen } from '@/components/wizard/DuzenleScreen'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Ürün düzenle' }
+export const metadata: Metadata = { title: 'Ürün düzenle', robots: NOINDEX_NOFOLLOW }
 
 export default async function DuzenlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

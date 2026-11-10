@@ -1,10 +1,20 @@
 import { getPayload } from 'payload'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ArrowRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  jsonLdGraph,
+  organizationNode,
+  pageMetadata,
+  websiteNode,
+} from '@/lib/seo'
 import { Barcode } from '@/components/Barcode'
 import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -22,6 +32,13 @@ const STEPS = [
   { no: '02', title: 'Kurallar eşleşir', desc: 'Uzman kuralları ürünle otomatik karşılaştırılır.' },
   { no: '03', title: 'Kararı gör', desc: 'Boykot, sağlık ve helal hükmü tek bakışta oku.' },
 ]
+
+export const metadata: Metadata = pageMetadata({
+  title: SITE_TITLE,
+  absoluteTitle: true,
+  description: SITE_DESCRIPTION,
+  path: '/',
+})
 
 export default async function HomePage() {
   const payloadConfig = await config
@@ -62,6 +79,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
+      <JsonLd data={jsonLdGraph([organizationNode(), websiteNode()])} />
       <section
         aria-labelledby="hero-heading"
         className="grid gap-10 pt-6 pb-12 sm:py-16 lg:grid-cols-2 lg:items-center"

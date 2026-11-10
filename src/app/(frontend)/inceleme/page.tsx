@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ReviewQueue } from '@/components/ReviewQueue'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'İnceleme kuyruğu' }
+export const metadata: Metadata = { title: 'İnceleme kuyruğu', robots: NOINDEX_NOFOLLOW }
 
 export default function IncelemePage() {
   return (

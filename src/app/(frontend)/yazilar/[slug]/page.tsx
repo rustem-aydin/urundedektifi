@@ -8,6 +8,13 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  articleNode,
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+} from '@/lib/seo'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { FollowButton } from '@/components/FollowButton'
@@ -30,17 +37,34 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     collection: 'posts',
     where: { and: [{ slug: { equals: slug } }, { status: { equals: 'published' } }] },
     limit: 1,
-    depth: 0,
-    // Meta etiketleri yalnız başlık ve özete bakar.
-    select: { title: true, excerpt: true },
+    depth: 1,
+    select: {
+      title: true,
+      slug: true,
+      excerpt: true,
+      cover: true,
+      expert: true,
+      publishedAt: true,
+      updatedAt: true,
+      createdAt: true,
+    },
   })
   const post = result.docs[0]
-  if (!post) return { title: 'Yazı bulunamadı' }
-  return {
+  if (!post) return { title: 'Yazı bulunamadı', robots: { index: false, follow: true } }
+
+  const expert = typeof post.expert === 'object' ? post.expert : null
+  const cover = typeof post.cover === 'object' ? post.cover : null
+
+  return pageMetadata({
     title: post.title,
-    description: post.excerpt || undefined,
-    openGraph: { title: post.title, description: post.excerpt || undefined, type: 'article' },
-  }
+    description: post.excerpt,
+    path: `/yazilar/${post.slug}`,
+    images: cover?.url ? [{ url: cover.url, alt: cover.alt || post.title }] : [],
+    type: 'article',
+    publishedTime: post.publishedAt ?? post.createdAt ?? undefined,
+    modifiedTime: post.updatedAt,
+    authors: expert?.name ? [expert.name] : undefined,
+  })
 }
 
 function formatDate(value?: string | null) {
@@ -70,6 +94,7 @@ export default async function PostPage({ params }: Params) {
       topics: true,
       expert: true,
       publishedAt: true,
+      updatedAt: true,
       createdAt: true,
     },
   })
@@ -100,6 +125,31 @@ export default async function PostPage({ params }: Params) {
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          articleNode({
+            title: post.title,
+            path: `/yazilar/${post.slug}`,
+            description: post.excerpt,
+            images: cover?.url ? [cover.url] : [],
+            datePublished: post.publishedAt ?? post.createdAt,
+            dateModified: post.updatedAt,
+            author: {
+              name: expert.name,
+              path: expert.slug ? `/uzmanlar/${expert.slug}` : null,
+            },
+            section: topics[0]?.name ?? null,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Uzmanlar', path: '/uzmanlar' },
+            ...(expert.slug
+              ? [{ name: expert.name, path: `/uzmanlar/${expert.slug}` }]
+              : []),
+            { name: post.title, path: `/yazilar/${post.slug}` },
+          ]),
+        ])}
+      />
       <nav aria-label="Geri" className="mb-6">
         <Link
           href={expert.slug ? `/uzmanlar/${expert.slug}` : '/uzmanlar'}

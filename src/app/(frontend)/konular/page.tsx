@@ -4,15 +4,23 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ruleStats } from '@/lib/ruleStats'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Konular',
   description: 'Boykot, sağlık, helal ve daha fazlası: uzmanların kural yazdığı tüm konular.',
-}
+  path: '/konular',
+})
 
 export default async function TopicsListPage() {
   const payloadConfig = await config
@@ -33,6 +41,26 @@ export default async function TopicsListPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: 'Konular',
+            description:
+              'Boykot, sağlık, helal ve daha fazlası: uzmanların kural yazdığı tüm konular.',
+            path: '/konular',
+            items: topics.docs.map((topic) => ({
+              name: topic.name,
+              path: `/konu/${topic.slug}`,
+            })),
+            numberOfItems: topics.docs.length,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Konular', path: '/konular' },
+          ]),
+        ])}
+      />
       <div className="flex flex-col items-start gap-2">
         <EvidenceTag>DOSYA DOLAPLARI</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Konular</h1>

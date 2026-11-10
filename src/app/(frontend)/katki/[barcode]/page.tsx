@@ -3,10 +3,11 @@ import Link from 'next/link'
 
 import { ContributionForm } from '@/components/ContributionForm'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { NOINDEX } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Ürün katkısı' }
+export const metadata: Metadata = { title: 'Ürün katkısı', robots: NOINDEX }
 
 const BARCODE = /^\d{8,14}$/
 

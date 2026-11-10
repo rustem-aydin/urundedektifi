@@ -3,10 +3,11 @@ import { Suspense } from 'react'
 
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { RegisterForm } from '@/components/RegisterForm'
+import { NOINDEX_NOFOLLOW } from '@/lib/seo'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = { title: 'Hesap oluştur' }
+export const metadata: Metadata = { title: 'Hesap oluştur', robots: NOINDEX_NOFOLLOW }
 
 export default function KayitPage() {
   return (

@@ -5,15 +5,31 @@ import type { Metadata } from 'next'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { ExpertCards } from '@/components/ExpertCards'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { cn } from '@/lib/utils'
 import { findAllDocs } from '@/lib/findAllDocs'
 import { ruleStats } from '@/lib/ruleStats'
 
-export const metadata: Metadata = {
-  title: 'Uzmanlar',
-  description: 'Ürünlere kural yazan, doğrulanmış uzmanlar.',
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ konu?: string }>
+}): Promise<Metadata> {
+  const params = await searchParams
+  return pageMetadata({
+    title: 'Uzmanlar',
+    description: 'Ürünlere kural yazan, doğrulanmış uzmanlar.',
+    path: '/uzmanlar',
+    noindex: Boolean(params.konu),
+  })
 }
 
 export default async function ExpertsPage({
@@ -112,6 +128,25 @@ export default async function ExpertsPage({
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: 'Uzmanlar',
+            description: 'Ürünlere kural yazan, doğrulanmış uzmanlar.',
+            path: '/uzmanlar',
+            items: filteredExperts.map((expert) => ({
+              name: expert.name,
+              path: `/uzmanlar/${expert.slug}`,
+            })),
+            numberOfItems: filteredExperts.length,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Uzmanlar', path: '/uzmanlar' },
+          ]),
+        ])}
+      />
       <div className="flex flex-col items-start gap-2">
         <EvidenceTag>İMZALAR</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Uzmanlar</h1>

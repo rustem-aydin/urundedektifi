@@ -7,15 +7,23 @@ import { ChevronRight, Package } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  webPageNode,
+} from '@/lib/seo'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { loadCategoryTree, type CategoryNode } from '@/lib/categoryTree'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Kategoriler',
   description:
     'Ürünleri üst ve alt kategoriye göre gez: içecek, süt ürünleri, et & şarküteri, atıştırmalık ve daha fazlası.',
-}
+  path: '/kategoriler',
+})
 
 const numberFormat = new Intl.NumberFormat('tr-TR')
 
@@ -131,6 +139,26 @@ export default async function CategoriesPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <JsonLd
+        data={jsonLdGraph([
+          webPageNode({
+            type: 'CollectionPage',
+            name: 'Kategoriler',
+            description:
+              'Ürünleri üst ve alt kategoriye göre gez: içecek, süt ürünleri, et & şarküteri, atıştırmalık ve daha fazlası.',
+            path: '/kategoriler',
+            items: tree.roots.map((root) => ({
+              name: root.name,
+              path: `/kategoriler/${root.slug}`,
+            })),
+            numberOfItems: tree.roots.length,
+          }),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Kategoriler', path: '/kategoriler' },
+          ]),
+        ])}
+      />
       <div className="flex flex-col items-start gap-2">
         <EvidenceTag>ÜRÜN TİPLERİ</EvidenceTag>
         <h1 className="font-display text-2xl sm:text-3xl">Kategoriler</h1>

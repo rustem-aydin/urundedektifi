@@ -6,7 +6,14 @@ import { ArrowLeft, AlertTriangle, Info, OctagonAlert } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
-import { getProductCase, viewCountFor } from '@/lib/productCase'
+import { getProductCase, viewCountFor, type ProductCase } from '@/lib/productCase'
+import { JsonLd } from '@/components/JsonLd'
+import {
+  breadcrumbNode,
+  jsonLdGraph,
+  pageMetadata,
+  productNode,
+} from '@/lib/seo'
 import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { type ExpertAvatar } from '@/components/ExpertVerdicts'
@@ -26,13 +33,42 @@ import { ContributionForm } from '@/components/ContributionForm'
 import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
 
+/** Barkod dosyası yoksa açıklama üretilemez; başlık da arama sonucunda değer taşımaz. */
+function verdictMetaDescription(product: ProductCase): string {
+  const verdicts = product.verdict.byTopic
+    .map((topicVerdict) => {
+      const rating = topicVerdict.matchedRules.find((rule) => rule.rating?.name)?.rating?.name
+      return rating ? `${topicVerdict.topic.name}: ${rating}` : null
+    })
+    .filter((value): value is string => Boolean(value))
+  const base = `${product.name}${product.brand?.name ? ` (${product.brand.name})` : ''}`
+  return verdicts.length > 0
+    ? `${base} — ${verdicts.join(', ')}. İçindekiler, besin değerleri ve uzman kuralları.`
+    : `${base} ürün dosyası: içindekiler, besin değerleri, alerjenler ve uzman hükümleri.`
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ barcode: string }>
 }): Promise<Metadata> {
   const { barcode } = await params
-  return { title: `Ürün Dosyası ${barcode}` }
+  const payloadConfig = await config
+  const payload = await getPayload({ config: payloadConfig })
+  const product = await getProductCase(payload, barcode)
+
+  if (!product) {
+    // Katkı formu 200 ile açılır (ADR 0024); arama motoruna yumuşak 404 olarak görünmemeli.
+    return { title: 'Bu barkod için dosya yok', robots: { index: false, follow: true } }
+  }
+
+  const image = product.gallery[0]
+  return pageMetadata({
+    title: product.name,
+    description: product.description || verdictMetaDescription(product),
+    path: `/urun/${encodeURIComponent(product.barcode ?? barcode)}`,
+    images: image ? [{ url: image.url, alt: image.alt || product.name }] : [],
+  })
 }
 
 const NUTRISCORE_COLORS: Record<string, string> = {
@@ -131,6 +167,22 @@ export default async function ProductDetailPage({
 
   return (
     <ProductVerdictProvider barcode={String(product.barcode ?? barcode)}>
+      <JsonLd
+        data={jsonLdGraph([
+          productNode(
+            product,
+            `/urun/${encodeURIComponent(product.barcode ?? barcode)}`,
+          ),
+          breadcrumbNode([
+            { name: 'Ana sayfa', path: '/' },
+            { name: 'Ürünler', path: '/urunler' },
+            {
+              name: product.name,
+              path: `/urun/${encodeURIComponent(product.barcode ?? barcode)}`,
+            },
+          ]),
+        ])}
+      />
       <ProductFeedbackProvider barcode={String(product.barcode ?? barcode)}>
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
       <Link
