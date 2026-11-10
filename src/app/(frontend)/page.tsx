@@ -82,7 +82,7 @@ export default async function HomePage() {
       <JsonLd data={jsonLdGraph([organizationNode(), websiteNode()])} />
       <section
         aria-labelledby="hero-heading"
-        className="grid gap-10 pt-6 pb-12 sm:py-16 lg:grid-cols-2 lg:items-center"
+        className="grid gap-10 pt-6 pb-12 sm:py-16 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center"
       >
         <div className="flex flex-col items-start gap-5">
           <EvidenceTag variant="evidence">VAKA DOSYASI · TÜKETİCİ</EvidenceTag>
@@ -99,9 +99,9 @@ export default async function HomePage() {
           <BarcodeLookupForm />
         </div>
 
-        {/* Tanıtım videosu: mobilde formun altında tam genişlik, masaüstünde hero'nun sağ kolonu. */}
+        {/* Tanıtım videosu: mobilde formun altında tam genişlik, masaüstünde hero'nun geniş kolonu. */}
         <div className="relative flex items-center justify-center">
-          <div className="group relative w-full max-w-md rotate-1 rounded-md border border-border bg-card p-2 shadow-md transition-transform duration-300 group-hover:rotate-0">
+          <div className="group relative w-full rotate-1 rounded-md border border-border bg-card p-2 shadow-md transition-transform duration-300 group-hover:rotate-0">
             <span className="absolute -top-2 left-1/2 z-10 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
             <HeroVideo />
           </div>
