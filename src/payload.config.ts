@@ -10,6 +10,7 @@ import { tr } from '@payloadcms/translations/languages/tr'
 
 import { mcpProductsPluginOptions } from './lib/mcpOptions'
 import { mergeDuplicateCategories } from './lib/categoryMerges'
+import { storageRetryStrategy } from './lib/s3Retry'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
@@ -123,6 +124,9 @@ export default buildConfig({
               region: process.env.S3_REGION,
               endpoint: process.env.S3_ENDPOINT,
               forcePathStyle: true,
+              // RustFS yoğun yükte zaman zaman 403 SignatureDoesNotMatch döndürüyor
+              // (bkz. src/lib/s3Retry.ts); tek bir red kart görselini kırıyor.
+              retryStrategy: storageRetryStrategy,
             },
           }),
         ]
