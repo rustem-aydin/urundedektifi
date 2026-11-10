@@ -82,7 +82,7 @@ export default async function HomePage() {
         </div>
 
         <div className="group relative flex items-center justify-center" aria-hidden="true">
-          <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 group-hover:rotate-0">
+          <div className="relative w-full max-w-sm rotate-1 rounded-md border border-border bg-card p-6 shadow-md transition-transform duration-300 lg:group-hover:rotate-0">
             <span className="absolute -top-2 left-1/2 h-4 w-24 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs" />
             <Barcode value="8690123456789" height={120} className="w-full text-foreground" />
             {/* Barkod tarama animasyonu yalnız masaüstü web'de: mobil görünümde çizgi hiç çizilmez. */}
