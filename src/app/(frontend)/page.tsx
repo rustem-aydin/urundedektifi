@@ -90,7 +90,7 @@ export default async function HomePage() {
             id="hero-heading"
             className="font-display text-3xl leading-tight text-balance sm:text-4xl"
           >
-            Barkodu göster, delilleri topla, kararı gör.
+            Barkodu tara, ürün hakkındaki uzman yorumunu gör.
           </h1>
           <p className="max-w-md text-muted-foreground">
             Barkod Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
