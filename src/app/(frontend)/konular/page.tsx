@@ -11,7 +11,7 @@ import { ruleStats } from '@/lib/ruleStats'
 
 export const metadata: Metadata = {
   title: 'Konular',
-  description: 'Uzmanların kural yazdığı tüm alanlar: boykot, sağlık, helal ve daha fazlası.',
+  description: 'Boykot, sağlık, helal ve daha fazlası: uzmanların kural yazdığı tüm konular.',
 }
 
 export default async function TopicsListPage() {

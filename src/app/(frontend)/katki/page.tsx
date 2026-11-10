@@ -15,7 +15,7 @@ export default function KatkiGirisPage() {
         <h1 className="font-display text-2xl sm:text-3xl">Ürün fotoğrafı gönder</h1>
         <p className="text-sm text-muted-foreground">
           Katalogda olmayan bir ürün mü elinde? Barkodunu yaz, fotoğraflarını gönder; dosya
-          incelemeye alınır, onaylandığında profilinizde gösterilir.
+          incelemeye alınır, onaylandığında profilinde görünür.
         </p>
       </div>
 

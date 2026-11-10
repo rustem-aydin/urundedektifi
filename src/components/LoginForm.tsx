@@ -51,8 +51,7 @@ export function LoginForm() {
         <EvidenceTag variant="evidence">OTURUM</EvidenceTag>
         <p className="font-display text-xl">{user.name}</p>
         <p className="text-sm text-muted-foreground">
-          Zaten giriş yapmış durumdasın. Hesap işlemleri (çıkış, kurumsal kısayollar) kendi
-          profilinde.
+          Zaten giriş yapmışsın. Çıkış ve panel kısayolları profilinde.
         </p>
         <Button asChild variant="outline" className="w-fit">
           <Link href={`/profil/${user.id}`}>Profilime git</Link>
@@ -64,8 +63,8 @@ export function LoginForm() {
   return (
     <form className="flex flex-col gap-4" onSubmit={submit}>
       <WizardIntro eyebrow="HESAP" title="Giriş">
-        Hesabınla giriş yap. Uzmanları takip etmek ve yazılarını anasayfada görmek için ücretsiz
-        hesap yeterli; ürün ekleme yalnız admin ve editör rollerine açık.
+        Hesabınla giriş yap. Uzmanları takip etmek, son yazılarını anasayfada görmek ve ürün
+        fotoğrafı göndermek için ücretsiz hesap yeterli.
       </WizardIntro>
       <TextField
         label="E-posta"

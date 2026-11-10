@@ -40,7 +40,7 @@ export default async function KatkiPage({
         <h1 className="font-display text-2xl sm:text-3xl">Ürün bulunamadı</h1>
         <p className="text-sm text-muted-foreground">
           {code} barkoduyla yayında bir dosya yok. Ürünün fotoğraflarını gönder; dosya incelemeye
-          alınır, onaylandığında profilinizde gösterilir.
+          alınır, onaylandığında profilinde görünür.
         </p>
       </div>
 

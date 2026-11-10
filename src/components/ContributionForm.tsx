@@ -124,8 +124,8 @@ export function ContributionForm({ barcode }: { barcode: string }) {
         <EvidenceTag variant="stamp">İNCELEMEDE</EvidenceTag>
         <h2 className="font-display text-xl">Ürün incelemeye alındı</h2>
         <p className="text-sm text-muted-foreground">
-          {barcode} barkoduyla açtığın dosya editör incelemesinde. Onaylandığında profilinizde
-          gösterilecektir.
+          {barcode} barkoduyla açtığın dosya editör incelemesinde. Onaylandığında profilinde
+          görünecek.
         </p>
         <div className="flex flex-wrap gap-2">
           {user ? (
@@ -155,7 +155,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
         <EvidenceTag variant="stamp">GİRİŞ GEREKLİ</EvidenceTag>
         <h2 className="font-display text-xl">Katkı için hesap gerekli</h2>
         <p className="text-sm text-muted-foreground">
-          Fotoğraf gönderen kişi oturum açmış olmalı; katkı, hesabının profilinde görünür.
+          Fotoğraf göndermek için giriş yapmalısın; katkın kendi profilinde görünecek.
         </p>
         <Button asChild>
           <Link href={`/giris?next=${encodeURIComponent(pathname || `/katki/${barcode}`)}`}>
@@ -250,7 +250,7 @@ export function ContributionForm({ barcode }: { barcode: string }) {
       </div>
 
       <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
-        <li>İlk fotoğraf ürünün ön yüzü olsun; içindekiler ve besin tablosu ayrı karelerde iyi olur.</li>
+        <li>İlk fotoğraf ürünün ön yüzü olsun. İçindekiler ve besin tablosunu ayrı karelerde çek.</li>
         <li>Fotoğraflar gönderildiğinde ürün incelemeye alınır, hemen yayına girmez.</li>
       </ul>
 

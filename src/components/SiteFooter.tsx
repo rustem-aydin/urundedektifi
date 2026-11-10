@@ -28,7 +28,7 @@ export function SiteFooter() {
               <BrandName className="text-base" />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Barkodu okut; ürünün boykot, sağlık ve helal açısından hükmünü uzmanların yazdığı
+              Barkodu okut; ürünün boykot, sağlık ve helal açısından durumunu uzmanların yazdığı
               kurallara göre anında gör.
             </p>
           </div>

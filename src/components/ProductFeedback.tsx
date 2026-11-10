@@ -19,6 +19,7 @@ import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
 import { VerdictStamp } from '@/components/VerdictStamp'
+import { DEFAULT_CONFIRM_TEXT, REFUTE_PREFIX } from '@/lib/feedbackText'
 import { userMessage } from '@/lib/userMessages'
 import {
   deleteFeedbackComment,
@@ -38,7 +39,7 @@ import { cn } from '@/lib/utils'
  *
  * Bölüm başlığının yanında rozet ("%86 · 12 doğrulama") ve "Doğrula" durur. Doğrulama
  * bir yorumdur: varsayılan metin hazır gelir, "doğru değil" seçilirse metin
- * "Doğru olmadığını bildiriyorum çünkü ..." diye başlar. Yorumlar tek düz listede,
+ * "Bu bölümdeki bilgiler yanlış çünkü ..." diye başlar. Yorumlar tek düz listede,
  * en yeni üstte; doğrulama yorumları hangi bölüme ait olduğunu taşır.
  */
 
@@ -55,8 +56,6 @@ const TARGET_LABELS = Object.fromEntries(
   FEEDBACK_TARGETS.map((target) => [target.key, target.label]),
 ) as Record<FeedbackTargetKey, string>
 
-const DEFAULT_CONFIRM_TEXT = 'Verilerin doğruluğunu teyit ediyorum.'
-const REFUTE_PREFIX = 'Doğru olmadığını bildiriyorum çünkü '
 const MAX_TEXT = 500
 
 const dateFormat = new Intl.DateTimeFormat('tr-TR', {
@@ -161,7 +160,7 @@ export function ProductFeedbackProvider({
     error,
     refresh,
     async vote(input) {
-      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
+      if (!token) throw new Error('Oy vermek için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
@@ -182,7 +181,7 @@ export function ProductFeedbackProvider({
       }
     },
     async comment(text) {
-      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
+      if (!token) throw new Error('Yorum yazmak için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
@@ -198,7 +197,7 @@ export function ProductFeedbackProvider({
       }
     },
     async remove(id) {
-      if (!token) throw new Error('Bunun için giriş yapman gerekiyor.')
+      if (!token) throw new Error('Yorumu silmek için giriş yapman gerekiyor.')
       setPending(true)
       setError(null)
       try {
@@ -429,7 +428,7 @@ function VerifyDialog({
             </label>
             <p className="text-xs text-muted-foreground">
               {verdict === 'confirm'
-                ? 'Boş bırakırsan varsayılan metin yazılır.'
+                ? 'Boş bırakırsan hazır metin eklenir.'
                 : `Yorumun "${REFUTE_PREFIX.trim()} …" diye başlar; nedenini sen yaz.`}
             </p>
 

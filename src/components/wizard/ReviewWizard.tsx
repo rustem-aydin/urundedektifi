@@ -101,7 +101,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
         setAiProblem(analysisError(doc))
         setNotice(
           status === 'running'
-            ? 'Katkı taslağı açıldı. Etiket okuması arka planda sürüyor; bittiğinde alanlar kendiliğinden dolar.'
+            ? 'Katkı taslağı açıldı. Etiket okuması arka planda sürüyor; bitince alanlar kendiliğinden dolacak.'
             : analysisExtraction(doc)
               ? 'Katkı taslağı açıldı: etiket okuması hazır, alanlar dolu geldi.'
               : photos.length
@@ -141,7 +141,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
             setDraft((current) => {
               if (!current) return current
               if (current.touched.length) {
-                setNotice('Etiket okuması bitti. Değiştirdiğin alanlar korunuyor; tümünü almak için sayfayı yenile.')
+                setNotice('Etiket okuması bitti. Değiştirdiğin alanlar korunuyor; analizin tamamını almak için sayfayı yenile.')
                 return current
               }
               return mergeExtraction(current, extraction)
@@ -224,7 +224,7 @@ export function ReviewWizard({ productId }: { productId: string }) {
       await restartAnalysis(productId, token)
       setAiStatus('running')
       setAiProblem(null)
-      const message = 'Analiz yeniden başlatıldı. Bitince alanlar kendiliğinden dolar.'
+      const message = 'Analiz yeniden başlatıldı. Bitince alanlar kendiliğinden dolacak.'
       setNotice(message)
       toast.success('Analiz yeniden başlatıldı.')
     } catch (error) {

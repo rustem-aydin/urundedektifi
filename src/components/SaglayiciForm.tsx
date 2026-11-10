@@ -70,7 +70,7 @@ export function SaglayiciForm() {
         >
           {status.configured
             ? 'Ürün fotoğrafları sunucu üzerinden bu sağlayıcıya gönderilir. API anahtarı yalnız sunucuda tutulur.'
-            : 'İnceleme ekranının fotoğraf analizi çalışmadan önce yönetici sağlayıcıyı tanımlamalı.'}
+            : 'Fotoğraf analizi çalışmadan önce bir yönetici sağlayıcıyı tanımlamalı.'}
         </WizardIntro>
       </CaseCard>
 

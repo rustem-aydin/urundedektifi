@@ -259,7 +259,7 @@ export default function BarcodeScanner() {
       } else {
         // Tek yol her rol için aynı: ürün fotoğrafla katkı olarak açılır (ADR 0026).
         setCameraStatus('Ürün bulunamadı — katkı ekranı açılıyor.')
-        toast.message('Ürün bulunamadı — dosyasını sen aç.')
+        toast.message('Ürün bulunamadı — dosyasını sen açabilirsin.')
         router.push(`/katki/${encodeURIComponent(barcodeText)}`)
       }
     } catch (error) {

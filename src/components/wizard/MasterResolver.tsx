@@ -101,14 +101,14 @@ function ResolverRow({
 
       {resolution.kind === 'create' && suggestion ? (
         <p className="text-sm text-muted-foreground">
-          Aynı ad master listede var. Kayıt sırasında yeni satır açılmaz; satır «{suggestion.name}»
+          Aynı ad ana listede var. Kayıt sırasında yeni satır açılmaz; satır «{suggestion.name}»
           kaydına bağlanır.
         </p>
       ) : null}
 
       {searching && resolution.kind !== 'existing' ? (
         <div className="flex flex-col gap-2">
-          <TextField label="Master listede ara" value={query} onChange={setQuery} />
+          <TextField label="Ana listede ara" value={query} onChange={setQuery} />
           <div className="flex flex-wrap gap-1.5">
             {results.map((option) => (
               <Chip
@@ -178,8 +178,8 @@ export function MasterResolver({ form, onEdit }: Props) {
     <div className="flex flex-col gap-4">
       <CaseCard className="flex flex-col gap-2 p-4">
         <EvidenceTag variant="evidence">EŞLEME</EvidenceTag>
-        <WizardIntro eyebrow="EŞLEME" title="Serbest metni master kayda bağla">
-          Kural motoru yalnız master kayıtlar üzerinden eşleşir. “Yeni oluştur” dediğin satırlar kayıt
+        <WizardIntro eyebrow="EŞLEME" title="Serbest metni ana kayda bağla">
+          Kural motoru yalnız ana kayıtlar üzerinden eşleşir. “Yeni oluştur” dediğin satırlar kayıt
           sırasında açılır; atlanan satır ürüne bağlanmaz ve hükümlerde görünmez.
         </WizardIntro>
       </CaseCard>

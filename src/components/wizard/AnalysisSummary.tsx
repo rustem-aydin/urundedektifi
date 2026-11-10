@@ -283,7 +283,7 @@ export function AnalysisSummary({ form, touched, onEdit, mode = 'review' }: Prop
 
       <p className="text-sm text-muted-foreground">
         İçindekiler, katkı maddeleri, alerjenler ve besin tablosu {editing ? 'aşağıda' : 'aşağıdaki eşleme bölümünde'}{' '}
-        master listeye eşlenir.
+        ana listeye eşlenir.
       </p>
     </div>
   )

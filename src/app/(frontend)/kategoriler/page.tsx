@@ -14,7 +14,7 @@ import { loadCategoryTree, type CategoryNode } from '@/lib/categoryTree'
 export const metadata: Metadata = {
   title: 'Kategoriler',
   description:
-    'Ürün tipleri üst ve alt kategori olarak: içecek, süt ürünleri, et & şarküteri, atıştırmalık ve daha fazlası.',
+    'Ürünleri üst ve alt kategoriye göre gez: içecek, süt ürünleri, et & şarküteri, atıştırmalık ve daha fazlası.',
 }
 
 const numberFormat = new Intl.NumberFormat('tr-TR')
@@ -150,7 +150,7 @@ export default async function CategoriesPage() {
         <div className="mt-10 flex flex-col items-start gap-4 rounded-md border border-dashed border-border bg-card p-8">
           <Package className="size-8 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">
-            Henüz ürün kategorisi eklenmemiş. Panelden kategori oluşturup ürünlere bağlayın.
+            Henüz ürün kategorisi eklenmemiş.
           </p>
         </div>
       ) : (

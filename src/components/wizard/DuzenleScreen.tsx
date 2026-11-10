@@ -266,7 +266,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         <EvidenceTag variant="stamp">KAYITLI ÜRÜN</EvidenceTag>
         <p className="font-display text-xl">{draft.form.name || 'İsimsiz ürün'}</p>
         <p className="text-sm text-muted-foreground">
-          Kaydettiğinde formdaki değerler ürünün üzerine yazılır; boş alanlar da temizlenir. Yeni
+          Kaydettiğinde formdaki değerler ürünün üzerine yazılır; boş bıraktığın alanlar silinir. Yeni
           fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur.
         </p>
         <TextField
@@ -274,7 +274,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
           value={draft.form.barcode}
           inputMode="numeric"
           placeholder="8690123456789"
-          hint="Barkodu değiştirirsen ürünün dosya adresi de yeni barkoda taşınır; eski bağlantı açılmaz."
+          hint="Barkodu değiştirirsen ürünün adresi de yeni barkoda taşınır; eski bağlantı açılmaz."
           onChange={(value) => setBarcode(value.replace(/\D/g, '').slice(0, 14))}
         />
         <div className="flex flex-col gap-1.5">

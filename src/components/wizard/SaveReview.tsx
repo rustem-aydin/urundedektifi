@@ -26,8 +26,8 @@ export function SaveReview({ draft, counts, busy, failure, dropped, onEdit, onSa
   const attached = draft.photos.filter((photo) => photo.role !== 'unknown')
 
   const warnings: string[] = []
-  if (!counts.total) warnings.push('Hiçbir satır master kayda bağlanmadı; hüküm değerlendirmesi boş kalır.')
-  if (counts.pending) warnings.push(`${counts.pending} satır karar bekliyor; kayıtta bağlanmaz.`)
+  if (!counts.total) warnings.push('Hiçbir satır ana kayda bağlanmadı; hüküm değerlendirmesi boş kalır.')
+  if (counts.pending) warnings.push(`${counts.pending} satır eşleşme bekliyor; kayıtta bağlanmaz.`)
   if (counts.skipped) warnings.push(`${counts.skipped} satır atlandı; bu satırlar hükümlerde görünmez.`)
   if (!attached.some((photo) => photo.role === 'front')) {
     warnings.push('Ön yüz fotoğrafı yok. Taslak kaydedilir; yayınlama kapalı kalır.')

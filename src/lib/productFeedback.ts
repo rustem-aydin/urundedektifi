@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import { APIError, type Payload } from 'payload'
 
+import { DEFAULT_CONFIRM_TEXT, REFUTE_PREFIX } from '@/lib/feedbackText'
 import type { User } from '@/payload-types'
 
 /**
@@ -34,11 +35,6 @@ export const FEEDBACK_TARGET_KEYS: FeedbackTargetKey[] = FEEDBACK_TARGETS.map((t
 export const FEEDBACK_TARGET_LABELS: Record<FeedbackTargetKey, string> = Object.fromEntries(
   FEEDBACK_TARGETS.map((t) => [t.key, t.label]),
 ) as Record<FeedbackTargetKey, string>
-
-export const DEFAULT_CONFIRM_TEXT = 'Verilerin doğruluğunu teyit ediyorum.'
-
-/** "Doğru değil" oyunun metni bu ifadeyle başlar; kullanıcı yalnız nedeni yazar. */
-export const REFUTE_PREFIX = 'Doğru olmadığını bildiriyorum çünkü '
 
 export const MAX_FEEDBACK_TEXT = 500
 export const FEEDBACK_PAGE_SIZE = 20
@@ -133,7 +129,7 @@ function voteText(verdict: FeedbackVerdict, note: string | null | undefined): st
   const trimmed = (note ?? '').replace(/\r\n/g, '\n').trim()
   if (verdict === 'confirm') return normalizeText(trimmed || DEFAULT_CONFIRM_TEXT)
   if (!trimmed) {
-    throw new APIError('Doğru olmadığını bildirirken nedeni yazmalısın.', 400)
+    throw new APIError('Yanlış olduğunu bildirirken nedenini yazmalısın.', 400)
   }
   const reason = trimmed.startsWith(REFUTE_PREFIX) ? trimmed.slice(REFUTE_PREFIX.length) : trimmed
   return normalizeText(`${REFUTE_PREFIX}${reason}`)

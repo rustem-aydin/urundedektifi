@@ -98,7 +98,7 @@ export const ProductFeedback: CollectionConfig = {
       label: 'Metin',
       admin: {
         description:
-          'Doğrulama oylarında varsayılan metin sunucuda yazılır ("Verilerin doğruluğunu teyit ediyorum." / "Doğru olmadığını bildiriyorum çünkü ...").',
+          'Doğrulama oylarında varsayılan metin sunucuda yazılır ("Bu bölümdeki bilgilerin doğru olduğunu onaylıyorum." / "Bu bölümdeki bilgiler yanlış çünkü ...").',
       },
     },
     {

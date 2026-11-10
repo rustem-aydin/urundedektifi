@@ -184,7 +184,7 @@ export default async function ProductDetailPage({
                 {formatPrice(priceSummary.min)}–{formatPrice(priceSummary.max)}
               </span>
               <span className="ml-2 text-muted-foreground">
-                (ort. {formatPrice(priceSummary.average)})
+                (ortalama {formatPrice(priceSummary.average)})
               </span>
             </p>
           )}
@@ -218,7 +218,7 @@ export default async function ProductDetailPage({
           title="Uyarılar"
           aside={<FeedbackAside target="uyarilar" />}
           hasData={product.warnings.length > 0}
-          emptyMessage="Bu ürüne işlenmiş uyarı yok."
+          emptyMessage="Bu ürün için girilmiş uyarı yok."
         >
           <ul className="mt-4 flex flex-col gap-2">
             {product.warnings.map((w, i) => {
@@ -250,7 +250,7 @@ export default async function ProductDetailPage({
           title="İçindekiler"
           aside={<FeedbackAside target="icindekiler" />}
           hasData={hasIngredients}
-          emptyMessage="İçindekiler henüz girilmemiş. Paketin arka yüzündeki listeyle dosya tamamlanır."
+          emptyMessage="İçindekiler henüz girilmemiş. Paketin arka yüzündeki listeyi ekleyerek dosyayı tamamlayabilirsin."
         >
           <CaseCard className="mt-4">
             <CardContent className="flex flex-col gap-4">
@@ -385,7 +385,7 @@ export default async function ProductDetailPage({
           title="Teknik özellikler"
           aside={<FeedbackAside target="teknik-ozellikler" />}
           hasData={product.specifications.length > 0}
-          emptyMessage="Teknik özellik henüz eklenmemiş."
+          emptyMessage="Teknik özellikler henüz eklenmemiş."
         >
           <CaseCard className="mt-4">
             <CardContent>
@@ -470,7 +470,7 @@ export default async function ProductDetailPage({
           eyebrow="Katkı"
           title={`Katkıda Bulunanlar (${contributorTotal})`}
           hasData={contributorTotal > 0}
-          emptyMessage="Bu dosyaya henüz katkı kaydı yok. Ürün eklendikçe, düzenlendikçe ve doğrulandıkça katkıda bulunanlar burada listelenir."
+          emptyMessage="Bu dosyaya henüz katkı yok. Ürün eklendikçe, düzenlendikçe ve doğrulandıkça katkıda bulunanlar burada listelenir."
         >
           <ContributorsStrip contributors={contributors} total={contributorTotal} />
         </CaseSection>

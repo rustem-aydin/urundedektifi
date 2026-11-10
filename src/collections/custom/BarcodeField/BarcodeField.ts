@@ -45,7 +45,7 @@ export const barcodeField = ({
     if (typeof val !== 'string') return 'Geçersiz değer.'
     // Basit bir barkod uzunluk kontrolü (EAN-8, EAN-13, UPC-A vb.)
     if (!/^\d{8,14}$/.test(val.replace(/-/g, ''))) {
-      return 'Geçerli bir barkod girin (Sadece rakamlar, 8-14 hane).'
+      return 'Geçerli bir barkod yaz (yalnız rakam, 8–14 hane).'
     }
     return true
   },

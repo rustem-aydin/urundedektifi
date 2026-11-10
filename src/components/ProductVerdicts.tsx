@@ -80,8 +80,8 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
         loading
           ? 'Hükümler yükleniyor…'
           : data?.hasOtherMatches
-            ? 'Bu ürünle eşleşen hükümler var; ama takip ettiğin uzmanlardan değil. O uzmanları takip edince hükümler burada görünür.'
-            : 'Bu ürünle eşleşen aktif kural yok. Uzmanlar kural ekledikçe dosya kendini günceller.'
+            ? 'Bu ürünle eşleşen hükümler var, ama takip ettiğin uzmanlardan değil. İlgili uzmanları takip edince hükümler burada görünür.'
+            : 'Bu ürünle eşleşen aktif kural yok. Uzmanlar kural ekledikçe bu bölüm güncellenir.'
       }
       emptyAction={
         loading ? null : (

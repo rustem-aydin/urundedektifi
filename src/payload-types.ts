@@ -898,7 +898,7 @@ export interface ProductFeedback {
    */
   verdict?: ('confirm' | 'refute') | null;
   /**
-   * Doğrulama oylarında varsayılan metin sunucuda yazılır ("Verilerin doğruluğunu teyit ediyorum." / "Doğru olmadığını bildiriyorum çünkü ...").
+   * Doğrulama oylarında varsayılan metin sunucuda yazılır ("Bu bölümdeki bilgilerin doğru olduğunu onaylıyorum." / "Bu bölümdeki bilgiler yanlış çünkü ...").
    */
   text: string;
   author: number | User;

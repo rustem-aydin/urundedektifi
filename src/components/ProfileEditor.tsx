@@ -109,7 +109,7 @@ export function ProfileEditor({
 
           <div className="mt-4 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="profile-name">Ad Soyad</Label>
+              <Label htmlFor="profile-name">Ad soyad</Label>
               <Input
                 id="profile-name"
                 value={nextName}
@@ -140,7 +140,7 @@ export function ProfileEditor({
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
               <p className="text-xs text-muted-foreground">
-                Kare format önerilir. Yükleme profil kaydedilince tamamlanır.
+                Kare format önerilir. Fotoğraf, profili kaydedince yüklenir.
               </p>
             </div>
 

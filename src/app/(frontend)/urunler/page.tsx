@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 
 export const metadata: Metadata = {
   title: 'Ürünler',
-  description: 'Yayındaki tüm ürün dosyaları — isim, kategori, marka ve etikete göre filtreleyin.',
+  description: 'Yayındaki tüm ürün dosyalarını isim, kategori, marka ve etikete göre filtrele.',
 }
 
 type SearchParams = { q?: string; kategori?: string; marka?: string; etiket?: string | string[] }
@@ -116,7 +116,7 @@ export default async function ProductsPage({
       ) : (
         <>
           <p className="mt-6 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase" aria-live="polite">
-            {products.totalDocs} ürün listeleniyor · en çok görüntülenen önce
+            {products.totalDocs} ürün listeleniyor · önce en çok görüntülenenler
           </p>
           <div className="mt-4">
             <InfiniteProductGrid

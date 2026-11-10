@@ -228,7 +228,7 @@ export function ProfileContributions({
       emptyMessage={
         own
           ? 'Henüz katkı göndermedin. Taramada bulunamayan bir ürünün fotoğraflarını göndererek dosya açabilirsin.'
-          : 'Bu kullanıcının yayında ürün katkısı yok. Katkı sağladıkça burada listelenir.'
+          : 'Bu kullanıcının yayında katkı verdiği ürün yok. Katkı verdikçe burada listelenir.'
       }
     >
       <div className="mt-4 flex flex-col gap-3">
@@ -250,7 +250,7 @@ export function ProfileContributions({
 
         {publishedShown < productCount ? (
           <p className="font-mono text-[0.65rem] tracking-[0.14em] text-faded uppercase">
-            En çok görüntülenen {numberFormat.format(publishedShown)} ürün gösteriliyor · toplam{' '}
+            {numberFormat.format(publishedShown)} ürün gösteriliyor (en çok görüntülenen) · toplam{' '}
             {numberFormat.format(productCount)}
           </p>
         ) : null}

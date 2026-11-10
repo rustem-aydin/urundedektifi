@@ -68,7 +68,7 @@ export function ContributionEntry() {
       <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         <EvidenceTag variant="tape">1–6 FOTOĞRAF</EvidenceTag>
         <EvidenceTag variant="tape">İNCELEME SONRASI YAYIN</EvidenceTag>
-        Katkı için giriş gerekir; gönderdiğin dosya editör onayına düşer.
+        Katkı için giriş gerekir; gönderdiğin dosya editör incelemesine gider.
       </p>
     </CaseCard>
   )

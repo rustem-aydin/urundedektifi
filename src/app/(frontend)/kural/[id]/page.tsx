@@ -115,12 +115,12 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
       <section className="mt-10">
         <h2 className="font-display text-xl">Eşleşen ürünler ({products.length})</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Bu kural yayındaki ürünlere otomatik uygulanır; aşağıdakiler kurala takılan dosyalar.
+          Bu kural yayındaki ürünlere otomatik uygulanır; aşağıdakiler kuralla eşleşen dosyalar.
         </p>
 
         {products.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Bu kurala takılan yayında ürün yok.
+            Bu kuralla eşleşen yayındaki ürün yok.
           </p>
         ) : (
           <div className="mt-5 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">

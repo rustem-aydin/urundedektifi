@@ -168,8 +168,8 @@ export default async function CategoryDetailPage({
               className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase"
               aria-live="polite"
             >
-              {numberFormat.format(products.totalDocs)} ürün listeleniyor · en çok görüntülenen
-              önce
+              {numberFormat.format(products.totalDocs)} ürün listeleniyor · önce en çok
+              görüntülenenler
             </p>
           )}
         </div>

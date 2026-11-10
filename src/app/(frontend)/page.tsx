@@ -55,8 +55,8 @@ export default async function HomePage() {
 
   const siteStats = [
     { label: 'Taranabilir ürün', value: publishedProducts.totalDocs },
-    { label: 'Toplam tarama', value: totalScans },
-    { label: 'Aktif kural', value: stats.total },
+    { label: 'Toplam görüntülenme', value: totalScans },
+    { label: 'Aktif uzman kuralı', value: stats.total },
     { label: 'Marka', value: brandCount.totalDocs },
   ]
 
@@ -76,7 +76,7 @@ export default async function HomePage() {
           </h1>
           <p className="max-w-md text-muted-foreground">
             Barkod Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
-            Geriye tek bakışta okunan bir hüküm kalır.
+            Geriye tek bakışta okunacak net bir hüküm kalır.
           </p>
           <BarcodeLookupForm />
         </div>

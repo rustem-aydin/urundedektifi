@@ -82,7 +82,7 @@ export default async function IngredientDetailPage({
       <section className="mt-10">
         <h2 className="font-display text-xl">Bu içeriğe ait kurallar ({rules.totalDocs})</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          İçeriği kullanan uzman kuralları. Kurala girince eşleştiği ürünleri görürsün.
+          Bu içeriği kullanan uzman kuralları. Bir kuralı açınca eşleştiği ürünleri görürsün.
         </p>
 
         {rules.docs.length === 0 ? (

@@ -114,12 +114,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           {
             label: 'Toplam görüntülenme',
             value: profile.stats.viewTotal,
-            hint: 'Bu ürünlerin toplam açılışı',
+            hint: 'Bu ürünler toplam kaç kez açıldı',
           },
           {
             label: 'Katkı işi',
             value: profile.stats.contributionCount,
-            hint: 'Oluşturma + düzenleme + doğrulama',
+            hint: 'Eklediğin, düzenlediğin ve doğruladığın işler',
           },
         ].map((stat) => (
           <div
@@ -142,7 +142,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           eyebrow="Takip"
           title={`Takip ettikleri (${profile.following.length})`}
           hasData={profile.following.length > 0}
-          emptyMessage="Henüz uzman takip etmiyor. Takip edilen uzmanların hükümleri ürün dosyalarında kişiselleşir."
+          emptyMessage="Henüz uzman takip etmiyor. Uzmanları takip edince ürün dosyalarında onların hükümleri görünür."
         >
           <ul className="mt-4 flex flex-wrap gap-2">
             {profile.following.map((expert) => (

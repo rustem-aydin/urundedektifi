@@ -11,7 +11,8 @@ const VERILER = [
     baslik: 'Hesap bilgileri',
     toplama: 'E-posta adresi, ad soyad, kullanıcı adı',
     amac: 'Kayıt ve giriş, uzman takibi, oy ve yorum yazma',
-    guvenlik: "Şifreler Payload CMS kimlik doğrulaması ile karma (hash) olarak saklanır; düz metin tutulmaz.",
+    guvenlik:
+      'Şifreler geri döndürülemez biçimde (hash) saklanır; düz metin olarak tutulmaz.',
   },
   {
     baslik: 'Ürün etkileşimleri',
@@ -73,9 +74,8 @@ export default function GizlilikPage() {
       <h2 className="mt-10 font-display text-xl tracking-wide">Reklam ve üçüncü taraflar</h2>
       <p className="mt-3 text-sm text-muted-foreground">
         Hizmet içinde reklam yoktur, izleyici analizi için üçüncü taraf SDK kullanılmaz. Veriler
-        reklam amacıyla satılmaz veya paylaşılmaz. Uygulama, açık kaynaklı harici bir yapay zekâ
-        sağlayıcısı seçme imkânı sunar; bu sağlayıcıya gönderilen anahtar yalnızca sizin cihazınızda
-        saklanır.
+        reklam amacıyla satılmaz veya paylaşılmaz. Uygulama, yapay zekâ sağlayıcısını kendiniz
+        seçmenize izin verir; seçtiğiniz sağlayıcının anahtarı yalnızca kendi cihazınızda saklanır.
       </p>
 
       <h2 className="mt-10 font-display text-xl tracking-wide">Saklama ve silme</h2>

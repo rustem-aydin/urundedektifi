@@ -30,7 +30,7 @@ export function BarcodeLookupForm() {
         router.push(`/urun/${digits}`)
       } else {
         // Tek yol her rol için aynı: ürün fotoğrafla katkı olarak açılır (ADR 0026).
-        toast.message('Ürün bulunamadı — dosyasını sen aç.')
+        toast.message('Ürün bulunamadı — dosyasını sen açabilirsin.')
         router.push(`/katki/${digits}`)
       }
     } catch {

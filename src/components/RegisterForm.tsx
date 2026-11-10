@@ -78,8 +78,8 @@ export function RegisterForm() {
   return (
     <form className="flex flex-col gap-4" onSubmit={submit}>
       <WizardIntro eyebrow="HESAP" title="Hesap oluştur">
-        Uzmanları takip et, yazılarını anasayfada hikâye rayında gör. Kayıt ücretsiz; ürün ekleme
-        yetkisi vermez.
+        Uzmanları takip et, son yazılarını anasayfada gör. Kayıt ücretsiz; istediğin ürünün
+        fotoğraflarını gönderip dosya açabilirsin.
       </WizardIntro>
       <TextField
         label="Ad soyad"
