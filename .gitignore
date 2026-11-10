@@ -58,6 +58,7 @@ scripts/.off-cache/
 # Tanıtım videosu ara çıktıları (yayınlanan MP4 public/video altında)
 /video/out/
 /video/hyperframes/assets/ui-demo.mp4
+/video/hyperframes/assets/ui-demo-dark.mp4
 /video/hyperframes/.hyperframes/
 
 # Medya denetimi çıktısı

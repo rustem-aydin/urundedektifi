@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr" data-resolution="landscape">
+<html lang="tr" data-resolution="landscape" data-composition-variables='[{"id":"paper","type":"color","label":"Kâğıt (arka plan)","default":"#f7f4ee"},{"id":"card","type":"color","label":"Kart yüzeyi","default":"#fcfbf7"},{"id":"ink","type":"color","label":"Mürekkep (metin)","default":"#1c1b17"},{"id":"border","type":"color","label":"Çizgi","default":"#d9d4c6"},{"id":"faded","type":"color","label":"Soluk metin","default":"#6e6a5e"},{"id":"stamp","type":"color","label":"Damga kırmızısı","default":"#b3341e"},{"id":"tape","type":"color","label":"Bant sarısı","default":"#e8b93c"},{"id":"demoClip","type":"string","label":"Uygulama demo klibi","default":"assets/ui-demo.mp4"}]'>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=1280, height=720" />
@@ -66,9 +66,18 @@
       #grid {
         position: absolute;
         inset: 0;
-        background-image: radial-gradient(circle, rgba(28, 27, 23, 0.075) 1px, transparent 1px);
+        background-image: radial-gradient(
+          circle,
+          color-mix(in srgb, var(--ink) 8%, transparent) 1px,
+          transparent 1px
+        );
         background-size: 26px 26px;
         opacity: 0.55;
+      }
+
+      #t-barcode rect,
+      #end-barcode rect {
+        fill: var(--ink);
       }
 
       .clip {
@@ -333,6 +342,7 @@
       <video
         id="demo"
         src="./assets/ui-demo.mp4"
+        data-var-src="demoClip"
         data-start="2.6"
         data-duration="10"
         data-track-index="0"
@@ -413,7 +423,6 @@
           rect.setAttribute('y', '0')
           rect.setAttribute('width', '1')
           rect.setAttribute('height', String(height))
-          rect.setAttribute('fill', '#1c1b17')
           svg.appendChild(rect)
         }
         svg.setAttribute('viewBox', `0 0 95 ${height}`)
@@ -445,8 +454,8 @@
         } else {
           const stamp = document.createElement('div')
           stamp.textContent = 'SONUÇ'
-          stamp.style.border = '3px solid #b3341e'
-          stamp.style.color = '#b3341e'
+          stamp.style.border = '3px solid var(--stamp)'
+          stamp.style.color = 'var(--stamp)'
           stamp.style.fontFamily = 'var(--display)'
           stamp.style.fontSize = '20px'
           stamp.style.letterSpacing = '0.14em'
