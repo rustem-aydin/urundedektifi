@@ -225,15 +225,16 @@
    sayfayı yatayda kaydırıyordu). Satır yüksekliği sütun genişliğinden türetilir:
    5 sütun + 4 boşluk = `20cqw - 0.4rem`; birim, galeri kökündeki
    `container-type: inline-size` sayesinde kolon genişliğine göre çözülür.
-   Kutu 1.4 satır yüksekliğinde kalır: alt satır kısmen görünür, böylece şeridin
-   kaydırılabilir olduğu anlaşılır. 5 veya daha az görselde kapak devreye girmez. */
+   Kutu 1.6 satır yüksekliğinde kalır: alt satırın yarısı görünür, böylece şeridin
+   kaydırılabilir olduğu anlaşılır (1.4'te 13 px'lik dilim kopuk görünüyordu).
+   5 veya daha az görselde kapak devreye girmez. */
 .product-thumbs {
   --thumb: min(4.5rem, calc(20cqw - 0.4rem));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: var(--thumb);
   gap: 0.5rem;
-  max-height: calc(var(--thumb) * 1.4);
+  max-height: calc(var(--thumb) * 1.6);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
