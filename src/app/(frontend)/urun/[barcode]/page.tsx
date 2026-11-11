@@ -3,7 +3,6 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, AlertTriangle, Info, OctagonAlert } from 'lucide-react'
 
-export const dynamic = 'force-dynamic'
 
 import config from '@/payload.config'
 import { getProductCase, viewCountFor, type ProductCase } from '@/lib/productCase'
@@ -32,6 +31,20 @@ import { ContributorsStrip } from '@/components/ContributorsStrip'
 import { ContributionForm } from '@/components/ContributionForm'
 import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
+
+/**
+ * Ürün sayfası uygulama içi önbellekte tutulur (ISR): ilk istek üretir, sonraki
+ * istekler 5 dakika boyunca sunucudan/DB'den bağımsız servis edilir. Boş
+ * `generateStaticParams` derleme sırasında tek bir sayfa bile üretmez; sayfalar
+ * çalışma anında oluşur ve `.next/cache` altında saklanır (Cloudflare'e bağımlı
+ * değil). Panelden ürün düzenlenince `revalidatePath` ile düşürülür.
+ */
+export const revalidate = 300
+export const dynamicParams = true
+
+export async function generateStaticParams() {
+  return []
+}
 
 /** Barkod dosyası yoksa açıklama üretilemez; başlık da arama sonucunda değer taşımaz. */
 function verdictMetaDescription(product: ProductCase): string {

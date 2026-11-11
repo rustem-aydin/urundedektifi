@@ -1,4 +1,5 @@
 import { APIError, type CollectionConfig, type PayloadRequest } from 'payload'
+import { revalidatePath } from 'next/cache'
 import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
 import { slugify } from '@/lib/slugify'
@@ -50,6 +51,21 @@ function feedbackError(error: unknown): Response | null {
     return Response.json({ error: 'Geçersiz istek gövdesi.' }, { status: 400 })
   }
   return null
+}
+
+/**
+ * Ürün sayfasının uygulama içi ISR kopyasını düşürür. Payload paneli kadar seed
+ * script'leri de bu hook'ları çalıştırır; Next istek bağlamı olmayan script'te
+ * `revalidatePath` hata atar, o yüzden sessizce yutulur — sayfa en geç 5 dakika
+ * içinde TTL ile kendini tazeler.
+ */
+function revalidateProductPage(barcode?: string | number | null) {
+  if (barcode == null || barcode === '') return
+  try {
+    revalidatePath(`/urun/${barcode}`)
+  } catch {
+    // Next dışı çalışma (script/CLI): düşürülecek bir sayfa önbelleği yok.
+  }
 }
 
 export const Products: CollectionConfig = {
@@ -1070,11 +1086,13 @@ export const Products: CollectionConfig = {
     afterChange: [
       async ({ doc, previousDoc, req, operation }) => {
         invalidateProductCaseCache(doc?.barcode)
+        revalidateProductPage(doc?.barcode)
         // Barkod değiştiyse eski kodun Dosya önbelleği de düşürülür: aksi hâlde eski
         // bağlantı TTL boyunca ürünü göstermeye devam ederdi.
         if (operation === 'update' && previousDoc?.barcode != null) {
           if (String(previousDoc.barcode) !== String(doc?.barcode ?? '')) {
             invalidateProductCaseCache(previousDoc.barcode)
+            revalidateProductPage(previousDoc.barcode)
           }
         }
         // Katkı kaydı: panelden ya da jetonla yapılan her yazım "oluşturdu"/"düzenledi"
@@ -1107,6 +1125,7 @@ export const Products: CollectionConfig = {
     afterDelete: [
       ({ doc }) => {
         invalidateProductCaseCache(doc?.barcode)
+        revalidateProductPage(doc?.barcode)
       },
     ],
     beforeValidate: [
