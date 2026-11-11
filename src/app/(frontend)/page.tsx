@@ -23,7 +23,7 @@ import { ProductGrid } from '@/components/ProductGrid'
 import { StatsStrip } from '@/components/StatsStrip'
 import { StoryRail } from '@/components/StoryRail'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
+import { PRODUCT_CARD_QUERY, productCardFromDoc } from '@/lib/productCardData'
 import { totalProductScans } from '@/lib/productScans'
 import { ruleStats } from '@/lib/ruleStats'
 
@@ -61,8 +61,7 @@ export default async function HomePage() {
         where: { status: { equals: 'published' } },
         sort: '-createdAt',
         limit: 6,
-        depth: 1,
-        select: PRODUCT_CARD_SELECT,
+        ...PRODUCT_CARD_QUERY,
       }),
       // İstatistik şeridi yalnız sayı gösterir; belge çekilmez.
       payload.count({ collection: 'products', where: { status: { equals: 'published' } } }),

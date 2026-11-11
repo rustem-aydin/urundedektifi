@@ -13,7 +13,7 @@ import {
   pageMetadata,
   webPageNode,
 } from '@/lib/seo'
-import { PRODUCT_CARD_SELECT, productCardFromDoc } from '@/lib/productCardData'
+import { PRODUCT_CARD_QUERY, productCardFromDoc } from '@/lib/productCardData'
 import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -81,11 +81,11 @@ export default async function IngredientDetailPage({
       where: {
         and: [{ status: { equals: 'published' } }, { 'items.ingredients': { equals: ingredient.id } }],
       },
-      depth: 1,
       limit: 100,
       sort: 'name',
-      // Ürün kartı yalnız künyeyi çizer; tam belge (fiyat, besin, uyarı...) çekilmez.
-      select: PRODUCT_CARD_SELECT,
+      // Ürün kartı yalnız künyeyi çizer; tam belge (fiyat, besin, uyarı...) ve
+      // ilişkilerin tamamı (populate) çekilmez.
+      ...PRODUCT_CARD_QUERY,
     }),
   ])
 

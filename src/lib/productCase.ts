@@ -286,6 +286,21 @@ const PRODUCT_SELECT = {
   prices: true,
 } as const
 
+/**
+ * `select` ana belgeyi daraltır; `depth: 2` ile çözülen ilişkiler yine tam belge
+ * olarak gelirdi (marka ülkesi/logo, kategori ikonu, medyanın ~14 alanı). Dosya
+ * yalnız bunları okur: medya `url`/`alt`, marka-kategori-ülke `name`.
+ *
+ * TUZAK: `media.url` sütun değil, `filename`'den üretilir; `filename` seçilmezse
+ * `url` null döner.
+ */
+const PRODUCT_POPULATE = {
+  media: { url: true, filename: true, alt: true },
+  brands: { name: true },
+  categories: { name: true },
+  countries: { name: true },
+} as const
+
 // --- Process-içi cache (tek container; Redis ileride tek noktadan eklenebilir) ---
 
 // Görüntülenme artışı bu önbelleği düşürmez: her açılışta kural motorunu yeniden çalıştırmak
@@ -362,6 +377,7 @@ export async function getProductCase(
     limit: 1,
     depth: 2,
     select: PRODUCT_SELECT,
+    populate: PRODUCT_POPULATE,
   })
 
   const product = found.docs[0]

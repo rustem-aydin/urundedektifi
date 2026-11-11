@@ -55,6 +55,28 @@ export const PRODUCT_CARD_SELECT = {
   additionalImages: true,
 } as const
 
+/**
+ * `select` yalnız ana belgenin alanlarını daraltır; `depth: 1` ile çözülen
+ * ilişkilerin (marka, kategori, görseller) **tamamı** gelmeye devam eder. 24 kart
+ * için ölçülen: select tek başına 49,8 KB, `populate` ile 23,3 KB (medya belgesi
+ * ~1,5 KB → ~150 B; marka/kategori yalnız `name`).
+ *
+ * TUZAK: `media.url` veritabanı sütunu değil, `filename`'den üretilir. `url` tek
+ * başına seçilirse `null` döner (REST'te ölçüldü); bu yüzden `filename` de seçilir.
+ */
+export const PRODUCT_CARD_POPULATE = {
+  media: { url: true, filename: true, alt: true },
+  brands: { name: true },
+  categories: { name: true },
+} as const
+
+/** Kart sorgusunun ortak şekli: ana belge `select`, ilişkiler `populate`, derinlik 1. */
+export const PRODUCT_CARD_QUERY = {
+  depth: 1,
+  select: PRODUCT_CARD_SELECT,
+  populate: PRODUCT_CARD_POPULATE,
+} as const
+
 /** Payload medya ilişkisinden yalnız karta gereken iki alanı çıkarır. */
 function mediaOf(value: unknown): { url: string; alt: string | null } | null {
   if (!value || typeof value !== 'object') return null
@@ -148,8 +170,7 @@ export async function listProductCards(
     page: filter.page ?? 1,
     // Kart yalnız marka/kategori/görsel ilişkilerini çözer; depth 2 bunların alt
     // ilişkilerini de (marka ülkesi, kategori ikonu) gereksiz yere çekiyordu.
-    depth: 1,
-    select: PRODUCT_CARD_SELECT,
+    ...PRODUCT_CARD_QUERY,
   })
 
   return { docs: result.docs.map(productCardFromDoc), totalDocs: result.totalDocs }
