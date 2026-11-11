@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ScanBarcode, Search } from 'lucide-react'
 
-import { getProduct } from '@/actions/product'
 import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,31 +12,27 @@ import { Input } from '@/components/ui/input'
 export function BarcodeLookupForm() {
   const router = useRouter()
   const [code, setCode] = useState('')
-  const [isChecking, setIsChecking] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const resetTimer = useRef<number | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => () => window.clearTimeout(resetTimer.current ?? undefined), [])
+
+  /**
+   * Ön sorgu YOK: `/urun/<barkod>` rotası dosya varsa ürünü, yoksa katkı formunu
+   * kendisi açar (ADR 0024). Eski akış önce bir sunucu eylemiyle "var mı" sorup
+   * (medyan ~240 ms) ancak sonra yönlendiriyordu; o tur kaldırıldı.
+   */
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const digits = code.replace(/\D/g, '')
-    if (digits.length < 8) {
-      toast.error('Geçersiz barkod — en az 8 hane gir.')
+    if (digits.length < 8 || digits.length > 14) {
+      toast.error('Geçersiz barkod — 8–14 hane gir.')
       return
     }
-    setIsChecking(true)
-    try {
-      const found = await getProduct(Number(digits))
-      if (found) {
-        toast.success('Ürün bulundu — dosyası açılıyor.')
-        router.push(`/urun/${digits}`)
-      } else {
-        // Tek yol her rol için aynı: ürün fotoğrafla katkı olarak açılır (ADR 0026).
-        toast.message('Ürün bulunamadı — dosyasını sen açabilirsin.')
-        router.push(`/katki/${digits}`)
-      }
-    } catch {
-      toast.error('Sorgu tamamlanamadı. Tekrar dene.')
-    } finally {
-      setIsChecking(false)
-    }
+    setIsNavigating(true)
+    router.push(`/urun/${digits}`)
+    // Gezinme başarısız olursa (çevrimdışı) düğme kilitli kalmasın.
+    resetTimer.current = window.setTimeout(() => setIsNavigating(false), 8000)
   }
 
   return (
@@ -60,11 +55,11 @@ export function BarcodeLookupForm() {
         <Button
           type="submit"
           size="lg"
-          disabled={isChecking}
+          disabled={isNavigating}
           className="h-11 px-5 font-medium"
         >
           <Search aria-hidden="true" />
-          {isChecking ? 'Sorgulanıyor…' : 'Ürünü sorgula'}
+          {isNavigating ? 'Açılıyor…' : 'Ürünü sorgula'}
         </Button>
       </div>
       <BarcodeScanButton

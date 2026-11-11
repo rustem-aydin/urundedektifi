@@ -360,6 +360,46 @@ async function getCachedRuleSet(payload: Payload): Promise<any[]> {
 }
 
 /**
+ * Açılışta ısınma (bkz. `src/instrumentation.ts`).
+ *
+ * Soğuk konteynerde ilk tarama bedeli: kural seti (`loadRuleSet` 3.900+ kuralı
+ * 500'lük sayfalarla okur, ~8 gidiş-dönüş) + Dosya kurulumu. Bu bedel ilk
+ * ziyaretçinin "eşleşme yavaş" olarak yaşadığı kuyruğu üretiyordu (ölçüm: 1,5–16 sn).
+ * Kural seti ve en çok görüntülenen birkaç Dosya açılışta belleğe alınır; istek
+ * yolunda yalnız önbellek isabeti kalır.
+ *
+ * `budgetMs`: açılışı geciktirmemek için ısınma süresi sınırlanır; kalan dosyalar
+ * kendi TTL'leriyle ilk istekte doldurulur.
+ */
+export async function warmProductCaseCache(payload: Payload, budgetMs = 15_000): Promise<void> {
+  const started = Date.now()
+  try {
+    const rules = await getCachedRuleSet(payload)
+    let warmed = 0
+    const top = await payload.find({
+      collection: 'products',
+      where: { status: { equals: 'published' } },
+      sort: '-goruntulenme',
+      limit: 40,
+      depth: 0,
+      // url/ilişki yok: yalnız barkod, Dosya buradan çözülür.
+      select: { barcode: true },
+    })
+    for (const doc of top.docs) {
+      if (Date.now() - started > budgetMs) break
+      if (!doc.barcode) continue
+      await getProductCase(payload, doc.barcode)
+      warmed++
+    }
+    console.log(
+      `[ısınma] ${rules.length} kural, ${warmed}/${top.docs.length} dosya — ${Date.now() - started} ms`,
+    )
+  } catch (error) {
+    console.error('[ısınma] başarısız', error)
+  }
+}
+
+/**
  * Barkod ile tek ürünün tam Dosya'sını döndürür.
  * Yayında olmayan ürünler dışarı sunulmaz (null döner).
  */
