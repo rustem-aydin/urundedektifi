@@ -154,6 +154,8 @@ Katkı akışının iki kapısı vardır: `/katki` (barkod elle girişi) ve tara
 
 Mobil aynı akışı birebir taşır: `katki` (barkod elle girişi + kamera) ve ürün ekranının "DOSYA YOK" dalında gömülü form. Fotoğraf ekleme yüzeyi iki tarafta tek bileşendir (web `ContributionForm`, mobil `components/katki/ContributionForm`): 1–6 fotoğraf, kamera + galeri, sıralama (ilk kare ön yüz), tek tek silme, sayaç ve "İNCELEMEDE" bitiş durumu.
 
+Kamera katmanı tarama ve fotoğraf modlarında yakınlaştırma ile fener sunar; fotoğraf modunda flaş, odak kilidi, makro ön ayarı ve ızgara eklenir. Web `getCapabilities()` ile flaş, odak mesafesi (makro), pozlama ve zoom aralığını okur, desteklenmeyen ayarı gizler. Mobil `expo-camera` lens/manuel odak açmadığı için "makro" en geniş açı + sürekli otomatik odak demektir.
+
 **Taslak Katkı**:
 İnceleme bekleyen Ürün: `status: draft` + `submittedBy` dolu. Taramada "yok" sayılır (`products.read` yalnız yayındakini herkese açar); yalnız sahibi ve panel rollerine görünür.
 _Avoid_: bekleyen ürün, aday kayıt
