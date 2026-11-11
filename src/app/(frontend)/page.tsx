@@ -97,7 +97,7 @@ export default async function HomePage() {
         className="grid gap-10 pt-6 pb-12 sm:py-16 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-center"
       >
         <div className="flex flex-col items-start gap-5">
-          <EvidenceTag variant="evidence">VAKA DOSYASI · TÜKETİCİ</EvidenceTag>
+          <EvidenceTag variant="evidence">TÜKETİCİ TOPLULUĞU</EvidenceTag>
           <h1
             id="hero-heading"
             className="font-display text-3xl leading-tight text-balance sm:text-4xl"

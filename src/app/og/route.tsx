@@ -58,7 +58,7 @@ export function GET() {
               letterSpacing: 4,
             }}
           >
-            VAKA DOSYASI · TÜKETİCİ
+            TÜKETİCİ TOPLULUĞU
           </div>
           <div style={{ display: 'flex', fontSize: 22, letterSpacing: 4, color: '#6e6a5e' }}>
             BD-2026
