@@ -1,4 +1,5 @@
 import type { Payload, Where } from 'payload'
+import { LRUCache } from 'lru-cache'
 
 /** Ürün listelerinde (ızgara) karta taşınan alanlar; tam Dosya istemciye gönderilmez. */
 export type ProductCardData = {
@@ -146,10 +147,44 @@ export function productCardFromDoc(product: {
   }
 }
 
+/**
+ * Liste sonuçları süreç içi LRU'da tutulur.
+ *
+ * `/urunler` ile sonsuz kaydırma ucu aynı sorguları tekrar tekrar çalıştırıyordu;
+ * sayfa ziyaretçi ya da bot için her seferinde veritabanına iniyordu. Önbellek
+ * yalnız sorgu çıktısını tutar (24 kart), HTML üretimi değişmez. Ürün yazımında
+ * `invalidateProductCardCache()` ile düşürülür; ayrıca 10 dakikada kendini tazeler.
+ */
+const listCache = new LRUCache<string, { docs: ProductCardData[]; totalDocs: number }>({
+  max: 300,
+  ttl: 1000 * 60 * 10,
+})
+
+function filterKey(filter: ProductCardFilter): string {
+  return JSON.stringify({
+    q: filter.q ?? '',
+    category: filter.category ?? '',
+    categories: filter.categories ?? [],
+    brand: filter.brand ?? '',
+    labels: filter.labels ?? [],
+    limit: filter.limit ?? 48,
+    page: filter.page ?? 1,
+  })
+}
+
+/** Ürün yazımından (panel ya da katkı) sonra liste kopyalarını düşürür. */
+export function invalidateProductCardCache() {
+  listCache.clear()
+}
+
 export async function listProductCards(
   payload: Payload,
   filter: ProductCardFilter = {},
 ): Promise<{ docs: ProductCardData[]; totalDocs: number }> {
+  const key = filterKey(filter)
+  const cached = listCache.get(key)
+  if (cached) return cached
+
   const and: Where[] = [{ status: { equals: 'published' } }]
   if (filter.q) and.push({ name: { contains: filter.q } })
   if (filter.categories && filter.categories.length > 0) {
@@ -173,5 +208,7 @@ export async function listProductCards(
     ...PRODUCT_CARD_QUERY,
   })
 
-  return { docs: result.docs.map(productCardFromDoc), totalDocs: result.totalDocs }
+  const cards = { docs: result.docs.map(productCardFromDoc), totalDocs: result.totalDocs }
+  listCache.set(key, cards)
+  return cards
 }

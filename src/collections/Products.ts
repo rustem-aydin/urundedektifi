@@ -5,6 +5,7 @@ import { detectCountryFromBarcode } from '@/lib/barcodePrefixes'
 import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
 import { getProductCase, invalidateProductCaseCache, viewCountFor } from '@/lib/productCase'
+import { invalidateProductCardCache } from '@/lib/productCardData'
 import {
   followingExpertIds,
   matchedRuleCountsByBarcode,
@@ -1086,6 +1087,7 @@ export const Products: CollectionConfig = {
     afterChange: [
       async ({ doc, previousDoc, req, operation }) => {
         invalidateProductCaseCache(doc?.barcode)
+        invalidateProductCardCache()
         revalidateProductPage(doc?.barcode)
         // Barkod değiştiyse eski kodun Dosya önbelleği de düşürülür: aksi hâlde eski
         // bağlantı TTL boyunca ürünü göstermeye devam ederdi.
@@ -1125,6 +1127,7 @@ export const Products: CollectionConfig = {
     afterDelete: [
       ({ doc }) => {
         invalidateProductCaseCache(doc?.barcode)
+        invalidateProductCardCache()
         revalidateProductPage(doc?.barcode)
       },
     ],
