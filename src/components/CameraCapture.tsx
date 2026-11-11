@@ -423,11 +423,22 @@ export function CameraCapture({ open, max, onClose, onDone }: Props) {
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Fotoğraf çek"
-      className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
+      className="camera-backdrop-in fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-0 backdrop-blur-[2px] md:items-center md:p-6"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) closeRef.current()
+      }}
     >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Fotoğraf çek"
+        className="camera-sheet-in relative flex h-[94svh] w-full flex-col overflow-hidden rounded-t-2xl bg-black text-white shadow-2xl md:h-[min(86svh,760px)] md:max-w-4xl md:rounded-xl md:border md:border-white/15"
+        onClick={(event) => event.stopPropagation()}
+      >
+      <div
+        aria-hidden="true"
+        className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/25 md:hidden"
+      />
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <video
           ref={videoRef}
@@ -707,6 +718,7 @@ export function CameraCapture({ open, max, onClose, onDone }: Props) {
             Tamam{shots.length ? ` (${shots.length})` : ''}
           </Button>
         </div>
+      </div>
       </div>
     </div>
   )
