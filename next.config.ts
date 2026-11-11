@@ -7,6 +7,9 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  // Stil dosyası HTML'e gömülür: 16 KB brotli CSS ayrı istek olarak 15 JS chunk'ıyla
+  // bant paylaşıp ilk boyayı ~700 ms geciktiriyordu (ölçüm: cssEnd 977 ms).
+  experimental: { inlineCss: true },
   allowedDevOrigins: ['192.168.1.101'],
   images: {
     // Payload medyası kendi rotasından (`/api/media/file/<dosya>`) servis edilir;
