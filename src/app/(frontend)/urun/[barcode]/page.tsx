@@ -1,4 +1,4 @@
-import { getPayload } from 'payload'
+import { getPayload, type Payload } from 'payload'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, AlertTriangle, Info, OctagonAlert } from 'lucide-react'
@@ -108,6 +108,32 @@ function formatDate(d: string) {
   }).format(new Date(d))
 }
 
+/**
+ * Hüküm satırındaki uzman avatarları: ürün dosyası avatar taşımadığı için
+ * slug → görsel eşlemesi burada kurulur. Bağımsız okuma olduğundan sayfada
+ * sayaç ve katkıcı sorgularıyla birlikte (Promise.all) çalıştırılır.
+ */
+async function expertAvatarsFor(
+  payload: Payload,
+  slugs: string[],
+): Promise<Record<string, ExpertAvatar>> {
+  const avatars: Record<string, ExpertAvatar> = {}
+  if (slugs.length === 0) return avatars
+
+  const experts = await payload.find({
+    collection: 'experts',
+    where: { slug: { in: slugs } },
+    limit: 100,
+    depth: 1,
+    select: { slug: true, avatar: true },
+  })
+  for (const expert of experts.docs) {
+    const avatar = typeof expert.avatar === 'object' && expert.avatar ? expert.avatar : null
+    avatars[expert.slug] = { url: avatar?.url ?? null, alt: avatar?.alt ?? null }
+  }
+  return avatars
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -137,10 +163,6 @@ export default async function ProductDetailPage({
     )
   }
 
-  // Dosya önbellekte yaşar; sayaç her istekte canlı okunur.
-  const goruntulenme = await viewCountFor(payload, product.id)
-  const { total: contributorTotal, contributors } = await listContributors(payload, product.id)
-
   const { verdict } = product
   const priceSummary = product.priceSummary
 
@@ -160,23 +182,20 @@ export default async function ProductDetailPage({
   const hasIngredients =
     product.ingredients.length > 0 || product.additives.length > 0 || product.allergens.length > 0
 
-  // Uzman hükümleri satırının solu: uzman avatarı (hüküm nesnesi avatar taşımaz, experts'ten eşlenir)
+  // Uzman hükümleri satırının solu: uzman avatarı (hüküm nesnesi avatar taşımaz, experts'ten eşlenir).
   const expertSlugs = verdict.byExpert.map((entry) => entry.expert.slug).filter(Boolean)
-  const expertAvatars: Record<string, ExpertAvatar> = {}
-  if (expertSlugs.length > 0) {
-    const experts = await payload.find({
-      collection: 'experts',
-      where: { slug: { in: expertSlugs } },
-      limit: 100,
-      depth: 1,
-      // Yalnız satırdaki avatar eşlemesi için gereken alanlar.
-      select: { slug: true, avatar: true },
-    })
-    for (const expert of experts.docs) {
-      const avatar = typeof expert.avatar === 'object' && expert.avatar ? expert.avatar : null
-      expertAvatars[expert.slug] = { url: avatar?.url ?? null, alt: avatar?.alt ?? null }
-    }
-  }
+
+  /**
+   * Dosya çözüldükten sonraki üç okuma birbirinden bağımsızdır (sayaç, katkıcılar,
+   * uzman avatarları). Sırayla beklemek her açılışa iki fazladan gidiş-dönüş ekliyordu;
+   * taramadan gelen ziyaretçi bu gecikmeyi doğrudan "eşleşme yavaş" olarak yaşıyor.
+   */
+  const [goruntulenme, contributorList, expertAvatars] = await Promise.all([
+    viewCountFor(payload, product.id),
+    listContributors(payload, product.id),
+    expertAvatarsFor(payload, expertSlugs),
+  ])
+  const { total: contributorTotal, contributors } = contributorList
 
   return (
     <ProductVerdictProvider barcode={String(product.barcode ?? barcode)}>

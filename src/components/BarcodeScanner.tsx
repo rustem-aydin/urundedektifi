@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import type { Html5Qrcode as Html5QrcodeInstance } from 'html5-qrcode'
 import { Focus, Minimize2, X, Zap, ZapOff } from 'lucide-react'
 import { toast } from 'sonner'
-import { getProduct } from '@/actions/product'
+import { Barcode } from '@/components/Barcode'
+import { CaseCard } from '@/components/CaseCard'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { Button } from '@/components/ui/button'
@@ -50,10 +51,13 @@ type BarcodeScannerProps = {
 export default function BarcodeScanner({ onClose }: BarcodeScannerProps) {
   const router = useRouter()
   const scannerRef = useRef<Html5QrcodeInstance | null>(null)
+  /** İlk okumadan sonra kilitlenir: kamera durana kadar gelen kareler yok sayılır. */
+  const scanLock = useRef(false)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string>('')
   const [cameraStatus, setCameraStatus] = useState<string>('Başlatılıyor…')
-  const [isChecking, setIsChecking] = useState(false)
+  /** Okunan barkod: dolu olduğunda "tarama tamamlandı" katmanı gösterilir. */
+  const [scanned, setScanned] = useState<string | null>(null)
   const [torchSupported, setTorchSupported] = useState(false)
   const [torchOn, setTorchOn] = useState(false)
   const [focusSupported, setFocusSupported] = useState(false)
@@ -167,7 +171,7 @@ export default function BarcodeScanner({ onClose }: BarcodeScannerProps) {
       { facingMode: 'environment' },
       SCAN_CONFIG,
       (decodedText: string) => {
-        void handleBarcodeScanned(decodedText)
+        handleBarcodeScanned(decodedText)
       },
       (errorMessage: string) => {
         if (!errorMessage.includes('No MultiFormat Readers')) {
@@ -244,62 +248,32 @@ export default function BarcodeScanner({ onClose }: BarcodeScannerProps) {
     }
   }, [])
 
-  const handleBarcodeScanned = async (barcodeText: string) => {
-    try {
-      setIsChecking(true)
-      setCameraStatus('Barkod sorgulanıyor…')
+  /**
+   * İlk okumada kamera durur ve "tarama tamamlandı" katmanı açılır.
+   *
+   * Eşleştirme burada YAPILMAZ: `/urun/<barkod>` rotası yayında dosya varsa ürünü,
+   * yoksa katkı formunu kendisi açar (ADR 0024). Eski akış önce bir sunucu eylemiyle
+   * "ürün var mı" sorguluyor, ancak ondan sonra yönlendiriyordu; bu, sayfa açılmadan
+   * önce fazladan bir sunucu turu (~0,4 sn) harcıyor ve o sırada kamera taramaya devam
+   * ettiği için aynı barkod birden çok kez okunuyordu.
+   */
+  const handleBarcodeScanned = (decoded: string) => {
+    if (scanLock.current) return
 
-      const barcodeNumber = parseInt(barcodeText, 10)
-
-      if (isNaN(barcodeNumber)) {
-        setError('Geçersiz barkod biçimi.')
-        setIsChecking(false)
-        return
-      }
-
-      const found = await getProduct(barcodeNumber)
-
-      await stopScanner()
-
-      if (found) {
-        setCameraStatus('Ürün bulundu.')
-        toast.success('Ürün bulundu — dosyası açılıyor.')
-        router.push(`/urun/${barcodeText}`)
-      } else {
-        // Tek yol her rol için aynı: ürün fotoğrafla katkı olarak açılır (ADR 0026).
-        setCameraStatus('Ürün bulunamadı — katkı ekranı açılıyor.')
-        toast.message('Ürün bulunamadı — dosyasını sen açabilirsin.')
-        router.push(`/katki/${encodeURIComponent(barcodeText)}`)
-      }
-    } catch (error) {
-      console.error('Sorgulama hatası:', error)
-      setError('Ürün sorgulanamadı. Tekrar dene.')
-      setCameraStatus('Sorgu başarısız; tarayıcı yeniden başlatılıyor…')
-      toast.error('Ürün sorgulanamadı. Tekrar dene.')
-
-      setTimeout(() => {
-        if (scannerRef.current && isReady) {
-          restartScanner()
-        }
-      }, 2000)
-    } finally {
-      setIsChecking(false)
+    const digits = decoded.replace(/\D/g, '')
+    if (digits.length < 8 || digits.length > 14) {
+      // Okuyucu nadiren barkod olmayan metin üretir; tarama kesilmeden devam etsin.
+      toast.error('Barkod okunamadı — barkodun tamamı çerçevede olsun.')
+      return
     }
-  }
 
-  const restartScanner = async () => {
-    const scanner = scannerRef.current
-    if (!scanner) return
-
-    try {
-      // `start()` çalışan tarayıcıyı temizlemez ("Cannot clear while scan is
-      // ongoing"): hata sonrası yeniden başlatmadan önce durdurmak gerekir.
-      await stopScanner()
-      await startScanner(scanner)
-    } catch (err) {
-      console.error('Yeniden başlatma hatası:', err)
-      setError('Kamera yeniden başlatılamadı. Sayfayı yenileyip tekrar dene.')
-    }
+    scanLock.current = true
+    setScanned(digits)
+    setCameraStatus('Tarama tamamlandı — yönlendiriliyorsunuz…')
+    void stopScanner()
+    // Dokunsal onay: kamera durduğu hâlde ekranın değişmediği izlenimini kırar.
+    if (typeof navigator.vibrate === 'function') navigator.vibrate([35, 40, 60])
+    router.push(`/urun/${digits}`)
   }
 
   useEffect(() => {
@@ -341,9 +315,6 @@ export default function BarcodeScanner({ onClose }: BarcodeScannerProps) {
           <span className="truncate font-mono text-xs tracking-[0.18em] text-white/85 uppercase [text-shadow:0_1px_2px_rgb(0_0_0/0.6)]">
             {cameraStatus}
           </span>
-          {isChecking ? (
-            <span className="size-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-b-white" />
-          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isReady && torchSupported ? (
@@ -391,6 +362,59 @@ export default function BarcodeScanner({ onClose }: BarcodeScannerProps) {
           </button>
         </div>
       </div>
+
+      {/* Okuma anı: kamera durduruldu, hedef sayfa hazırlanıyor. Katman yönlendirme
+          tamamlanana kadar açık kalır (eski sayfa RSC yanıtı gelene kadar görünür),
+          böylece kullanıcı "okumadı" sanıp barkodu tekrar taramaz. */}
+      {scanned ? (
+        <div
+          role="status"
+          aria-live="assertive"
+          className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-black/85 px-5 backdrop-blur-sm"
+        >
+          <CaseCard tape className="w-full max-w-sm bg-card p-5">
+            <div className="flex items-center justify-between gap-3">
+              <VerdictStamp variant="safe">Okundu</VerdictStamp>
+              <span className="flex items-center gap-2 font-mono text-[0.65rem] tracking-[0.16em] text-muted-foreground uppercase">
+                <span
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin rounded-full border-2 border-border border-b-foreground motion-reduce:animate-none"
+                />
+                Yönlendiriliyorsunuz…
+              </span>
+            </div>
+
+            <h2 className="mt-3 font-display text-xl text-foreground">Tarama tamamlandı</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Barkod okundu, ürün dosyası açılıyor.
+            </p>
+
+            <Barcode
+              value={scanned}
+              height={44}
+              className="mt-4 w-full"
+              barClassName="text-foreground/85"
+              digitsClassName="text-xs tracking-[0.3em] text-foreground"
+            />
+
+            <div className="mt-4 h-0.5 w-full overflow-hidden rounded-full bg-muted">
+              <span
+                aria-hidden="true"
+                className="block h-full w-1/3 animate-pulse rounded-full bg-stamp motion-reduce:animate-none"
+              />
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="mt-3 px-0 text-xs text-muted-foreground"
+            >
+              Kapat
+            </Button>
+          </CaseCard>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/95 px-5 py-24">
