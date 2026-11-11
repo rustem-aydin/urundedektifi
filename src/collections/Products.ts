@@ -6,6 +6,7 @@ import { slugify } from '@/lib/slugify'
 import { barcodeField } from './custom/BarcodeField/BarcodeField'
 import { getProductCase, invalidateProductCaseCache, viewCountFor } from '@/lib/productCase'
 import { invalidateProductCardCache } from '@/lib/productCardData'
+import { clearServerCache } from '@/lib/serverCache'
 import {
   followingExpertIds,
   matchedRuleCountsByBarcode,
@@ -1088,6 +1089,7 @@ export const Products: CollectionConfig = {
       async ({ doc, previousDoc, req, operation }) => {
         invalidateProductCaseCache(doc?.barcode)
         invalidateProductCardCache()
+        clearServerCache()
         revalidateProductPage(doc?.barcode)
         // Barkod değiştiyse eski kodun Dosya önbelleği de düşürülür: aksi hâlde eski
         // bağlantı TTL boyunca ürünü göstermeye devam ederdi.
@@ -1128,6 +1130,7 @@ export const Products: CollectionConfig = {
       ({ doc }) => {
         invalidateProductCaseCache(doc?.barcode)
         invalidateProductCardCache()
+        clearServerCache()
         revalidateProductPage(doc?.barcode)
       },
     ],

@@ -26,6 +26,7 @@ import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PRODUCT_CARD_QUERY, productCardFromDoc } from '@/lib/productCardData'
 import { totalProductScans } from '@/lib/productScans'
 import { ruleStats } from '@/lib/ruleStats'
+import { cached } from '@/lib/serverCache'
 
 const STEPS = [
   { no: '01', title: 'Sorgula', desc: 'Barkod numarasını yaz; ürün dosyası anında açılır.' },
@@ -40,9 +41,15 @@ export const metadata: Metadata = pageMetadata({
   path: '/',
 })
 
-export default async function HomePage() {
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
+/**
+ * Ana sayfanın verisi 5 dakika süreç içi önbellekte tutulur: bot trafiği ve
+ * ziyaretçiler aynı 6 sorguyu tekrar tekrar çalıştırmaz. İçerik yazımında
+ * `clearServerCache()` ile düşürülür (bkz. koleksiyon hook'ları).
+ */
+const loadHomeData = () =>
+  cached('home', async () => {
+    const payloadConfig = await config
+    const payload = await getPayload({ config: payloadConfig })
 
   const [topics, stats, latestProducts, publishedProducts, brandCount, totalScans] =
     await Promise.all([
@@ -69,12 +76,18 @@ export default async function HomePage() {
       totalProductScans(payload),
     ])
 
-  const siteStats = [
-    { label: 'Taranabilir ürün', value: publishedProducts.totalDocs },
-    { label: 'Toplam görüntülenme', value: totalScans },
-    { label: 'Aktif uzman kuralı', value: stats.total },
-    { label: 'Marka', value: brandCount.totalDocs },
-  ]
+    const siteStats = [
+      { label: 'Taranabilir ürün', value: publishedProducts.totalDocs },
+      { label: 'Toplam görüntülenme', value: totalScans },
+      { label: 'Aktif uzman kuralı', value: stats.total },
+      { label: 'Marka', value: brandCount.totalDocs },
+    ]
+
+    return { topics, stats, latestProducts, siteStats }
+  })
+
+export default async function HomePage() {
+  const { topics, stats, latestProducts, siteStats } = await loadHomeData()
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">

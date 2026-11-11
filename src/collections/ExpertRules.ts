@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { invalidateProductCaseCache, invalidateRuleSetCache, listProductsMatchingRule } from '@/lib/productCase'
 import { invalidateRuleStats } from '@/lib/ruleStats'
+import { clearServerCache } from '@/lib/serverCache'
 import type { User } from '@/payload-types'
 
 const RULE_TYPES = [
@@ -353,6 +354,8 @@ export const ExpertRules: CollectionConfig = {
         invalidateProductCaseCache()
         // Konu/uzman sayaçları (GROUP BY sonucu) da tazelenir.
         invalidateRuleStats()
+        // Ana sayfanın 5 dakikalık veri kopyası tazelenir.
+        clearServerCache()
       },
     ],
     afterDelete: [

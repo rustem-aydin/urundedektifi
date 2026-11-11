@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
+import { clearServerCache } from '@/lib/serverCache'
 import type { User } from '@/payload-types'
 
 export const Categories: CollectionConfig = {
@@ -93,5 +94,8 @@ export const Categories: CollectionConfig = {
         return data
       },
     ],
+    // Ana sayfa verisi ve kategori ağacı süreç içi önbellekte durur.
+    afterChange: [() => clearServerCache()],
+    afterDelete: [() => clearServerCache()],
   },
 }

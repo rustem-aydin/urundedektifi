@@ -3,6 +3,7 @@ import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 import type { Category } from '@/payload-types'
+import { cached } from '@/lib/serverCache'
 
 /**
  * Ürün kategorileri hiyerarşisi (`categories.parent`).
@@ -120,8 +121,9 @@ function sortNodes(nodes: CategoryNode[]): void {
  * Kategori detay sayfası ağacı hem `generateMetadata` hem sayfa gövdesinde istiyor;
  * React `cache` aynı istekteki ikinci çağrıyı bellekten karşılar (tek sorgu + tek sayım).
  */
-export const loadCategoryTree = cache(async (payload: Payload): Promise<CategoryTree> => {
-  const [categories, counts] = await Promise.all([
+export const loadCategoryTree = cache((payload: Payload): Promise<CategoryTree> =>
+  cached('category-tree', async () => {
+    const [categories, counts] = await Promise.all([
     payload.find({
       collection: 'categories',
       limit: 500,
@@ -172,13 +174,14 @@ export const loadCategoryTree = cache(async (payload: Payload): Promise<Category
 
   sortNodes(roots)
 
-  return {
-    roots,
-    all,
-    byId,
-    bySlug: new Map(all.map((node) => [node.slug, node])),
-  }
-})
+    return {
+      roots,
+      all,
+      byId,
+      bySlug: new Map(all.map((node) => [node.slug, node])),
+    }
+  }),
+)
 
 /** Kategori kendisi + tüm torunları (ürün süzgeci için). */
 export function categoryDescendantIds(node: CategoryNode): string[] {
