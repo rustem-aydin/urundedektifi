@@ -220,29 +220,27 @@
   }
 }
 
-/* Ürün galerisi küçük resimleri: satırda 5 görsel. 5'ten fazla görsel varsa şerit
-   yana taşmak yerine dikey kaydırılır (mobilde 6 görselli şerit 424 px'e uzayıp
-   sayfayı yatayda kaydırıyordu). Satır yüksekliği sütun genişliğinden türetilir:
-   5 sütun + 4 boşluk = `20cqw - 0.4rem`; birim, galeri kökündeki
-   `container-type: inline-size` sayesinde kolon genişliğine göre çözülür.
-   Kutu 1.6 satır yüksekliğinde kalır: alt satırın yarısı görünür, böylece şeridin
-   kaydırılabilir olduğu anlaşılır (1.4'te 13 px'lik dilim kopuk görünüyordu).
-   5 veya daha az görselde kapak devreye girmez. */
+/* Ürün galerisi küçük resimleri: tek sıra, YATAY kaydırma. Şerit yatay kaydırılan
+   bir kutu olduğu için min-content genişliği 424 px'e (6 × 64 px + boşluklar)
+   çıkıyor; grid kolonu `auto` olduğunda bu değer kolonu ve sayfayı genişletiyordu.
+   Galeri kökündeki `min-w-0` otomatik minimum boyutu sıfırlar, şerit kolon
+   genişliğine sıkışır ve kaydırma kutu içinde kalır. Taşan küçük resim yarım
+   görünerek yatay kaydırma ipucu verir. */
 .product-thumbs {
-  --thumb: min(4.5rem, calc(20cqw - 0.4rem));
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-auto-rows: var(--thumb);
+  display: flex;
+  width: 100%;
+  min-width: 0;
   gap: 0.5rem;
-  max-height: calc(var(--thumb) * 1.6);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding-bottom: 0.25rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   scrollbar-width: thin;
+  scroll-snap-type: x proximity;
 }
 
 .product-thumbs > * {
-  width: 100%;
-  height: 100%;
+  flex: none;
+  scroll-snap-align: start;
 }
 
 /* Tam ekran tarama: html5-qrcode #reader öğesine satır içi `position: relative`

@@ -26,7 +26,7 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 [container-type:inline-size]">
+    <div className="flex min-w-0 flex-col gap-2">
       <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-card shadow-sm">
         <span
           className="pointer-events-none absolute -top-2 left-1/2 z-10 h-4 w-20 -translate-x-1/2 -rotate-3 bg-tape-yellow/70 shadow-xs"
@@ -86,7 +86,7 @@ export function ProductGallery({ images }: { images: GalleryImage[] }) {
               aria-label={`Görsel ${i + 1}: ${g.label}`}
               onClick={() => setActive(i)}
               className={cn(
-                'relative overflow-hidden rounded-sm border bg-card transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                'relative aspect-square w-16 shrink-0 overflow-hidden rounded-sm border bg-card transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:w-20',
                 i === safeActive
                   ? 'border-2 border-stamp'
                   : 'border-border hover:border-foreground/50',
