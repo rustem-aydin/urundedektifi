@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 /**
- * Ürün dosyası edge önbelleği: Cloudflare Cache Rule kur / doğrula / kaldır.
+ * Ürün dosyası edge önbelleği: Cloudflare Cache Rule doğrula / kur / kaldır.
  *
- * Neden var: Next ürün sayfasını ISR ile 300 sn tutuyor (`x-nextjs-cache: HIT`) ama
- * Cloudflare HTML'i varsayılan olarak önbelleklemiyor (`cf-cache-status: DYNAMIC`),
- * yani her tarama origin'e gidiyor. Kural, `/urun/<barkod>` yanıtlarını 60 sn edge'de
- * tutar (prod ölçümü: 0.129 s → ~0.11 s).
+ * Durum: kural CANLIDA (zone barkoddedektifi.com, ruleset sürüm 2) —
+ * `(http.request.full_uri wildcard r"https://barkoddedektifi.com/urun/*")`,
+ * Eligible for cache, Edge TTL 60 sn (override origin), Browser TTL respect origin.
+ * Ölçüm: cf-cache-status DYNAMIC → MISS/HIT, TTFB 133 ms → 66 ms (aynı istemci).
  *
- * Kullanım (CF_API_TOKEN: Zone → Cache Rules → Edit + Zone → Read):
- *   CF_API_TOKEN=... node scripts/cf-cache-rule.mjs apply
- *   CF_API_TOKEN=... node scripts/cf-cache-rule.mjs verify
+ * Next ürün sayfasını ISR ile 300 sn tutuyor ama Cloudflare HTML'i varsayılan olarak
+ * önbelleklemiyor; kural olmadan her tarama origin'e gidiyordu.
+ *
+ * Kullanım:
+ *   node scripts/cf-cache-rule.mjs verify                       # token gerekmez
+ *   CF_API_TOKEN=... node scripts/cf-cache-rule.mjs apply       # Zone → Cache Rules: Edit
  *   CF_API_TOKEN=... node scripts/cf-cache-rule.mjs remove
  *
  * `apply` kuralı kurar, hemen doğrular ve önbellek ÇALIŞMIYORSA (tüm yanıtlar
- * DYNAMIC) kuralı kendisi kaldırır: origin `vary: rsc, next-router-state-tree, …`
- * gönderdiği için Cloudflare bu yanıtları önbelleklemiyor olabilir; o durumda kural
- * boşuna durmasın. `--keep` ile otomatik geri alma kapatılır.
+ * DYNAMIC/MISS) kuralı kendisi kaldırır: origin `vary: rsc, …` gönderdiği için
+ * Cloudflare bu yanıtları önbelleklemiyor olabilir; o durumda kural boşuna durmasın.
+ * `--keep` otomatik geri almayı kapatır.
  */
 import { readFileSync } from 'node:fs'
 
@@ -23,7 +26,8 @@ const ZONE_NAME = process.env.CF_ZONE_NAME ?? 'barkoddedektifi.com'
 const API = 'https://api.cloudflare.com/client/v4'
 const RULE = {
   description: 'Ürün dosyası HTML/RSC: 60 sn edge TTL',
-  expression: '(http.request.uri.path matches "^/urun/[0-9]+/?$")',
+  // Panelin ürettiği biçim (edge_ttl 60 panelde seçilemiyor, en kısa 2 saat).
+  expression: `(http.request.full_uri wildcard r"https://${ZONE_NAME}/urun/*")`,
   action: 'set_cache_settings',
   enabled: true,
   action_parameters: {
@@ -34,13 +38,13 @@ const RULE = {
   },
 }
 
-const token = process.env.CF_API_TOKEN ?? readDotEnv('CF_API_TOKEN')
-if (!token) fail('CF_API_TOKEN yok (Zone → Cache Rules: Edit izinli token gerekir).')
-
 const command = process.argv[2] ?? 'verify'
 const keep = process.argv.includes('--keep')
+const token = process.env.CF_API_TOKEN ?? readDotEnv('CF_API_TOKEN')
 
-const zoneId = process.env.CF_ZONE_ID ?? (await resolveZoneId())
+if (command === 'apply' && !token) {
+  fail('CF_API_TOKEN yok (Zone → Cache Rules: Edit + Zone → Read izinli token gerekir).')
+}
 
 switch (command) {
   case 'apply':
@@ -57,6 +61,7 @@ switch (command) {
 }
 
 async function apply() {
+  const zoneId = await resolveZoneId()
   const res = await cf('PUT', `/zones/${zoneId}/rulesets/phases/http_request_cache_settings/entrypoint`, {
     name: 'main',
     description: 'Ürün dosyası edge önbelleği (tarama sonrası sayfa açılışı)',
@@ -77,6 +82,7 @@ async function apply() {
 }
 
 async function remove() {
+  const zoneId = await resolveZoneId()
   const res = await cf('DELETE', `/zones/${zoneId}/rulesets/phases/http_request_cache_settings/entrypoint`)
   console.log(res.success ? 'Kural kaldırıldı.' : `Kaldırma yanıtı: ${JSON.stringify(res.errors)}`)
 }
@@ -120,6 +126,7 @@ async function verify({ exitOnFailure }) {
 }
 
 async function resolveZoneId() {
+  if (process.env.CF_ZONE_ID) return process.env.CF_ZONE_ID
   const res = await cf('GET', `/zones?name=${encodeURIComponent(ZONE_NAME)}`)
   const zone = res.result?.[0]
   if (!res.success || !zone) {
