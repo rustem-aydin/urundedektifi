@@ -270,13 +270,9 @@ export interface Expert {
    */
   slug: string;
   /**
-   * Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır. 1 uzman = 1 hesap; hesabın kendisi elle değiştirilemez, e-postası "Panel E-posta Adresi" alanından düzenlenir.
+   * Uzmanın panele gireceği mevcut kullanıcı. Hesap Kullanıcılar ekranında açılır; e-posta ve şifre oradan yönetilir.
    */
   user?: (number | null) | User;
-  /**
-   * Uzmanın panele giriş e-postası. Boş bırakılırsa adından türetilir (ör. boykot_dedektifi@expert.local); buradan kendi gerçek adresiyle değiştirebilirsiniz. Şifre Kullanıcılar ekranından belirlenir.
-   */
-  accountEmail?: string | null;
   /**
    * Uzmanın mesleki ünvanı (Örn: "Gıda Mühendisi", "Helal Denetçisi", "Diyetisyen", "Çevre Mühendisi").
    */
@@ -1848,7 +1844,6 @@ export interface ExpertsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   user?: T;
-  accountEmail?: T;
   title?: T;
   avatar?: T;
   cover?: T;
