@@ -106,6 +106,14 @@ export async function login(email: string, password: string): Promise<AuthRespon
   })
 }
 
+/** Google Identity Services'tan gelen ID token ile Payload oturumu açar. */
+export async function googleLogin(idToken: string): Promise<AuthResponse> {
+  return request<AuthResponse>('/users/google', {
+    method: 'POST',
+    body: JSON.stringify({ idToken }),
+  })
+}
+
 export async function fetchMe(token: string): Promise<User> {
   const result = await request<User | { user: User }>('/users/me', {}, token)
   return 'user' in result ? result.user : result

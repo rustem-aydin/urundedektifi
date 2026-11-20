@@ -13,6 +13,7 @@ import * as migration_20261031_090000_ai_settings from './20261031_090000_ai_set
 import * as migration_20261031_120000_drop_brand_boycott_fields from './20261031_120000_drop_brand_boycott_fields';
 import * as migration_20261101_140000_product_ai_analysis from './20261101_140000_product_ai_analysis';
 import * as migration_20261102_090000_products_view_sort_index from './20261102_090000_products_view_sort_index';
+import * as migration_20261120_120000_users_google_id from './20261120_120000_users_google_id';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20261102_090000_products_view_sort_index.up,
     down: migration_20261102_090000_products_view_sort_index.down,
     name: '20261102_090000_products_view_sort_index',
+  },
+  {
+    up: migration_20261120_120000_users_google_id.up,
+    down: migration_20261120_120000_users_google_id.down,
+    name: '20261120_120000_users_google_id',
   },
 ];

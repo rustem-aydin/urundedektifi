@@ -2,9 +2,16 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
-import { ApiError, fetchMe, login as requestLogin, register, updateFollowing } from '@/lib/wizard/api'
+import {
+  ApiError,
+  fetchMe,
+  googleLogin as requestGoogleLogin,
+  login as requestLogin,
+  register,
+  updateFollowing,
+} from '@/lib/wizard/api'
 import { consumeFollow } from '@/lib/followIntent'
-import type { FollowingRef, User, UserRole } from '@/lib/wizard/types'
+import type { AuthResponse, FollowingRef, User, UserRole } from '@/lib/wizard/types'
 
 /**
  * Web oturumu: Payload kullanıcısı + JWT.
@@ -33,6 +40,8 @@ type SessionValue = {
   /** Takip edilen uzman kimlikleri (oturum sahibinin `users.following` alanı). */
   followingIds: string[]
   signIn: (email: string, password: string) => Promise<void>
+  /** Google Identity Services ID token'ı ile giriş (hesap yoksa açılır). */
+  signInWithGoogle: (idToken: string) => Promise<void>
   signUp: (input: { name: string; email: string; password: string }) => Promise<void>
   signOut: () => void
   /** Profil düzenlemesinden sonra kullanıcıyı sunucudan tazeler. */
@@ -93,36 +102,53 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    setBusy(true)
-    try {
-      const result = await requestLogin(email, password)
+  /** Ortak oturum yazımı: jeton + kullanıcı + takip listesi, bekleyen takip tamamlanır. */
+  const applySession = useCallback(
+    async (result: AuthResponse) => {
       window.localStorage.setItem(TOKEN_KEY, result.token)
       setToken(result.token)
       setUser(result.user)
       setFollowingIds(normalizeFollowing(result.user.following))
       await completePendingFollow(result.user, result.token)
-    } finally {
-      setBusy(false)
-    }
-  }, [completePendingFollow])
+    },
+    [completePendingFollow],
+  )
+
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      setBusy(true)
+      try {
+        await applySession(await requestLogin(email, password))
+      } finally {
+        setBusy(false)
+      }
+    },
+    [applySession],
+  )
+
+  const signInWithGoogle = useCallback(
+    async (idToken: string) => {
+      setBusy(true)
+      try {
+        await applySession(await requestGoogleLogin(idToken))
+      } finally {
+        setBusy(false)
+      }
+    },
+    [applySession],
+  )
 
   const signUp = useCallback(
     async (input: { name: string; email: string; password: string }) => {
       setBusy(true)
       try {
         await register(input)
-        const result = await requestLogin(input.email, input.password)
-        window.localStorage.setItem(TOKEN_KEY, result.token)
-        setToken(result.token)
-        setUser(result.user)
-        setFollowingIds(normalizeFollowing(result.user.following))
-        await completePendingFollow(result.user, result.token)
+        await applySession(await requestLogin(input.email, input.password))
       } finally {
         setBusy(false)
       }
     },
-    [completePendingFollow],
+    [applySession],
   )
 
   const signOut = useCallback(() => {
@@ -176,6 +202,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       isPanel: Boolean(user && CORPORATE_ROLES.includes(user.role)),
       followingIds,
       signIn,
+      signInWithGoogle,
       signUp,
       signOut,
       refreshUser,
@@ -189,6 +216,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       busy,
       followingIds,
       signIn,
+      signInWithGoogle,
       signUp,
       signOut,
       refreshUser,

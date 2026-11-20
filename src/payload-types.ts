@@ -199,6 +199,10 @@ export interface User {
    */
   avatar?: (number | null) | Media;
   /**
+   * Google ile giriş yapıldığında otomatik doldurulur. Elle değiştirilmez.
+   */
+  googleId?: string | null;
+  /**
    * Herkese açık profilde görünen kısa tanıtım. Boş bırakılabilir; e-posta ve diğer hesap bilgileri profilde gösterilmez.
    */
   bio?: string | null;
@@ -1605,6 +1609,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   avatar?: T;
+  googleId?: T;
   bio?: T;
   following?: T;
   updatedAt?: T;

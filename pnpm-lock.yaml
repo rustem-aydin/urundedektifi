@@ -68,6 +68,9 @@ importers:
       html5-qrcode:
         specifier: ^2.3.8
         version: 2.3.8
+      jose:
+        specifier: 6.2.3
+        version: 6.2.3
       jsqr:
         specifier: ^1.4.0
         version: 1.4.0

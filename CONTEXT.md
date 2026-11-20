@@ -78,6 +78,13 @@ _Avoid_: skor, puan, "İsrail malı" (ölçek adı değildir), "boykotlu marka b
 `users` koleksiyonunda `role: 'user'` olan üyelik. Açık kayıtla (`POST /api/users`) oluşturulur; rol istemciden bağımsız olarak hook'ta `user`'a sabitlenir ve admin paneline giremez (`access.admin`).
 _Avoid_: üye, abone, müşteri
 
+**Google ile Giriş**:
+Aynı Tüketici Hesabına Google ID token'ıyla giriş (`POST /api/users/google`, ADR 0036). Jeton sunucuda
+Google JWKS ile doğrulanır; hesap yoksa açılır, şifreyle açılmış hesap bağlanırken eski şifre
+döndürülür. Web GIS, mobil Google Sign-In kullanır; istemci sırrı yoktur. `users.googleId` yalnız bu
+uçta yazılır.
+_Avoid_: sosyal giriş, OAuth girişi (genel)
+
 **Takip**:
 Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Hükümleri görünür, ürün kartlarındaki "N kural eşleşti" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
 _Avoid_: abonelik, favori

@@ -1,6 +1,14 @@
+import { randomBytes } from 'node:crypto'
+
 import { APIError, type CollectionConfig } from 'payload'
 import type { User } from '@/payload-types'
 import { buildPublicProfile } from '@/lib/productContributions'
+import {
+  allowedGoogleAudiences,
+  issueUserToken,
+  verifyGoogleIdToken,
+  type GoogleProfile,
+} from '@/lib/googleAuth'
 
 const isAdmin = (user: User | null) => user?.role === 'admin'
 
@@ -63,6 +71,148 @@ export const Users: CollectionConfig = {
         return Response.json(profile)
       },
     },
+    {
+      // Google ile giriş (web: GIS ID token, mobil: Google Sign-In ID token).
+      // Jeton yalnız burada doğrulanır; istemciler Google istemci sırrı taşımaz.
+      path: '/google',
+      method: 'post',
+      handler: async (req) => {
+        const audiences = allowedGoogleAudiences()
+        if (audiences.length === 0) {
+          return Response.json(
+            { error: 'Google ile giriş henüz yapılandırılmadı.' },
+            { status: 503 },
+          )
+        }
+
+        let idToken = ''
+        try {
+          const body = (await req.json?.()) as { idToken?: unknown } | null
+          if (body && typeof body.idToken === 'string') idToken = body.idToken.trim()
+        } catch {
+          // Gövde JSON değil: aşağıdaki eksik-jeton yanıtı döner.
+        }
+        if (!idToken) {
+          return Response.json({ error: 'Google kimlik jetonu gerekli.' }, { status: 400 })
+        }
+
+        let profile: GoogleProfile | null
+        try {
+          profile = await verifyGoogleIdToken(idToken, audiences)
+        } catch {
+          // İmza/seyirci/veren doğrulanamadı ya da süre doldu.
+          return Response.json(
+            { error: 'Google oturumu doğrulanamadı. Tekrar dene.' },
+            { status: 401 },
+          )
+        }
+        if (!profile) {
+          return Response.json(
+            { error: 'Google hesabının e-postası doğrulanmamış. Başka bir hesapla dene.' },
+            { status: 401 },
+          )
+        }
+
+        const { payload } = req
+        // İlk ölçüt Google'ın kararlı `sub` değeri: e-posta değişse bile hesap bulunur.
+        const byGoogle = await payload.find({
+          collection: 'users',
+          where: { googleId: { equals: profile.sub } },
+          limit: 1,
+          pagination: false,
+          depth: 0,
+          overrideAccess: true,
+          req,
+        })
+        let user: User | null = byGoogle.docs[0] ?? null
+
+        if (!user) {
+          // Postgres'te e-posta benzersizliği büyük/küçük harfe duyarlıdır; kayıtlar farklı
+          // yazımla açılmış olabilir. `like` ile geniş arayıp tam eşleşmeyi kendimiz seçeriz.
+          const byEmail = await payload.find({
+            collection: 'users',
+            where: { email: { like: profile.email } },
+            limit: 20,
+            depth: 0,
+            overrideAccess: true,
+            req,
+          })
+          const existing = byEmail.docs.find(
+            (doc) => String(doc.email ?? '').trim().toLowerCase() === profile.email,
+          )
+
+          if (existing) {
+            if (existing.googleId && existing.googleId !== profile.sub) {
+              return Response.json(
+                { error: 'Bu e-posta başka bir Google hesabına bağlı.' },
+                { status: 409 },
+              )
+            }
+            // E-posta sahipliği artık Google tarafından kanıtlandı. Şifreyle açılmış hesabı
+            // bağlarken eski şifre döndürülür: doğrulanmamış e-posta ile önceden açılmış bir
+            // "gölge" hesabın şifresi, gerçek sahibin Google girişiyle erişim kazanmasına yol açmasın.
+            user = await payload.update({
+              collection: 'users',
+              id: existing.id,
+              data: { googleId: profile.sub, password: randomBytes(32).toString('base64url') },
+              overrideAccess: true,
+              depth: 0,
+              req,
+            })
+          } else {
+            try {
+              user = await payload.create({
+                collection: 'users',
+                data: {
+                  name: profile.name,
+                  email: profile.email,
+                  password: randomBytes(32).toString('base64url'),
+                  googleId: profile.sub,
+                  role: 'user',
+                },
+                overrideAccess: true,
+                depth: 0,
+                req,
+              })
+            } catch (error) {
+              // Aynı Google hesabıyla eşzamanlı iki giriş: kaydı yarışın kazananı belirledi.
+              const raced = await payload.find({
+                collection: 'users',
+                where: { googleId: { equals: profile.sub } },
+                limit: 1,
+                pagination: false,
+                depth: 0,
+                overrideAccess: true,
+                req,
+              })
+              if (!raced.docs[0]) throw error
+              user = raced.docs[0]
+            }
+          }
+        }
+
+        if (!user) {
+          return Response.json({ error: 'Hesap açılamadı. Tekrar dene.' }, { status: 500 })
+        }
+
+        const expiration = payload.collections.users.config.auth.tokenExpiration
+        const tokenExpiration = typeof expiration === 'number' ? expiration : 604800
+        const { token, exp } = await issueUserToken({
+          id: user.id,
+          email: String(user.email),
+          secret: payload.secret,
+          tokenExpiration,
+        })
+        const sessionUser = await payload.findByID({
+          collection: 'users',
+          id: user.id,
+          depth: 2,
+          overrideAccess: true,
+          req,
+        })
+        return Response.json({ token, exp, user: sessionUser })
+      },
+    },
   ],
   fields: [
     {
@@ -104,6 +254,22 @@ export const Users: CollectionConfig = {
       label: 'Profil Fotoğrafı',
       admin: {
         description: 'Kare formatında, en az 200x200 piksel önerilir.',
+      },
+    },
+    {
+      name: 'googleId',
+      type: 'text',
+      label: 'Google Hesabı',
+      unique: true,
+      // Yalnız `/api/users/google` ucu yazar (overrideAccess). Genel REST bu alanı göremez.
+      access: {
+        create: () => false,
+        update: () => false,
+      },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Google ile giriş yapıldığında otomatik doldurulur. Elle değiştirilmez.',
       },
     },
     {

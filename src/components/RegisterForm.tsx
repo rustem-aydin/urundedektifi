@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { GoogleSignInButton } from '@/components/GoogleSignInButton'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { TextField, WizardIntro } from '@/components/wizard/controls'
@@ -20,13 +21,31 @@ import { userMessage } from '@/lib/userMessages'
 export function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, busy, restoring, signUp } = useSession()
+  const { user, busy, restoring, signUp, signInWithGoogle } = useSession()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
 
   const next = searchParams.get('next') || '/'
+  const googleEnabled = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+
+  async function googleSignUp(credential: string) {
+    if (busy) return
+    setFailure(null)
+    try {
+      await signInWithGoogle(credential)
+      toast.success('Google ile giriş yapıldı. Hoş geldin!')
+      router.replace(next.startsWith('/') ? next : '/')
+    } catch (error) {
+      const message =
+        error instanceof ApiError && error.kind === 'unauthorized'
+          ? 'Google oturumu doğrulanamadı. Tekrar dene.'
+          : userMessage(error, 'Google ile devam edilemedi. Bağlantını kontrol edip tekrar dene.')
+      setFailure(message)
+      toast.error(message)
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -81,6 +100,18 @@ export function RegisterForm() {
         Uzmanları takip et, son yazılarını anasayfada gör. Kayıt ücretsiz; istediğin ürünün
         fotoğraflarını gönderip dosya açabilirsin.
       </WizardIntro>
+      {googleEnabled ? (
+        <>
+          <GoogleSignInButton onCredential={googleSignUp} disabled={busy} />
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" aria-hidden="true" />
+            <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+              veya e-posta ile
+            </span>
+            <span className="h-px flex-1 bg-border" aria-hidden="true" />
+          </div>
+        </>
+      ) : null}
       <TextField
         label="Ad soyad"
         value={name}

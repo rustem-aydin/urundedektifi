@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
+import { GoogleSignInButton } from '@/components/GoogleSignInButton'
 import { useSession } from '@/components/session-provider'
 import { Button } from '@/components/ui/button'
 import { TextField, WizardIntro } from '@/components/wizard/controls'
@@ -17,12 +18,30 @@ import { userMessage } from '@/lib/userMessages'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, busy, restoring, signIn } = useSession()
+  const { user, busy, restoring, signIn, signInWithGoogle } = useSession()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
 
   const next = searchParams.get('next') || '/'
+  const googleEnabled = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+
+  async function googleSignIn(credential: string) {
+    if (busy) return
+    setFailure(null)
+    try {
+      await signInWithGoogle(credential)
+      toast.success('Google ile giriş yapıldı. Hoş geldin!')
+      router.replace(next.startsWith('/') ? next : '/')
+    } catch (error) {
+      const message =
+        error instanceof ApiError && error.kind === 'unauthorized'
+          ? 'Google oturumu doğrulanamadı. Tekrar dene.'
+          : userMessage(error, 'Google ile giriş yapılamadı. Bağlantını kontrol edip tekrar dene.')
+      setFailure(message)
+      toast.error(message)
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -66,6 +85,18 @@ export function LoginForm() {
         Hesabınla giriş yap. Uzmanları takip etmek, son yazılarını anasayfada görmek ve ürün
         fotoğrafı göndermek için ücretsiz hesap yeterli.
       </WizardIntro>
+      {googleEnabled ? (
+        <>
+          <GoogleSignInButton onCredential={googleSignIn} disabled={busy} />
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" aria-hidden />
+            <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+              veya e-posta ile
+            </span>
+            <span className="h-px flex-1 bg-border" aria-hidden />
+          </div>
+        </>
+      ) : null}
       <TextField
         label="E-posta"
         value={email}
