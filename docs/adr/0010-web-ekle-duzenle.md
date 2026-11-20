@@ -14,7 +14,8 @@
 Mobildeki yazma akışı web'e taşındı; iki yüzey aynı sözleşmeyi paylaşır:
 
 - **Tek akış:** barkod → fotoğraflar → YZ analizi → onay → master eşleme → kayıt.
-  Düzenle ekranı analiz yapmaz; form `depth=2` ham dokümandan dolar (ADR 0009).
+  Düzenle ekranı formu `depth=2` ham dokümandan doldurur; eklenen yeni fotoğraflar isteğe bağlı
+  olarak YZ ile okunup yalnız boş alanları doldurur (bkz. ADR 0034).
 - **Saf mantık taşındı:** `src/lib/wizard/` altında `ai`, `productDraft`, `productPayload`,
   `productWrite`, `match`, `labels`. Kart/kural eşleştirme yine sunucudadır; istemci
   `verdictEngine` kopyası çıkarmaz.

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { CaseCard } from '@/components/CaseCard'
@@ -12,18 +12,22 @@ import { Button } from '@/components/ui/button'
 import { AnalysisSummary } from '@/components/wizard/AnalysisSummary'
 import { Chip, TextField, WizardIntro } from '@/components/wizard/controls'
 import { MasterResolver } from '@/components/wizard/MasterResolver'
+import { PhotoRequests } from '@/components/wizard/PhotoRequests'
 import { PhotoTray } from '@/components/wizard/PhotoTray'
+import { analyzeProduct } from '@/lib/wizard/ai'
 import { fetchProductDoc, findProductByBarcode } from '@/lib/wizard/api'
 import { PHOTO_ROLE_NAMES } from '@/lib/wizard/labels'
 import { getPhotoBlob, putPhotoBlob } from '@/lib/wizard/photoStore'
 import {
   draftFromProduct,
   forgetPhoto,
+  mergeExtraction,
   resolutionCounts,
   type Draft,
   type ProductForm,
 } from '@/lib/wizard/productDraft'
 import {
+  blobToBase64,
   preparePhoto,
   resolveCreatedMasters,
   saveProductEdits,
@@ -51,6 +55,11 @@ export function DuzenleScreen({ productId }: { productId: string }) {
   const [saved, setSaved] = useState<{ barcode: string; published: boolean } | null>(null)
   /** Yüklenen dosyanın barkodu: doğrulama yalnız barkod değiştiğinde uygulanır. */
   const [originalBarcode, setOriginalBarcode] = useState('')
+  /** Fotoğraflardan etiket okuma: yalnız boş alanları doldurur (ADR 0034). */
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisNote, setAnalysisNote] = useState<string | null>(null)
+  /** Bu oturumda fotoğraf eklendi ve analiz henüz yapılmadı: ekleme bitince kendiliğinden okunur. */
+  const autoAnalyze = useRef(false)
 
   useEffect(() => {
     if (!isPanel || !productId || !token) return
@@ -107,6 +116,8 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         photos.push({ id, role: 'unknown', source, url: URL.createObjectURL(resized.blob) })
       }
       setDraft((current) => (current ? { ...current, photos: [...current.photos, ...photos] } : current))
+      // Eklenen her fotoğraf partisi kendiliğinden okunur; sonuç yalnız boş alanları doldurur.
+      autoAnalyze.current = true
     } catch (error) {
       const message = `Fotoğraf hazırlanamadı: ${describe(error)}`
       setFailure(message)
@@ -115,6 +126,53 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       setBusy(false)
     }
   }
+
+  /**
+   * Eklenen fotoğraflardan etiket okur; sonuç `fill-missing` ile birleşir: kayıtlı ürünün
+   * dolu alanları korunur, yalnız boş alanlar doldurulur (ADR 0034).
+   */
+  async function analyze() {
+    if (!draft || !token || !draft.photos.length || analyzing) return
+    setFailure(null)
+    setAnalysisNote(null)
+    setAnalyzing(true)
+    try {
+      const images: { index: number; base64: string }[] = []
+      for (const [index, photo] of draft.photos.entries()) {
+        const blob = await getPhotoBlob(photo.id)
+        if (!blob) throw new Error('Bir fotoğraf okunamadı. Kaldırıp yeniden ekle.')
+        images.push({ index, base64: await blobToBase64(blob) })
+      }
+      const result = await analyzeProduct({ token, images, previous: null, hints: [] })
+      setDraft((current) =>
+        current ? mergeExtraction(current, result.data, { mode: 'fill-missing' }) : current,
+      )
+      const requests = result.data.requests.length
+      setAnalysisNote(
+        `Etiket okuması tamamlandı: yalnız boş alanlar dolduruldu, dolu alanlar korundu.${
+          requests ? ` ${requests} eksik fotoğraf talebi var.` : ''
+        }`,
+      )
+      toast.success('Etiket okuması tamamlandı; eksik alanlar dolduruldu.')
+    } catch (error) {
+      const message = describe(error)
+      setFailure(message)
+      toast.error(message)
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  /**
+   * Fotoğraf eklenince analiz kendiliğinden başlar; düğme yalnız elle yeniden çalıştırmak için.
+   */
+  useEffect(() => {
+    if (!autoAnalyze.current || !draft || !draft.photos.length || analyzing) return
+    autoAnalyze.current = false
+    void analyze()
+    // `analyze` her render'da yeniden kurulur; bayrak ikinci çalıştırmayı engeller.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, analyzing])
 
   async function save() {
     if (!draft || !token) return
@@ -267,7 +325,8 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         <p className="font-display text-xl">{draft.form.name || 'İsimsiz ürün'}</p>
         <p className="text-sm text-muted-foreground">
           Kaydettiğinde formdaki değerler ürünün üzerine yazılır; boş bıraktığın alanlar silinir. Yeni
-          fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur.
+          fotoğraf eklemezsen mevcut görseller ve fiyat geçmişi korunur. Eklediğin fotoğrafları
+          yapay zekâya okutup yalnız boş alanları doldurabilirsin.
         </p>
         <TextField
           label="Barkod (8–14 hane)"
@@ -303,9 +362,12 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       </CaseCard>
 
       {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
-      {busy ? (
-        <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Kaydediliyor…</p>
+      {busy || analyzing ? (
+        <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">
+          {analyzing ? 'Etiket okunuyor…' : 'Kaydediliyor…'}
+        </p>
       ) : null}
+      {analysisNote ? <p className="text-sm text-evidence-green">{analysisNote}</p> : null}
 
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground uppercase">
@@ -313,7 +375,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
         </span>
         <PhotoTray
           photos={draft.photos}
-          disabled={busy}
+          disabled={busy || analyzing}
           onAdd={(files, source) => void addPhotos(files, source)}
           onRemove={(photoId) => {
             const photo = draft.photos.find((item) => item.id === photoId)
@@ -329,7 +391,31 @@ export function DuzenleScreen({ productId }: { productId: string }) {
             })
           }
         />
+        {draft.photos.length ? (
+          <div className="flex flex-col gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              disabled={busy || analyzing}
+              onClick={() => void analyze()}
+            >
+              {analyzing
+                ? 'Etiket okunuyor…'
+                : draft.extraction
+                  ? 'Fotoğrafları yeniden analiz et'
+                  : 'Fotoğrafları analiz et · eksikleri doldur'}
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Yapay zekâ fotoğraflardaki etiketi okur ve yalnız boş alanları doldurur. Dolu
+              alanlara, eşleşmelere ve ürünün barkoduna dokunmaz; sonucu kaydetmeden önce
+              gözden geçir.
+            </p>
+          </div>
+        ) : null}
       </div>
+
+      {draft.extraction ? <PhotoRequests requests={draft.extraction.requests} /> : null}
 
       <AnalysisSummary form={draft.form} touched={draft.touched} mode="edit" onEdit={editForm} />
       <MasterResolver form={draft.form} onEdit={editForm} />
@@ -340,7 +426,7 @@ export function DuzenleScreen({ productId }: { productId: string }) {
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} onClick={() => void save()}>
+        <Button disabled={busy || analyzing} onClick={() => void save()}>
           {busy ? 'Kaydediliyor…' : 'Değişiklikleri kaydet'}
         </Button>
         <Button variant="ghost" asChild>

@@ -122,58 +122,125 @@ function mergeNutrients(extraction: Extraction, previous: FormNutrient[]): FormN
   })
 }
 
+function unionLabels(current: string[], extracted: Extraction['labels']): string[] {
+  const next = [...current]
+  for (const label of extracted) {
+    if (!next.includes(label)) next.push(label)
+  }
+  return next
+}
+
+function mergeSpecifications(
+  current: ProductForm['specifications'],
+  extracted: Extraction['specifications'],
+): ProductForm['specifications'] {
+  const next = [...current]
+  for (const row of extracted) {
+    if (!row.key.trim() || next.some((item) => item.key === row.key)) continue
+    next.push({ key: row.key, value: row.value, unit: row.unit ?? '' })
+  }
+  return next
+}
+
+export type MergeMode = 'overwrite' | 'fill-missing'
+
 /**
  * Analiz sonucunu forma yazar; kullanıcının elle dokunduğu alanlar korunur.
  * `touched` anahtarları ProductForm alan adlarıyla aynıdır ('name', 'ingredients', ...).
+ *
+ * `fill-missing` (Düzenle ekranı): yalnız BOŞ alanlar doldurulur. Dolu metin, eşleme ve
+ * listeler olduğu gibi kalır — kayıtlı ürün verisi analizle ezilmez. Etiketler ve teknik
+ * özellikler küme gibi birleşir: var olan değer korunur, eksik olan eklenir. Barkod kimliktir,
+ * hiçbir modda değişmez.
  */
-export function mergeExtraction(draft: Draft, extraction: Extraction): Draft {
+export function mergeExtraction(
+  draft: Draft,
+  extraction: Extraction,
+  options: { mode?: MergeMode } = {},
+): Draft {
+  const fill = options.mode === 'fill-missing'
   const form = draft.form
   const keep = (field: string) => draft.touched.includes(field)
-  const text = (field: keyof ProductForm, next: string | null) =>
-    keep(field) ? (form[field] as string) : (next ?? (form[field] as string))
+  const text = (field: keyof ProductForm, next: string | null) => {
+    const current = form[field] as string
+    if (keep(field)) return current
+    if (fill) return current.trim() ? current : (next ?? current)
+    return next ?? current
+  }
+  /** fill-missing'te dolu liste korunur; overwrite'ta analiz listeyi belirler. */
+  const list = <T>(field: string, current: T[], next: T[]) => {
+    if (keep(field)) return current
+    return fill && current.length ? current : next
+  }
 
   const next: ProductForm = {
     ...form,
-    barcode: keep('barcode') || form.barcode ? form.barcode : (extraction.barcode ?? ''),
+    barcode: fill || keep('barcode') || form.barcode ? form.barcode : (extraction.barcode ?? ''),
     name: text('name', extraction.name),
     brand: keep('brand')
       ? form.brand
-      : resolutionFromList(extraction.brandName ?? form.brand.name, form.brand),
+      : fill && form.brand.name.trim()
+        ? form.brand
+        : resolutionFromList(extraction.brandName ?? form.brand.name, form.brand),
     category: keep('category')
       ? form.category
-      : resolutionFromList(extraction.categoryName ?? form.category.name, form.category),
+      : fill && form.category.name.trim()
+        ? form.category
+        : resolutionFromList(extraction.categoryName ?? form.category.name, form.category),
     manufacturer: text('manufacturer', extraction.manufacturer),
     size: text('size', extraction.size),
     packaging: text('packaging', extraction.packaging),
     description: text('description', extraction.description),
     usage: text('usage', extraction.usage),
     storage: text('storage', extraction.storage),
-    nutriscore: keep('nutriscore') ? form.nutriscore : (extraction.nutriscore ?? form.nutriscore),
-    labels: keep('labels') ? form.labels : extraction.labels.length ? extraction.labels : form.labels,
+    nutriscore: keep('nutriscore')
+      ? form.nutriscore
+      : fill && form.nutriscore
+        ? form.nutriscore
+        : (extraction.nutriscore ?? form.nutriscore),
+    labels: keep('labels')
+      ? form.labels
+      : fill
+        ? unionLabels(form.labels, extraction.labels)
+        : extraction.labels.length
+          ? extraction.labels
+          : form.labels,
     ingredients: keep('ingredients')
       ? form.ingredients
-      : mergeIngredients(extraction, form.ingredients),
-    additives: keep('additives') ? form.additives : mergeAdditives(extraction, form.additives),
+      : fill && form.ingredients.length
+        ? form.ingredients
+        : mergeIngredients(extraction, form.ingredients),
+    additives: keep('additives')
+      ? form.additives
+      : fill && form.additives.length
+        ? form.additives
+        : mergeAdditives(extraction, form.additives),
     allergens: keep('allergens')
       ? form.allergens
-      : extraction.allergens.map((name) => {
-          const existing = form.allergens.find((item) => item.name === name)
-          return resolutionFromList(name, existing)
-        }),
+      : fill && form.allergens.length
+        ? form.allergens
+        : extraction.allergens.map((name) => {
+            const existing = form.allergens.find((item) => item.name === name)
+            return resolutionFromList(name, existing)
+          }),
     nutrition: keep('nutrition')
       ? form.nutrition
-      : {
-          per: extraction.nutrition?.per ?? form.nutrition.per,
-          items: mergeNutrients(extraction, form.nutrition.items),
-        },
-    warnings: keep('warnings') ? form.warnings : extraction.warnings,
+      : fill && form.nutrition.items.length
+        ? form.nutrition
+        : {
+            per: extraction.nutrition?.per ?? form.nutrition.per,
+            items: mergeNutrients(extraction, form.nutrition.items),
+          },
+    warnings: list('warnings', form.warnings, extraction.warnings),
     specifications: keep('specifications')
       ? form.specifications
-      : extraction.specifications.map((row) => ({
-          key: row.key,
-          value: row.value,
-          unit: row.unit ?? '',
-        })),
+      : fill
+        ? mergeSpecifications(form.specifications, extraction.specifications)
+        : extraction.specifications.map((row) => ({
+            key: row.key,
+            value: row.value,
+            unit: row.unit ?? '',
+          })),
     isPublished: form.isPublished,
     price: form.price,
   }
@@ -182,10 +249,13 @@ export function mergeExtraction(draft: Draft, extraction: Extraction): Draft {
     ...draft,
     form: next,
     extraction,
-    photos: draft.photos.map((photo, index) => ({
-      ...photo,
-      role: extraction.photoRoles.find((entry) => entry.index === index)?.role ?? photo.role,
-    })),
+    photos: draft.photos.map((photo, index) => {
+      const role = extraction.photoRoles.find((entry) => entry.index === index)?.role
+      if (!role) return photo
+      // Düzenle'de kullanıcının seçtiği rol analizle değişmez.
+      if (fill && photo.role !== 'unknown') return photo
+      return { ...photo, role }
+    }),
     updatedAt: new Date().toISOString(),
   }
 }
