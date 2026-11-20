@@ -1,6 +1,8 @@
 import type { Payload, Where } from 'payload'
 import { LRUCache } from 'lru-cache'
 
+import { PRODUCT_SORT_DEFAULT, productSortOrder, type ProductSort } from './productSort'
+
 /** Ürün listelerinde (ızgara) karta taşınan alanlar; tam Dosya istemciye gönderilmez. */
 export type ProductCardData = {
   id: string
@@ -14,7 +16,7 @@ export type ProductCardData = {
   viewCount?: number
 }
 
-/** Liste süzgeci: ad, kategori (tek veya alt kategorilerle), marka ve etiketler. */
+/** Liste süzgeci: ad, kategori (tek veya alt kategorilerle), marka, etiketler ve sıralama. */
 export type ProductCardFilter = {
   q?: string
   category?: string
@@ -22,6 +24,8 @@ export type ProductCardFilter = {
   categories?: string[]
   brand?: string
   labels?: string[]
+  /** Liste sırası; verilmezse `views`. */
+  sort?: ProductSort
   limit?: number
   /** 1 tabanlı sayfa; sonuç `limit` kadar kart döner (sonsuz kaydırma için). */
   page?: number
@@ -167,6 +171,7 @@ function filterKey(filter: ProductCardFilter): string {
     categories: filter.categories ?? [],
     brand: filter.brand ?? '',
     labels: filter.labels ?? [],
+    sort: filter.sort ?? PRODUCT_SORT_DEFAULT,
     limit: filter.limit ?? 48,
     page: filter.page ?? 1,
   })
@@ -198,9 +203,10 @@ export async function listProductCards(
   const result = await payload.find({
     collection: 'products',
     where: { and },
-    // En çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre bozulur.
-    // Sıralama `products_status_goruntulenme_created_idx` indeksinden gelir.
-    sort: ['-goruntulenme', '-createdAt'],
+    // Varsayılan: en çok görüntülenen önce; eşitlik (yeni ürünlerde 0) yayın tarihine göre
+    // bozulur. Sıralama `products_status_goruntulenme_created_idx` indeksinden gelir; ada ve
+    // tarihe göre sıralamaların kendi indeksleri vardır (bkz. PRODUCT_SORT_OPTIONS).
+    sort: productSortOrder(filter.sort),
     limit: filter.limit ?? 48,
     page: filter.page ?? 1,
     // Kart yalnız marka/kategori/görsel ilişkilerini çözer; depth 2 bunların alt

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { productCardFromDoc } from '@/lib/productCardData'
+import { productSortCaption, productSortFromParam, productSortOrder } from '@/lib/productSort'
 
 const media = (url: string, alt?: string) => ({ id: 1, url, alt: alt ?? null })
 
@@ -47,5 +48,22 @@ describe('productCardFromDoc kapak seçimi', () => {
   it('yalnız ilişki kimliği (depth 0) gelse de görsel sayılmaz', () => {
     const card = productCardFromDoc({ id: 5, name: 'Çay', frontImage: 42 })
     expect(card.imageUrl).toBeNull()
+  })
+})
+
+describe('liste sıralaması', () => {
+  it('URL parametresi bilinen sıralamaya çevrilir, tanınmayan değer varsayılana düşer', () => {
+    expect(productSortFromParam('name')).toBe('name')
+    expect(productSortFromParam(['newest', 'name'])).toBe('newest')
+    expect(productSortFromParam('fiyat')).toBe('views')
+    expect(productSortFromParam(undefined)).toBe('views')
+  })
+
+  it('Payload sıralaması ve sayaç metni aynı seçenekten gelir', () => {
+    expect(productSortOrder('name')).toEqual(['name'])
+    expect(productSortOrder('name-desc')).toEqual(['-name'])
+    expect(productSortOrder('oldest')).toEqual(['createdAt'])
+    expect(productSortOrder(undefined)).toEqual(['-goruntulenme', '-createdAt'])
+    expect(productSortCaption('newest')).toBe('önce en yeni eklenenler')
   })
 })

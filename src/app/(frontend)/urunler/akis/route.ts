@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 
 import config from '@/payload.config'
 import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
+import { productSortFromParam } from '@/lib/productSort'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
   const categoryIds = params.getAll('kategori').filter(Boolean)
   const brand = params.get('marka') ?? ''
   const labels = params.getAll('etiket')
+  const sort = productSortFromParam(params.get('sirala'))
 
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
     categories: categoryIds.length > 0 ? categoryIds : undefined,
     brand,
     labels,
+    sort,
     page,
     limit: PRODUCT_PAGE_SIZE,
   })

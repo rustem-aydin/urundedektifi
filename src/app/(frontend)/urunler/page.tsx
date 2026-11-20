@@ -14,17 +14,25 @@ import {
   webPageNode,
 } from '@/lib/seo'
 import { PRODUCT_PAGE_SIZE, listProductCards } from '@/lib/productCardData'
+import { PRODUCT_SORT_DEFAULT, productSortCaption, productSortFromParam } from '@/lib/productSort'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { BarcodeScanButton } from '@/components/BarcodeScanButton'
 import { InfiniteProductGrid } from '@/components/InfiniteProductGrid'
 import { ProductsFilterBar } from '@/components/ProductsFilterBar'
 import { Button } from '@/components/ui/button'
 
-type SearchParams = { q?: string; kategori?: string; marka?: string; etiket?: string | string[] }
+type SearchParams = {
+  q?: string
+  kategori?: string
+  marka?: string
+  etiket?: string | string[]
+  sirala?: string
+}
 
 /**
  * Süzgeçli liste adresleri (`?q=...`) kendi kanonik adresleri değildir: aynı
  * listeyi binlerce varyasyonda üretmemek için yalnız temiz liste indekslenir.
+ * Sıralama da aynı listenin varyantıdır; `?sirala=` indekslenmez.
  */
 export async function generateMetadata({
   searchParams,
@@ -32,7 +40,9 @@ export async function generateMetadata({
   searchParams: Promise<SearchParams>
 }): Promise<Metadata> {
   const params = await searchParams
-  const filtered = Boolean(params.q || params.kategori || params.marka || params.etiket)
+  const filtered = Boolean(
+    params.q || params.kategori || params.marka || params.etiket || params.sirala,
+  )
   return pageMetadata({
     title: 'Ürünler',
     description:
@@ -52,6 +62,7 @@ export default async function ProductsPage({
   const category = params.kategori || ''
   const brand = params.marka || ''
   const labels = Array.isArray(params.etiket) ? params.etiket : params.etiket ? [params.etiket] : []
+  const sort = productSortFromParam(params.sirala)
 
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
@@ -67,7 +78,7 @@ export default async function ProductsPage({
     }),
     // Marka listesi sunucuda çekilmez: 3.950 marka tek istekte 10 sn'ye yaklaşıyordu.
     // Süzgeç, yazdıkça `/api/brands` üzerinden ilk 20 eşleşmeyi arar (bkz. BrandCombobox).
-    listProductCards(payload, { q, category, brand, labels, limit: PRODUCT_PAGE_SIZE }),
+    listProductCards(payload, { q, category, brand, labels, sort, limit: PRODUCT_PAGE_SIZE }),
   ])
 
   // Seçili markanın adı: tek kayıt, süzgeç düğmesinde görünür.
@@ -87,6 +98,7 @@ export default async function ProductsPage({
   if (category) feedQuery.set('kategori', category)
   if (brand) feedQuery.set('marka', brand)
   for (const label of labels) feedQuery.append('etiket', label)
+  if (sort !== PRODUCT_SORT_DEFAULT) feedQuery.set('sirala', sort)
   const feedParams = feedQuery.toString()
 
   return (
@@ -120,7 +132,8 @@ export default async function ProductsPage({
           category={category}
           brand={brand}
           labels={labels}
-          categories={categories.docs.map((c: any) => ({ id: String(c.id), name: c.name }))}
+          sort={sort}
+          categories={categories.docs.map((c) => ({ id: String(c.id), name: c.name ?? '' }))}
           brandName={(selectedBrand as { name?: string } | null)?.name ?? null}
         />
       </div>
@@ -152,7 +165,7 @@ export default async function ProductsPage({
       ) : (
         <>
           <p className="mt-6 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase" aria-live="polite">
-            {products.totalDocs} ürün listeleniyor · önce en çok görüntülenenler
+            {products.totalDocs} ürün listeleniyor · {productSortCaption(sort)}
           </p>
           <div className="mt-4">
             <InfiniteProductGrid

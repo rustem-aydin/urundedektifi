@@ -2,12 +2,18 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react'
 
 import { BrandCombobox } from '@/components/BrandCombobox'
 import { FilterGroupSelect } from '@/components/FilterGroupSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  PRODUCT_SORT_DEFAULT,
+  PRODUCT_SORT_OPTIONS,
+  productSortFromParam,
+  type ProductSort,
+} from '@/lib/productSort'
 import { cn } from '@/lib/utils'
 
 type Option = { id: string; name: string }
@@ -38,25 +44,28 @@ type ProductsFilterBarProps = {
   category: string
   brand: string
   labels: string[]
+  /** Liste sırası; `?sirala=` URL'de yazar, varsayılan yazılmaz. */
+  sort: ProductSort
   categories: Option[]
   /** Seçili markanın adı; liste sunucuda tutulmaz (bkz. BrandCombobox). */
   brandName?: string | null
 }
 
-type FilterState = { q: string; category: string; brand: string; labels: string[] }
+type FilterState = { q: string; category: string; brand: string; labels: string[]; sort: ProductSort }
 
-/** Filtre sözleşmesi `q`, `kategori`, `marka`, `etiket`; boş değer parametreye yazılmaz. */
-function buildParams({ q, category, brand, labels }: FilterState) {
+/** Filtre sözleşmesi `q`, `kategori`, `marka`, `etiket`, `sirala`; varsayılan değer parametreye yazılmaz. */
+function buildParams({ q, category, brand, labels, sort }: FilterState) {
   const params = new URLSearchParams()
   if (q) params.set('q', q)
   if (category) params.set('kategori', category)
   if (brand) params.set('marka', brand)
   for (const label of labels) params.append('etiket', label)
+  if (sort !== PRODUCT_SORT_DEFAULT) params.set('sirala', sort)
   return params
 }
 
 function filterKey(state: FilterState) {
-  return [state.q, state.category, state.brand, ...state.labels].join('\u0001')
+  return [state.q, state.category, state.brand, ...state.labels, state.sort].join('\u0001')
 }
 
 const CHIP_BASE =
@@ -101,18 +110,19 @@ export function ProductsFilterBar({
   category,
   brand,
   labels,
+  sort,
   categories,
   brandName,
 }: ProductsFilterBarProps) {
   const router = useRouter()
-  const [state, setState] = useState<FilterState>({ q, category, brand, labels })
+  const [state, setState] = useState<FilterState>({ q, category, brand, labels, sort })
   const [draft, setDraft] = useState(q)
   const [brandLabel, setBrandLabel] = useState<string | null>(brandName ?? null)
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
   // URL'den gelen yeni filtre (geri/ileri, bağlantı) yerel kopyayı ezer.
-  const incoming: FilterState = { q, category, brand, labels }
+  const incoming: FilterState = { q, category, brand, labels, sort }
   const incomingKey = filterKey(incoming)
   const [lastKey, setLastKey] = useState(incomingKey)
   if (incomingKey !== lastKey) {
@@ -228,16 +238,45 @@ export function ProductsFilterBar({
           </span>
         </button>
 
-        {hasFilters && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="inline-flex items-center gap-1 rounded-sm py-1 font-mono text-[0.7rem] tracking-[0.14em] text-stamp uppercase underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <X aria-hidden="true" className="size-3.5" />
-            Temizle
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <label
+              htmlFor="urun-sirala"
+              className="font-mono text-[0.7rem] tracking-[0.14em] text-faded uppercase"
+            >
+              Sırala
+            </label>
+            <div className="relative">
+              <select
+                id="urun-sirala"
+                value={state.sort}
+                onChange={(event) => apply({ sort: productSortFromParam(event.target.value) })}
+                className="h-8 cursor-pointer appearance-none rounded-sm border border-border bg-card py-0 pr-6 pl-2 font-mono text-[0.7rem] tracking-[0.14em] uppercase transition-colors hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {PRODUCT_SORT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 right-1.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
+          </div>
+
+          {hasFilters && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="inline-flex items-center gap-1 rounded-sm py-1 font-mono text-[0.7rem] tracking-[0.14em] text-stamp uppercase underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <X aria-hidden="true" className="size-3.5" />
+              Temizle
+            </button>
+          )}
+        </div>
       </div>
 
       {!open && activeChips.length > 0 && (
