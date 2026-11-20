@@ -106,6 +106,22 @@ describe('mergeExtraction · fill-missing', () => {
     ])
   })
 
+  it('dolu içindekiler listesini korur', () => {
+    const draft = draftWithPhotos({
+      items: [{ ingredients: { id: 5, name: 'Tuz' }, percent_estimate: null }],
+    })
+    const next = mergeExtraction(draft, extraction, { mode: 'fill-missing' })
+
+    expect(next.form.ingredients.map((row) => row.name)).toEqual(['Tuz'])
+  })
+
+  it('kullanıcının bilerek boşalttığı alanı doldurmaz', () => {
+    const draft = { ...draftWithPhotos(), touched: ['manufacturer'] }
+    const next = mergeExtraction(draft, extraction, { mode: 'fill-missing' })
+
+    expect(next.form.manufacturer).toBe('')
+  })
+
   it('kullanıcının seçtiği fotoğraf rolünü korur, bilinmeyen role analizden atar', () => {
     const next = mergeExtraction(draftWithPhotos(), extraction, { mode: 'fill-missing' })
 
