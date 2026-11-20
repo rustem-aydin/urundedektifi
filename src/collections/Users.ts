@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 
-import { APIError, type CollectionConfig } from 'payload'
+import { type CollectionConfig } from 'payload'
 import type { User } from '@/payload-types'
 import { buildPublicProfile } from '@/lib/productContributions'
 import {
@@ -295,59 +295,4 @@ export const Users: CollectionConfig = {
       },
     },
   ],
-  hooks: {
-    /**
-     * Rol ↔ uzman kaydı tutarlılığı (ADR 0032).
-     * - "Uzman" rolü elle açılamaz: hesap uzman kaydından otomatik açılır.
-     * - Bir uzmana bağlı hesabın rolü uzman kalır; bağı olmayan hesap uzman yapılamaz.
-     * Uzman kaydından gelen yazımlar `EXPERT_ACCOUNT_CONTEXT` ile bu kapıyı atlar.
-     */
-    beforeChange: [
-      async ({ data, operation, originalDoc, req }) => {
-        if (req.context?.skipExpertAccountGuard) return data
-        const nextRole = (data as User | undefined)?.role
-        if (!nextRole) return data
-
-        const boundCount = async (userId: number | string) => {
-          const result = await req.payload.count({
-            collection: 'experts',
-            where: { user: { equals: userId } },
-            overrideAccess: true,
-            req,
-          })
-          return result.totalDocs
-        }
-
-        if (operation === 'create') {
-          if (nextRole === 'expert') {
-            throw new APIError(
-              'Uzman hesabı buradan açılmaz: Uzmanlar ekranında uzman kaydı oluşturun, panel hesabı otomatik açılır.',
-              400,
-            )
-          }
-          return data
-        }
-
-        if (nextRole === 'expert' && originalDoc?.role !== 'expert') {
-          if ((await boundCount(originalDoc.id)) === 0) {
-            throw new APIError(
-              'Bu hesap bir uzman kaydına bağlı değil. Önce Uzmanlar ekranında uzman oluşturup hesabı bağlayın.',
-              400,
-            )
-          }
-        }
-
-        if (originalDoc?.role === 'expert' && nextRole !== 'expert') {
-          if ((await boundCount(originalDoc.id)) > 0) {
-            throw new APIError(
-              'Bu hesap bir uzmana bağlı; rolü "Uzman" kalmalı. Rolü düşürmek için önce uzman kaydını silin.',
-              400,
-            )
-          }
-        }
-
-        return data
-      },
-    ],
-  },
 }

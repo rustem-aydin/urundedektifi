@@ -1,9 +1,9 @@
 # ADR 0032 — Uzman ↔ panel hesabı eşleşmesi: 1 uzman = 1 hesap
 
-- Durum: Kabul edildi
+- Durum: Yerini aldı: ADR 0035 (uzman panel hesabı mevcut kullanıcıdan seçilir)
 - Tarih: 2026-11-02
-- İlgili: ADR 0011 (uzman yazıları), ADR 0029 (rol yetki matrisi), `src/collections/Users.ts`,
-  `src/collections/Experts.ts`, `src/lib/expertAccounts.ts`
+- İlgili: ADR 0011 (uzman yazıları), ADR 0029 (rol yetki matrisi), ADR 0035 (yerini alan karar),
+  `src/collections/Users.ts`, `src/collections/Experts.ts`
 - Yerini aldığı: ADR 0029 §2'nin "uzman `products.update` yapabilir" maddesi ile ADR 0029 §3'ün
   "uzman kendi yazısını silmez" maddesi
 
@@ -88,3 +88,6 @@ ise korunur: personel hesabı uzman kaydının eki değildir, kazara silinmesi y
   cascade) ve `tests/int/access.int.spec.ts` (rol matrisi + ürün güncelleme daraltması).
 - Şema değişikliği yok: alan zaten vardı, kurallar hook'ta. Geçiş için veritabanı migration'ı
   gerekmez; yalnız kayıtların eşleştirilmesi gerekir.
+
+> ADR 0035 ile otomatik hesap akışı, seed scriptleri ve ilgili test kaldırıldı; bu bölüm
+> tarihsel kayıttır.

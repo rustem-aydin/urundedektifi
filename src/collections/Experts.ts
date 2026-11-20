@@ -1,13 +1,6 @@
-import { APIError, type CollectionConfig } from 'payload'
+import { type CollectionConfig } from 'payload'
 import { slugify } from '@/lib/slugify'
 import { expertRules, invalidateProductCaseCache, listProductsForRules } from '@/lib/productCase'
-import {
-  createExpertAccount,
-  ensureExpertAccountRole,
-  expertAccountEmail,
-  relationshipId,
-  setExpertAccountEmail,
-} from '@/lib/expertAccounts'
 import type { User } from '@/payload-types'
 
 export const Experts: CollectionConfig = {
@@ -119,31 +112,9 @@ export const Experts: CollectionConfig = {
       relationTo: 'users',
       label: 'Panel Hesabı',
       admin: {
-        readOnly: true,
         position: 'sidebar',
         description:
-          'Uzmanın admin panele gireceği hesap. Uzman kaydı ilk kaydedildiğinde otomatik açılır. 1 uzman = 1 hesap; hesabın kendisi elle değiştirilemez, e-postası "Panel E-posta Adresi" alanından düzenlenir.',
-      },
-    },
-    {
-      // Hesabın giriş adresi: varsayılan uzmanın adından türetilir (ADR 0032 §2),
-      // admin bunu değiştirebilir. Veritabanında kolon yok; değer `users.email`te yaşar.
-      name: 'accountEmail',
-      type: 'email',
-      label: 'Panel E-posta Adresi',
-      virtual: true,
-      access: {
-        read: ({ req: { user } }) =>
-          ['admin', 'editor'].includes((user as User | null)?.role ?? ''),
-        update: ({ req: { user } }) =>
-          ['admin', 'editor'].includes((user as User | null)?.role ?? ''),
-      },
-      admin: {
-        position: 'sidebar',
-        // Payload sanal alanları varsayılan olarak salt okunur yapar; bu alan bilerek yazılabilir.
-        readOnly: false,
-        description:
-          'Uzmanın panele giriş e-postası. Boş bırakılırsa adından türetilir (ör. boykot_dedektifi@expert.local); buradan kendi gerçek adresiyle değiştirebilirsiniz. Şifre Kullanıcılar ekranından belirlenir.',
+          'Uzmanın panele gireceği mevcut kullanıcı. Hesap Kullanıcılar ekranında açılır; e-posta ve şifre oradan yönetilir.',
       },
     },
     {
@@ -295,100 +266,8 @@ export const Experts: CollectionConfig = {
         return data
       },
     ],
-    // Her uzmanın tam olarak bir panel hesabı vardır (ADR 0032). Hesap ya uzman
-    // kaydından otomatik açılır ya da bağlanan hesap uzmana çekilir.
-    beforeChange: [
-      async ({ data, originalDoc, req }) => {
-        const linked =
-          relationshipId(data?.user) ?? relationshipId(originalDoc?.user)
-        const requestedEmail =
-          typeof data?.accountEmail === 'string' && data.accountEmail.trim()
-            ? data.accountEmail
-            : null
-
-        if (linked) {
-          // 1 uzman = 1 hesap: aynı hesap ikinci bir uzmana bağlanamaz.
-          const clash = await req.payload.find({
-            collection: 'experts',
-            where: {
-              and: [
-                { user: { equals: linked } },
-                ...(originalDoc?.id ? [{ id: { not_equals: originalDoc.id } }] : []),
-              ],
-            },
-            limit: 1,
-            depth: 0,
-            overrideAccess: true,
-            req,
-          })
-          if (clash.docs.length > 0) {
-            throw new APIError(
-              'Bu hesap başka bir uzmana bağlı. Bir hesap yalnız bir uzmana ait olabilir.',
-              400,
-            )
-          }
-          data.user = linked
-          await ensureExpertAccountRole(req.payload, linked, req)
-          if (requestedEmail) {
-            await setExpertAccountEmail(req.payload, linked, requestedEmail, req)
-          }
-          return data
-        }
-
-        const name =
-          typeof data?.name === 'string' && data.name.trim()
-            ? data.name
-            : typeof originalDoc?.name === 'string'
-              ? originalDoc.name
-              : ''
-        if (!name.trim()) {
-          throw new APIError('Uzmanın adı olmadan panel hesabı açılamaz.', 400)
-        }
-        data.user = await createExpertAccount(
-          req.payload,
-          name,
-          req,
-          requestedEmail ?? undefined,
-        )
-        return data
-      },
-    ],
-    // Panelde hesabın giriş adresini göster (sanal alan; veritabanında kolon yok).
-    afterRead: [
-      async ({ doc, req }) => {
-        const role = (req.user as User | null)?.role
-        if (role !== 'admin' && role !== 'editor') return doc
-        const linked = relationshipId(doc?.user)
-        if (!linked) return doc
-        const email = await expertAccountEmail(req.payload, linked, req)
-        if (email) doc.accountEmail = email
-        return doc
-      },
-    ],
     // Uzman adı/slug/avatarı ürün dosyasındaki hüküm satırlarında görünür: case önbelleği düşsün.
     afterChange: [() => invalidateProductCaseCache()],
-    afterDelete: [
-      async ({ doc, req }) => {
-        invalidateProductCaseCache()
-        // Uzman silinince hesabı da gider; admin/editör hesabı asla cascade silinmez.
-        const linked = relationshipId(doc?.user)
-        if (!linked) return
-        const account = await req.payload
-          .findByID({
-            collection: 'users',
-            id: linked,
-            depth: 0,
-            overrideAccess: true,
-            req,
-          })
-          .catch(() => null)
-        if (!account) return
-        const role = (account as User | null)?.role
-        if (role === 'admin' || role === 'editor') return
-        await req.payload
-          .delete({ collection: 'users', id: linked, overrideAccess: true, req })
-          .catch(() => undefined)
-      },
-    ],
+    afterDelete: [() => invalidateProductCaseCache()],
   },
 }

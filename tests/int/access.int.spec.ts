@@ -50,15 +50,14 @@ async function userFor(role: Role) {
   })
   created.push({ collection: 'experts', id: expert.id })
 
-  // "Uzman" rolü yalnız uzman kaydından doğar: hesap normal üye olarak açılır,
-  // uzman kaydına bağlanınca rolü uzmana çekilir. Diğer roller bağsız kalır.
+  // "Uzman" rolü Kullanıcılar ekranında açılır; uzman kaydı yalnız mevcut hesaba bağlanır.
   const person = await payload.create({
     collection: 'users',
     data: {
       name: `access ${label}`,
       email: `${label}@example.com`,
       password: 'test-password-123',
-      role: role === 'expert' ? 'user' : role,
+      role,
     } as never,
     overrideAccess: true,
   })
