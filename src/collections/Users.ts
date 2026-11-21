@@ -59,6 +59,36 @@ export const Users: CollectionConfig = {
   },
   endpoints: [
     {
+      /**
+       * Hesabı sil: kullanıcı yalnız kendi hesabını silebilir (jeton zorunlu).
+       *
+       * Google Play, hesap oluşturan uygulamalarda "hesabımı sil" yolu ister; bu uç hem
+       * web `/hesap-sil` sayfasını hem mobil profil ekranını besler. Kişisel veriler
+       * (ad, e-posta, bio, avatar, takip listesi) satırla birlikte silinir; kullanıcının
+       * açtığı oturumlar da temizlenir. Katkı sağladığı ürün kayıtları silinmez:
+       * onlar katalog verisidir, katkıcı bağı kullanıcı silinince boşalır.
+       */
+      path: '/delete-account',
+      method: 'post',
+      handler: async (req) => {
+        const user = req.user
+        if (!user) {
+          return Response.json({ error: 'Bu işlem için giriş yapmalısın.' }, { status: 401 })
+        }
+        try {
+          await req.payload.delete({
+            collection: 'users',
+            id: user.id,
+            overrideAccess: true,
+          })
+        } catch (error) {
+          req.payload.logger.error({ err: error }, 'hesap silinemedi')
+          return Response.json({ error: 'Hesap silinemedi. Tekrar dene.' }, { status: 500 })
+        }
+        return Response.json({ ok: true })
+      },
+    },
+    {
       // Herkese açık profil: e-posta ve hesap alanları sızmadan yalnız kamuya açık özet.
       // Web `/profil/[id]` sunucu tarafında bu yardımcıyı doğrudan çağırır; mobil bu uçtan okur.
       path: '/profile/:id',
