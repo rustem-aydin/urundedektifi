@@ -66,6 +66,22 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
   const verdicts = data?.byExpert ?? []
   const total = data?.totalMatched ?? 0
 
+  // Hüküm listesinin üstünde "ne zaman güncellendi" görünmeli: marka itirazında
+  // ilk sorulan şey hükmün yaşı. Tarih, eşleşen delillerin en yeni güncellemesidir.
+  const lastUpdated = verdicts
+    .flatMap((entry) => entry.matchedRules)
+    .map((rule) => rule.updatedAt)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1)
+  const lastUpdatedLabel = lastUpdated
+    ? new Intl.DateTimeFormat('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(lastUpdated))
+    : null
+
   return (
     <CaseSection
       id="hukumler"
@@ -94,6 +110,11 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
         )
       }
     >
+      {lastUpdatedLabel ? (
+        <p className="mt-3 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+          Delillerin son güncellemesi · {lastUpdatedLabel}
+        </p>
+      ) : null}
       <ExpertVerdicts verdicts={verdicts} avatars={avatars} />
     </CaseSection>
   )

@@ -320,6 +320,10 @@ export const ExpertRules: CollectionConfig = {
       name: 'sources',
       type: 'array',
       labels: { singular: 'Kaynak', plural: 'Kaynaklar (Referanslar)' },
+      admin: {
+        description:
+          'Hükmün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.',
+      },
       fields: [
         {
           name: 'title',

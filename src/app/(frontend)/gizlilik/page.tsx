@@ -98,10 +98,10 @@ export default function GizlilikPage() {
       <p className="mt-3 text-sm text-muted-foreground">
         Gizlilik talepleri ve sorular için:{' '}
         <a
-          href="mailto:rustemaydin.web@gmail.com"
+          href="mailto:rustemaydinnn@gmail.com"
           className="underline underline-offset-4 hover:text-foreground"
         >
-          rustemaydin.web@gmail.com
+          rustemaydinnn@gmail.com
         </a>
       </p>
 

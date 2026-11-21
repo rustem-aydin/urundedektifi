@@ -875,10 +875,11 @@ export const Products: CollectionConfig = {
                   options: [
                     { label: '🟢 Düşük (bilgi)', value: 'low' },
                     { label: '🟡 Orta (dikkat)', value: 'medium' },
-                    { label: '🔴 Yüksek (tehlike)', value: 'high' },
+                    { label: '🔴 Yüksek (kaynağı gösterilen ciddi uyarı)', value: 'high' },
                   ],
                   admin: {
-                    description: 'Uyarının ciddiyet seviyesi. Sitede renkli olarak gösterilir.',
+                    description:
+                      'Uyarının ciddiyet seviyesi. "Yüksek" için uyarının dayanağı (etiket, üretici, resmî kurum) açıklama/uyarı metninde belirtilmelidir.',
                   },
                 },
                 {

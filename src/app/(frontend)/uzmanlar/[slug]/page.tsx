@@ -24,6 +24,7 @@ import { FollowButton } from '@/components/FollowButton'
 import { ProductCard } from '@/components/ProductCard'
 import { RatingFilterBar } from '@/components/RatingFilterBar'
 import { VerdictStamp } from '@/components/VerdictStamp'
+import { VerdictDisclaimer } from '@/components/VerdictDisclaimer'
 
 export async function generateMetadata({
   params,
@@ -565,6 +566,8 @@ export default async function ExpertDetailPage({
           },
         ]}
       />
+
+      <VerdictDisclaimer className="mt-8" />
     </div>
   )
 }

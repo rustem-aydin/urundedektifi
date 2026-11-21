@@ -113,12 +113,13 @@ export const Additives: CollectionConfig = {
       type: 'select',
       label: 'Risk Seviyesi',
       options: [
-        { label: '✅ Düşük (güvenli)', value: 'low' },
+        { label: '✅ Düşük (bilinen güvenli kullanım)', value: 'low' },
         { label: '⚠️ Orta (aşırı tüketimde dikkat)', value: 'medium' },
-        { label: '❌ Yüksek (sağlığa zararlı olduğu gösterilmiş)', value: 'high' },
+        { label: '❌ Yüksek (yetkili kurum değerlendirmelerinde riskli bulunmuş)', value: 'high' },
       ],
       admin: {
-        description: 'Sağlık açısından risk seviyesi. Bilimsel kanıtlara dayanır.',
+        description:
+          'Sağlık açısından risk seviyesi. "Yüksek" yalnız kaynağı (EFSA/WHO/JECFA vb.) `sources` alanında gösterilen kayıtlara verilir; kaynaksız risk iddiası yayınlanmaz.',
       },
     },
     {

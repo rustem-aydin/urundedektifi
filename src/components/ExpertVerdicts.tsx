@@ -17,6 +17,17 @@ import type { ExpertVerdict } from '@/lib/verdictEngine'
 
 export type ExpertAvatar = { url: string | null; alt: string | null }
 
+/** Hükmün yaşı: kuralın son güncelleme tarihi (itiraz/düzeltme bağlamında okunur). */
+function formatRuleDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('tr-TR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date)
+}
+
 /**
  * Dosya 01 — Uzman hükümleri.
  *
@@ -156,6 +167,11 @@ export function ExpertVerdicts({
                       ) : null}
                       {rule.description ? (
                         <p className="text-sm text-muted-foreground">{rule.description}</p>
+                      ) : null}
+                      {rule.updatedAt ? (
+                        <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+                          Güncellendi {formatRuleDate(rule.updatedAt)}
+                        </p>
                       ) : null}
                       {rule.sources?.length ? (
                         <span className="flex flex-col gap-0.5">

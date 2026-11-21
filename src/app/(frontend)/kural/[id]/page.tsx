@@ -17,6 +17,7 @@ import { ruleTypeLabel } from '@/lib/ruleLabels'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ProductCard } from '@/components/ProductCard'
+import { VerdictDisclaimer } from '@/components/VerdictDisclaimer'
 
 export async function generateMetadata({
   params,
@@ -55,6 +56,15 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
   const rating = rule.rating && typeof rule.rating === 'object' ? rule.rating : null
   const topic = rule.topic && typeof rule.topic === 'object' ? rule.topic : null
   const expert = rule.expert && typeof rule.expert === 'object' ? rule.expert : null
+
+  // Kaynak değişince hüküm güncellenir; okuyucu hükmün yaşını görebilmeli.
+  const updatedLabel = rule.updatedAt
+    ? new Intl.DateTimeFormat('tr-TR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(rule.updatedAt))
+    : null
 
   // `sources` ve `evidence` aynı bağlantıyı taşıyabilir: URL'e göre tekilleştir.
   const seenUrls = new Set<string>()
@@ -125,6 +135,7 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
               {topic.icon} {topic.name}
             </span>
           ) : null}
+          {updatedLabel ? <span>· Güncellendi {updatedLabel}</span> : null}
         </p>
 
         {rule.description ? (
@@ -153,6 +164,8 @@ export default async function RuleDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </CaseCard>
+
+      <VerdictDisclaimer className="mt-4" />
 
       <section className="mt-10">
         <h2 className="font-display text-xl">Eşleşen ürünler ({products.length})</h2>

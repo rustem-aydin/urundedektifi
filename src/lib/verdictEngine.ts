@@ -20,6 +20,9 @@ export type Rule = {
   evidence?: any[] | null
   sources?: any[] | null
   isActive?: boolean | null
+  /** Hükmün yaşı: kural panelde güncellendiğinde değişir (hüküm yüzeylerinde gösterilir). */
+  createdAt?: string | null
+  updatedAt?: string | null
 }
 
 export type Product = {

@@ -28,6 +28,7 @@ import { ProductGallery } from '@/components/ProductGallery'
 import { ProductAdminActions } from '@/components/ProductAdminActions'
 import { ProductViewCounter } from '@/components/ProductViewCounter'
 import { ContributorsStrip } from '@/components/ContributorsStrip'
+import { VerdictDisclaimer } from '@/components/VerdictDisclaimer'
 import { ContributionForm } from '@/components/ContributionForm'
 import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
@@ -294,6 +295,7 @@ export default async function ProductDetailPage({
       <div className="mt-10 flex flex-col gap-10">
         {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
         <VerdictSection avatars={expertAvatars} />
+        <VerdictDisclaimer className="-mt-6" />
 
         {/* UYARILAR */}
         <CaseSection
