@@ -8,6 +8,8 @@ type CaseSectionProps = {
   title: React.ReactNode
   aside?: React.ReactNode
   hasData: boolean
+  /** Yükleme hatası: `hasData` false olsa da çocuklar (hata dalı) basılır. */
+  hasError?: boolean
   emptyMessage: React.ReactNode
   /** Boş durumda mesajın altında gösterilecek eylem (ör. "Uzmanları keşfet" düğmesi). */
   emptyAction?: React.ReactNode
@@ -21,6 +23,7 @@ export function CaseSection({
   title,
   aside,
   hasData,
+  hasError = false,
   emptyMessage,
   emptyAction,
   className,
@@ -41,7 +44,7 @@ export function CaseSection({
         {aside}
       </div>
 
-      {hasData ? (
+      {hasData || hasError ? (
         children
       ) : (
         <div className="mt-4 flex flex-col items-start gap-3 rounded-md border border-dashed border-border bg-card/60 px-5 py-4">

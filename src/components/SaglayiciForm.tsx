@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { AsyncError } from '@/components/AsyncError'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
@@ -20,28 +21,37 @@ import { fetchProviderStatus, type ProviderStatus } from '@/lib/wizard/provider'
 export function SaglayiciForm() {
   const { token, user, restoring } = useSession()
   const [status, setStatus] = useState<ProviderStatus | null>(null)
+  const [failure, setFailure] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!token) {
       setStatus({ configured: false, baseUrl: null, model: null })
+      setFailure(null)
       return
     }
     let active = true
+    setFailure(null)
     fetchProviderStatus(token)
       .then((next) => {
         if (active) setStatus(next)
       })
       .catch((error: unknown) => {
         if (!active) return
-        setStatus({ configured: false, baseUrl: null, model: null })
-        toast.error(userMessage(error, 'Sağlayıcı durumu okunamadı. Tekrar dene.'))
+        const message = `Sağlayıcı durumu okunamadı. ${userMessage(
+          error,
+          'Bağlantını kontrol edip tekrar dene.',
+        )}`
+        setStatus(null)
+        setFailure(message)
+        toast.error(message)
       })
     return () => {
       active = false
     }
-  }, [token])
+  }, [token, attempt])
 
-  if (restoring || status === null) {
+  if (restoring) {
     return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
   }
 
@@ -58,6 +68,14 @@ export function SaglayiciForm() {
         </Button>
       </CaseCard>
     )
+  }
+
+  if (failure) {
+    return <AsyncError message={failure} onRetry={() => setAttempt((value) => value + 1)} />
+  }
+
+  if (status === null) {
+    return <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">Ayarlar okunuyor…</p>
   }
 
   return (

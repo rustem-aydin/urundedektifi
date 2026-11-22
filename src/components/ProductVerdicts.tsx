@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
+import { AsyncError } from '@/components/AsyncError'
 import { CaseSection } from '@/components/CaseSection'
 import { ExpertVerdicts, type ExpertAvatar } from '@/components/ExpertVerdicts'
 import { useSession } from '@/components/session-provider'
 import { VerdictStamp } from '@/components/VerdictStamp'
 import { fetchVerdict, type ProductVerdict } from '@/lib/wizard/api'
+import { userMessage } from '@/lib/userMessages'
 
 /**
  * Ürün Dosyası'ndaki hükümler takibe bağlıdır: yalnız oturum sahibinin takip ettiği
@@ -18,9 +20,23 @@ import { fetchVerdict, type ProductVerdict } from '@/lib/wizard/api'
  * sayfa köküne konur.
  */
 
-type VerdictState = { data: ProductVerdict | null; loading: boolean }
+/**
+ * Üç durum: yükleniyor | hata | veri (boş olabilir). Hata, "eşleşen kural yok"
+ * iddiasına dönüşmemeli — boykot/helal gibi konularda yanlış güven verir.
+ */
+type VerdictState = {
+  data: ProductVerdict | null
+  loading: boolean
+  error: string | null
+  retry: () => void
+}
 
-const VerdictContext = createContext<VerdictState>({ data: null, loading: true })
+const VerdictContext = createContext<VerdictState>({
+  data: null,
+  loading: true,
+  error: null,
+  retry: () => {},
+})
 
 export function ProductVerdictProvider({
   barcode,
@@ -30,39 +46,51 @@ export function ProductVerdictProvider({
   children: ReactNode
 }) {
   const { token, restoring, followingIds } = useSession()
-  const [state, setState] = useState<VerdictState>({ data: null, loading: true })
+  const [state, setState] = useState<Omit<VerdictState, 'retry'>>({
+    data: null,
+    loading: true,
+    error: null,
+  })
+  const [attempt, setAttempt] = useState(0)
   const followingKey = followingIds.join(',')
 
   useEffect(() => {
     if (restoring) return
     let cancelled = false
-    setState((previous) => ({ data: previous.data, loading: true }))
+    setState((previous) => ({ data: previous.data, loading: true, error: null }))
     fetchVerdict(barcode, token)
       .then((data) => {
-        if (!cancelled) setState({ data, loading: false })
+        if (!cancelled) setState({ data, loading: false, error: null })
       })
-      .catch(() => {
-        if (!cancelled) setState({ data: null, loading: false })
+      .catch((caught: unknown) => {
+        if (!cancelled)
+          setState({
+            data: null,
+            loading: false,
+            error: `Hükümler yüklenemedi. ${userMessage(caught, 'Bağlantını kontrol edip tekrar dene.')}`,
+          })
       })
     return () => {
       cancelled = true
     }
     // followingKey: takip değişince hüküm yeniden çekilir (başka sekmede takip edilmiş olabilir).
-  }, [barcode, token, restoring, followingKey])
+  }, [barcode, token, restoring, followingKey, attempt])
 
-  return <VerdictContext.Provider value={state}>{children}</VerdictContext.Provider>
+  const retry = useCallback(() => setAttempt((value) => value + 1), [])
+
+  return <VerdictContext.Provider value={{ ...state, retry }}>{children}</VerdictContext.Provider>
 }
 
-/** Üst bilgi rozeti: takip edilen uzmanların eşleşen kural sayısı. */
+/** Üst bilgi rozeti: takip edilen uzmanların eşleşen kural sayısı. Hata/boşta rozet yok. */
 export function MatchedStamp() {
-  const { data, loading } = useContext(VerdictContext)
-  if (loading || !data || data.totalMatched === 0) return null
+  const { data, loading, error } = useContext(VerdictContext)
+  if (loading || error || !data || data.totalMatched === 0) return null
   return <VerdictStamp variant="warn">{data.totalMatched} delil eşleşti</VerdictStamp>
 }
 
 /** Dosya 01: hüküm listesi ya da "uzman takip edin" boş durumu. */
 export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvatar> }) {
-  const { data, loading } = useContext(VerdictContext)
+  const { data, loading, error, retry } = useContext(VerdictContext)
   const verdicts = data?.byExpert ?? []
   const total = data?.totalMatched ?? 0
 
@@ -88,10 +116,12 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
       eyebrow="Dosya 01"
       title={
         <>
-          Uzman hükümleri <span className="font-mono text-base text-faded">({total})</span>
+          Uzman hükümleri{' '}
+          {data ? <span className="font-mono text-base text-faded">({total})</span> : null}
         </>
       }
       hasData={verdicts.length > 0}
+      hasError={Boolean(error)}
       emptyMessage={
         loading
           ? 'Hükümler yükleniyor…'
@@ -110,12 +140,18 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
         )
       }
     >
-      {lastUpdatedLabel ? (
-        <p className="mt-3 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-          Delillerin son güncellemesi · {lastUpdatedLabel}
-        </p>
-      ) : null}
-      <ExpertVerdicts verdicts={verdicts} avatars={avatars} />
+      {error ? (
+        <AsyncError className="mt-4" message={error} onRetry={retry} />
+      ) : (
+        <>
+          {lastUpdatedLabel ? (
+            <p className="mt-3 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
+              Delillerin son güncellemesi · {lastUpdatedLabel}
+            </p>
+          ) : null}
+          <ExpertVerdicts verdicts={verdicts} avatars={avatars} />
+        </>
+      )}
     </CaseSection>
   )
 }

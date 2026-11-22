@@ -197,30 +197,48 @@ export default async function TopicPage({
         )}
       </section>
 
-      {rules.docs.length > 0 && (
-        <section aria-labelledby="topic-rules-heading" className="mt-10">
-          <h2 id="topic-rules-heading" className="font-display text-xl">
-            Bu konudaki aktif kurallar ({rules.totalDocs})
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.
+      <section aria-labelledby="topic-rules-heading" className="mt-10">
+        <h2 id="topic-rules-heading" className="font-display text-xl">
+          Bu konudaki aktif kurallar ({rules.totalDocs})
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Bu kurallar eşleşen tüm ürünlere otomatik olarak uygulanır.
+        </p>
+        {rules.docs.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            {rulePage > 1 ? (
+              <>
+                Bu sayfada kural yok.{' '}
+                <Link
+                  href={`/konu/${topic.slug}`}
+                  className="underline underline-offset-4 hover:text-foreground"
+                >
+                  İlk sayfaya dön
+                </Link>
+                .
+              </>
+            ) : (
+              'Bu konuda henüz aktif kural yok.'
+            )}
           </p>
+        ) : (
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {rules.docs.map((rule: any) => {
-              const expert = rule.expert
+            {rules.docs.map((rule) => {
+              const expert = typeof rule.expert === 'object' ? rule.expert : null
+              const rating = typeof rule.rating === 'object' ? rule.rating : null
               return (
                 <CaseCard key={rule.id} tape>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
                       <EvidenceTag variant="evidence">DELİL</EvidenceTag>
-                      {rule.rating && (
+                      {rating && (
                         <span
                           className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"
                           // Derecelendirme rengi CMS'ten serbest gelir; token dışı tek renk burada, inline stil ile uygulanır
-                          style={{ color: rule.rating.color || undefined }}
-                          title={rule.rating.description || rule.rating.name}
+                          style={{ color: rating.color || undefined }}
+                          title={rating.description || rating.name}
                         >
-                          {rule.rating.name}
+                          {rating.name}
                         </span>
                       )}
                     </div>
@@ -247,39 +265,39 @@ export default async function TopicPage({
               )
             })}
           </div>
+        )}
 
-          {rules.totalPages > 1 && (
-            <nav
-              aria-label="Kural sayfaları"
-              className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
-            >
-              {rulePage > 1 ? (
-                <Link
-                  href={`/konu/${topic.slug}?kuralSayfa=${rulePage - 1}`}
-                  className="underline-offset-4 hover:underline"
-                >
-                  ← Önceki
-                </Link>
-              ) : (
-                <span aria-hidden="true" />
-              )}
-              <span className="text-faded">
-                {rulePage} / {rules.totalPages}
-              </span>
-              {rulePage < rules.totalPages ? (
-                <Link
-                  href={`/konu/${topic.slug}?kuralSayfa=${rulePage + 1}`}
-                  className="underline-offset-4 hover:underline"
-                >
-                  Sonraki →
-                </Link>
-              ) : (
-                <span aria-hidden="true" />
-              )}
-            </nav>
-          )}
-        </section>
-      )}
+        {rules.totalPages > 1 && (
+          <nav
+            aria-label="Kural sayfaları"
+            className="mt-6 flex items-center justify-between gap-4 font-mono text-[0.7rem] tracking-[0.14em] uppercase"
+          >
+            {rulePage > 1 ? (
+              <Link
+                href={`/konu/${topic.slug}?kuralSayfa=${Math.min(rulePage - 1, rules.totalPages)}`}
+                className="underline-offset-4 hover:underline"
+              >
+                ← Önceki
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <span className="text-faded">
+              {Math.min(rulePage, rules.totalPages)} / {rules.totalPages}
+            </span>
+            {rulePage < rules.totalPages ? (
+              <Link
+                href={`/konu/${topic.slug}?kuralSayfa=${rulePage + 1}`}
+                className="underline-offset-4 hover:underline"
+              >
+                Sonraki →
+              </Link>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+          </nav>
+        )}
+      </section>
     </div>
   )
 }

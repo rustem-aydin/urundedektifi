@@ -110,10 +110,18 @@ export default function RootLayout(props: { children: React.ReactNode }) {
       className={`${inter.variable} ${specialElite.variable} ${jetbrainsMono.variable}`}
     >
       <body className="flex min-h-svh flex-col font-sans">
+        <a
+          href="#icerik"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-sm focus:border focus:border-border focus:bg-card focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:outline-2 focus:outline-offset-2 focus:outline-ring"
+        >
+          İçeriğe geç
+        </a>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SessionProvider>
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            <main id="icerik" tabIndex={-1} className="flex-1">
+              {children}
+            </main>
             <SiteFooter />
             <Toaster position="bottom-right" />
           </SessionProvider>
