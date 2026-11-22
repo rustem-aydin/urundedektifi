@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { AsyncError } from '@/components/AsyncError'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { useSession } from '@/components/session-provider'
@@ -143,29 +144,39 @@ export function ProfileContributions({
   const [loading, setLoading] = useState(false)
 
   const own = Boolean(user && String(user.id) === String(profileId))
+  const mounted = useRef(true)
 
   useEffect(() => {
-    if (restoring || !own || !token) return
-    let active = true
-    setLoading(true)
-    fetchMyContributions(token)
-      .then((result) => {
-        if (!active) return
-        setMine(result.items)
-        setPending(result.pending)
-        setLimit(result.limit)
-      })
-      .catch((error: unknown) => {
-        if (!active) return
-        setFailure(userMessage(error, 'Katkıların yüklenemedi. Bağlantını kontrol edip tekrar dene.'))
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
+    mounted.current = true
     return () => {
-      active = false
+      mounted.current = false
     }
-  }, [own, restoring, token])
+  }, [])
+
+  const loadMine = useCallback(async () => {
+    if (!token) return
+    setLoading(true)
+    setFailure(null)
+    try {
+      const result = await fetchMyContributions(token)
+      if (!mounted.current) return
+      setMine(result.items)
+      setPending(result.pending)
+      setLimit(result.limit)
+    } catch (error: unknown) {
+      if (!mounted.current) return
+      setFailure(
+        `Katkıların yüklenemedi. ${userMessage(error, 'Bağlantını kontrol edip tekrar dene.')}`,
+      )
+    } finally {
+      if (mounted.current) setLoading(false)
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (restoring || !own) return
+    void loadMine()
+  }, [loadMine, own, restoring])
 
   const { cards, publishedShown } = useMemo(() => {
     const ownItems = own ? mine : []
@@ -224,7 +235,8 @@ export function ProfileContributions({
           </EvidenceTag>
         ) : null
       }
-      hasData={cards.length > 0}
+      hasData={cards.length > 0 || loading}
+      hasError={Boolean(failure)}
       emptyMessage={
         own
           ? 'Henüz katkı göndermedin. Taramada bulunamayan bir ürünün fotoğraflarını göndererek dosya açabilirsin.'
@@ -232,7 +244,9 @@ export function ProfileContributions({
       }
     >
       <div className="mt-4 flex flex-col gap-3">
-        {failure ? <p className="text-sm text-stamp">{failure}</p> : null}
+        {failure ? (
+          <AsyncError message={failure} onRetry={() => void loadMine()} />
+        ) : null}
 
         {own && loading ? (
           <p className="font-mono text-xs tracking-[0.14em] text-muted-foreground uppercase">

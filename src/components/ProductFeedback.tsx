@@ -14,6 +14,7 @@ import {
 } from 'react'
 import { toast } from 'sonner'
 
+import { AsyncError } from '@/components/AsyncError'
 import { CaseCard } from '@/components/CaseCard'
 import { CaseSection } from '@/components/CaseSection'
 import { EvidenceTag } from '@/components/EvidenceTag'
@@ -70,8 +71,12 @@ type FeedbackContextValue = {
   data: ProductFeedback | null
   loading: boolean
   pending: boolean
+  /** Yazma işlemi hatası (oy/yorum/silme). */
   error: string | null
+  /** İlk yükleme hatası; boş sonuç metninden ayrı tutulur. */
+  loadError: string | null
   refresh: () => Promise<void>
+  retry: () => Promise<void>
   vote: (input: { target: FeedbackTargetKey; verdict: FeedbackVerdict; note: string }) => Promise<void>
   comment: (text: string) => Promise<void>
   remove: (id: string) => Promise<void>
@@ -99,6 +104,7 @@ export function ProductFeedbackProvider({
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [limit, setLimit] = useState(20)
   const [openTarget, setOpenTarget] = useState<FeedbackTargetKey | null>(null)
   const mounted = useRef(true)
@@ -123,14 +129,17 @@ export function ProductFeedbackProvider({
     if (restoring) return
     let active = true
     setLoading(true)
+    setLoadError(null)
     fetchProductFeedback(barcode, token, { limit })
       .then((next) => {
         if (!active) return
         setData(next)
         setError(null)
+        setLoadError(null)
       })
       .catch((caught) => {
-        if (active) setError(userMessage(caught, 'Yorumlar yüklenemedi. Tekrar dene.'))
+        if (active)
+          setLoadError(`Yorumlar yüklenemedi. ${userMessage(caught, 'Bağlantını kontrol edip tekrar dene.')}`)
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -142,6 +151,20 @@ export function ProductFeedbackProvider({
 
   const refresh = useCallback(async () => {
     await load(limit)
+  }, [load, limit])
+
+  const retry = useCallback(async () => {
+    setLoading(true)
+    setLoadError(null)
+    try {
+      await load(limit)
+    } catch (caught) {
+      if (mounted.current) {
+        setLoadError(`Yorumlar yüklenemedi. ${userMessage(caught, 'Bağlantını kontrol edip tekrar dene.')}`)
+      }
+    } finally {
+      if (mounted.current) setLoading(false)
+    }
   }, [load, limit])
 
   /** Yazma yanıtı ilk sayfayı taşır; daha fazla yorum açılmışsa tamamı yeniden çekilir. */
@@ -158,7 +181,9 @@ export function ProductFeedbackProvider({
     loading,
     pending,
     error,
+    loadError,
     refresh,
+    retry,
     async vote(input) {
       if (!token) throw new Error('Oy vermek için giriş yapman gerekiyor.')
       setPending(true)
@@ -464,7 +489,7 @@ function VerifyDialog({
 
 /** Dosya 09: yorum kutusu + yorum/doğrulama akışı. */
 export function FeedbackCommentsSection() {
-  const { data, loading, pending, error, comment, remove, loadMore } = useFeedback()
+  const { data, loading, pending, error, loadError, comment, remove, loadMore, retry } = useFeedback()
   const [draft, setDraft] = useState('')
   const pathname = usePathname()
 
@@ -485,6 +510,7 @@ export function FeedbackCommentsSection() {
       eyebrow="Dosya 09"
       title={`Yorumlar${data ? ` (${data.totalComments})` : ''}`}
       hasData={Boolean(data)}
+      hasError={Boolean(loadError)}
       emptyMessage={
         loading
           ? 'Yorumlar yükleniyor…'
@@ -492,7 +518,9 @@ export function FeedbackCommentsSection() {
       }
     >
       <div className="mt-4 flex flex-col gap-4">
-        {data?.signedIn ? (
+        {loadError ? (
+          <AsyncError message={loadError} onRetry={() => void retry()} />
+        ) : data?.signedIn ? (
           <div className="flex flex-col gap-2">
             <label className="flex flex-col gap-1.5">
               <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">

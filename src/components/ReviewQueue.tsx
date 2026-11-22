@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { AsyncError } from '@/components/AsyncError'
 import { CaseCard } from '@/components/CaseCard'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { ImageLightbox, type LightboxImage } from '@/components/ImageLightbox'
@@ -43,6 +44,7 @@ export function ReviewQueue() {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [viewer, setViewer] = useState<{ images: LightboxImage[]; index: number } | null>(null)
 
   const allowed = user?.role === 'admin' || user?.role === 'editor'
@@ -50,12 +52,13 @@ export function ReviewQueue() {
   const load = useCallback(async () => {
     if (!token || !allowed) return
     setLoading(true)
+    setLoadError(null)
     try {
       setItems(await fetchReviewQueue(token))
       setFailure(null)
     } catch (error) {
-      const message = describe(error)
-      setFailure(message)
+      const message = `İnceleme kuyruğu yüklenemedi. ${describe(error)}`
+      setLoadError(message)
       toast.error(message)
     } finally {
       setLoading(false)
@@ -148,12 +151,18 @@ export function ReviewQueue() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <EvidenceTag variant="tape">{items.length} taslak</EvidenceTag>
-        <EvidenceTag>{unseen} görülmemiş</EvidenceTag>
+        {loadError ? null : (
+          <>
+            <EvidenceTag variant="tape">{items.length} taslak</EvidenceTag>
+            <EvidenceTag>{unseen} görülmemiş</EvidenceTag>
+          </>
+        )}
         <Button type="button" variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
           {loading ? 'Yükleniyor…' : 'Yenile'}
         </Button>
       </div>
+
+      {loadError ? <AsyncError message={loadError} onRetry={() => void load()} /> : null}
 
       {failure ? (
         <p role="alert" className="text-sm text-stamp">
@@ -161,7 +170,7 @@ export function ReviewQueue() {
         </p>
       ) : null}
 
-      {items.length === 0 && !loading ? (
+      {items.length === 0 && !loading && !loadError ? (
         <p className="text-sm text-muted-foreground">İncelenecek taslak yok.</p>
       ) : null}
 
