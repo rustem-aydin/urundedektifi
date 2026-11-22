@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 /**
  * Hesap silme paneli: Play mağaza girişindeki "Hesap silme URL'si" bu sayfayı gösterir.
@@ -57,12 +58,12 @@ export function DeleteAccountPanel() {
     return (
       <div className="mt-6 rounded border border-border bg-card px-4 py-3 text-sm">
         <p>Silmek istediğiniz hesaba giriş yapın, sonra bu sayfaya dönün.</p>
-        <a
+        <Link
           href="/giris"
           className="mt-2 inline-block underline underline-offset-4 hover:text-foreground"
         >
           Giriş yap
-        </a>
+        </Link>
       </div>
     )
   }

@@ -1,16 +1,11 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTypeScript from 'eslint-config-next/typescript'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
-
+// `eslint-config-next` 16 flat config dizileri yayınlıyor; FlatCompat/eslintrc
+// köprüsü bu nesneleri şemaya çeviremiyor ("Converting circular structure").
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  ...nextVitals,
+  ...nextTypeScript,
   {
     rules: {
       '@typescript-eslint/ban-ts-comment': 'warn',
@@ -28,10 +23,20 @@ const eslintConfig = [
           caughtErrorsIgnorePattern: '^(_|ignore)',
         },
       ],
+      // Next 16 flat config, react-hooks v7'nin derleyici kurallarını da açıyor.
+      // Kod tabanı bunlardan önce yazıldı; yalnız rules-of-hooks/exhaustive-deps kuralı geçerliydi.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
     },
   },
   {
-    ignores: ['.next/', 'src/payload-types.ts', 'src/payload-generated-schema.ts'],
+    ignores: [
+      '.next/',
+      'src/payload-types.ts',
+      'src/payload-generated-schema.ts',
+      'video/hyperframes/vendor/**',
+    ],
   },
 ]
 

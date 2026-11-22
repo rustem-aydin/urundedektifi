@@ -16,7 +16,7 @@ export default function IncelemePage() {
         <h1 className="font-display text-2xl sm:text-3xl">Taslak ürünler</h1>
         <p className="text-sm text-muted-foreground">
           Kullanıcı katkıları burada birikir. Etiket okuması katkı anında arka planda başlar;
-          "İncele" ürünü alanları dolu hâlde açar. Yayınlama oradan yapılır. Reddedilen katkı silinir.
+          &quot;İncele&quot; ürünü alanları dolu hâlde açar. Yayınlama oradan yapılır. Reddedilen katkı silinir.
         </p>
       </div>
 

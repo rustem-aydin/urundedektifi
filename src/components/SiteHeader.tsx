@@ -13,7 +13,7 @@ import { fetchReviewCount } from '@/lib/wizard/api'
 
 const NAV_ITEMS = [
   { href: '/urunler', label: 'Ürünler' },
-  { href: '/kategoriler', label: 'Kategoriler' },
+  { href: '/kategoriler', label: 'Kategori' },
   { href: '/konular', label: 'Konular' },
   { href: '/uzmanlar', label: 'Uzmanlar' },
 ]

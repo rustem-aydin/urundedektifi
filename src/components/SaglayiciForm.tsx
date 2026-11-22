@@ -95,7 +95,7 @@ export function SaglayiciForm() {
             için geçerli olur.
           </p>
           <Button asChild className="w-fit">
-            <a href="/admin/globals/ai-settings">Yönetim panelini aç</a>
+            <Link href="/admin/globals/ai-settings">Yönetim panelini aç</Link>
           </Button>
         </CaseCard>
       )}
