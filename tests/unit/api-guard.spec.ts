@@ -123,13 +123,14 @@ describe('decideApiRequest — GraphQL', () => {
 })
 
 describe('decideApiRequest — /urunler/akis', () => {
-  it('sayfa > 20 → 429', () => {
-    expectRejected(run({ pathname: '/urunler/akis', search: `?sayfa=${AKIS_MAX_PAGE + 1}` }), 429)
-    expectRejected(run({ pathname: '/urunler/akis', search: '?sayfa=50' }), 429)
+  it('derin sayfalama tavanı 100 sayfa (2400 ürün)', () => {
+    expect(AKIS_MAX_PAGE).toBe(100)
   })
 
-  it('sayfa <= 20 geçer', () => {
-    expect(run({ pathname: '/urunler/akis', search: `?sayfa=${AKIS_MAX_PAGE}` }).allowed).toBe(true)
+  it('derin sayfalar guard tarafından 429 edilmez; liste sonunu rota döndürür', () => {
+    for (const sayfa of ['21', '50', '100', '101', '999']) {
+      expect(run({ pathname: '/urunler/akis', search: `?sayfa=${sayfa}` }).allowed).toBe(true)
+    }
   })
 
   it('IP başına dakikada 60 istek', () => {
