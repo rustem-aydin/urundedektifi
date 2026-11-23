@@ -14,7 +14,7 @@ export const Brands: CollectionConfig = {
     defaultColumns: ['name', 'country'],
     group: 'Katalog',
     description:
-      'Ürün markaları. Marka hakkındaki hükümler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.',
+      'Ürün markaları. Marka hakkındaki görüşler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.',
   },
   access: {
     read: () => true,

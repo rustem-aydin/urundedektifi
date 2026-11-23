@@ -46,6 +46,9 @@ _Avoid_: eşleşme (teknik), sonuç
 Uzmanın bir ürün hakkındaki nihai değerlendirmesi (yenilebilir / boykot / riskli vb.). Birden çok Dayanak'tan ve her uzmanın Derecelendirmesinden türer. Kullanıcıya görünen ad **Görüş**'tür; kodda `verdict` olarak geçer. Eski adlar "Hüküm / Karar" tarihseldir (2026-11-23'e kadar kullanıldı).
 _Avoid_: skor, puan
 
+**Arayüz dili notu**:
+Sayaçlar **"N kural eşleşti"** der (eşleşen kural sayısı). Kod, tip, koleksiyon ve API adları (`VerdictStamp`, `ExpertVerdicts`, `verdict`, `matchedRules`) değişmez; "hüküm" ve "delil" yalnız tarihsel/kod içi adlardır.
+
 **Derecelendirme / Derece**:
 Bir uzmanın kendi ölçeğindeki tek bir seviye (örn: "Helal", "Riskli", "Boykot"). Renk + sıra (`rating-scales`) ile CMS'ten gelir.
 _Avoid_: rozet, kötü/iyi

@@ -304,7 +304,7 @@ function productVerdictProperties(product: ProductCase): JsonLdNode[] {
     const rating = topicVerdict.matchedRules.find((rule) => rule.rating?.name)?.rating?.name
     properties.push({
       '@type': 'PropertyValue',
-      name: `${topicVerdict.topic.name} hükmü`,
+      name: `${topicVerdict.topic.name} görüşü`,
       value: rating ?? 'Eşleşen kural yok',
     })
   }

@@ -278,12 +278,12 @@ export const ExpertRules: CollectionConfig = {
     {
       name: 'evidence',
       type: 'array',
-      labels: { singular: 'Kanıt', plural: 'Kanıtlar (Görsel/Belge/Bağlantı)' },
+      labels: { singular: 'Dayanak', plural: 'Dayanaklar (Görsel/Belge/Bağlantı)' },
       fields: [
         {
           name: 'type',
           type: 'select',
-          label: 'Kanıt Tipi',
+          label: 'Dayanak Tipi',
           required: true,
           defaultValue: 'image',
           options: [
@@ -312,7 +312,7 @@ export const ExpertRules: CollectionConfig = {
         {
           name: 'caption',
           type: 'text',
-          label: 'Kanıt Açıklaması',
+          label: 'Dayanak Açıklaması',
         },
       ],
     },
@@ -322,7 +322,7 @@ export const ExpertRules: CollectionConfig = {
       labels: { singular: 'Kaynak', plural: 'Kaynaklar (Referanslar)' },
       admin: {
         description:
-          'Hükmün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.',
+          'Görüşün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.',
       },
       fields: [
         {

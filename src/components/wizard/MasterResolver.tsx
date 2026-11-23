@@ -180,7 +180,7 @@ export function MasterResolver({ form, onEdit }: Props) {
         <EvidenceTag variant="evidence">EŞLEME</EvidenceTag>
         <WizardIntro eyebrow="EŞLEME" title="Serbest metni ana kayda bağla">
           Kural motoru yalnız ana kayıtlar üzerinden eşleşir. “Yeni oluştur” dediğin satırlar kayıt
-          sırasında açılır; atlanan satır ürüne bağlanmaz ve hükümlerde görünmez.
+          sırasında açılır; atlanan satır ürüne bağlanmaz ve görüşlerde görünmez.
         </WizardIntro>
       </CaseCard>
 
