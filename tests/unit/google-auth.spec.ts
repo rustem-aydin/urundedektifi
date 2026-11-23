@@ -7,8 +7,10 @@ import {
   type JWTVerifyGetKey,
 } from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
+import type { Payload, PayloadRequest } from 'payload'
 
-import { GOOGLE_ISSUERS, issueUserToken, verifyGoogleIdToken } from '@/lib/googleAuth'
+import type { User } from '@/payload-types'
+import { GOOGLE_ISSUERS, issueSessionToken, verifyGoogleIdToken } from '@/lib/googleAuth'
 
 /**
  * Google ID token doğrulaması: seyirci (aud), veren (iss), imza ve e-posta doğrulaması.
@@ -107,18 +109,48 @@ describe('verifyGoogleIdToken', () => {
   })
 })
 
-describe('issueUserToken', () => {
-  it('Payload’ın çözebileceği HS256 oturum jetonu üretir', async () => {
+describe('issueSessionToken', () => {
+  it('sid taşıyan, Payload’ın doğrulayacağı HS256 oturum jetonu üretir', async () => {
     const secret = 'test-payload-secret'
-    const { token, exp } = await issueUserToken({
-      id: '42',
-      email: 'user@example.com',
+    const user = { id: 42, email: 'user@example.com' } as User
+    // Ham DB belgesi: oturum dizisi burada tam olur (temiz kullanıcıda boş).
+    const stored = { ...user, sessions: [] } as unknown as User
+    const writes: Array<Record<string, unknown>> = []
+
+    const payload = {
+      collections: {
+        users: {
+          config: {
+            slug: 'users',
+            auth: { useSessions: true, tokenExpiration: 604800 },
+            fields: [],
+          },
+        },
+      },
+      db: {
+        findOne: async () => stored,
+        updateOne: async ({ data }: { data: Record<string, unknown> }) => {
+          writes.push(data)
+        },
+      },
       secret,
-      tokenExpiration: 604800,
+    } as unknown as Payload
+
+    const { token, exp } = await issueSessionToken({
+      payload,
+      req: {} as PayloadRequest,
+      user,
     })
 
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
-    expect(payload).toMatchObject({ id: '42', collection: 'users', email: 'user@example.com' })
-    expect(exp - Number(payload.iat)).toBe(604800)
+    const { payload: claims } = await jwtVerify(token, new TextEncoder().encode(secret))
+    expect(claims).toMatchObject({ id: 42, collection: 'users', email: 'user@example.com' })
+    expect(typeof claims.sid).toBe('string')
+    expect(claims.sid).toBeTruthy()
+    // `exp` (saniye) ile `iat` arasındaki fark tokenExpiration olmalı.
+    expect(exp - Number(claims.iat)).toBe(604800)
+
+    // `sid` yalnız jetonda kalmamalı; kullanıcının oturum dizisine de yazılmalı.
+    const sessions = writes[0]?.sessions as Array<{ id: string }>
+    expect(sessions).toEqual([expect.objectContaining({ id: claims.sid })])
   })
 })
