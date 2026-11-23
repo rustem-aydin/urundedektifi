@@ -15,8 +15,11 @@
  * - Aynı IP dakikada 300 okuma; tek ürün uçları ayrıca dakikada 60.
  * - `/api/graphql` muaf değildir: ayrı IP bütçesi dakikada 30; sorgu, `variables`
  *   ve gövdedeki `limit` değerleri de 1..100 dışındaysa 400.
- * - `/urunler/akis` muaf değildir: IP başına dakikada 60; `sayfa > 20` → 429.
- *   Yanıt gövdesi değişmez, mobil/web sözleşmesi aynı kalır.
+ * - `/urunler/akis` muaf değildir: IP başına dakikada 60. Sayfa tavanı (100)
+ *   burada değil rotada uygulanır: tavan aşılırsa 429 değil, normal liste sonu
+ *   (`products: []`, `hasNextPage: false`, HTTP 200) döner; istemci hata kutusu
+ *   göstermez. Yanıt sözleşmesi (`products`, `page`, `pageSize`, `totalDocs`)
+ *   korunur.
  * - Yazma uçları: kayıt, katkı ve geri bildirim dakikada 10; giriş/Google
  *   girişi dakikada 10 (pencere dolunca kendiliğinden açılır, kalıcı kilit yok);
  *   şifre sıfırlama e-posta başına saatte 3.
@@ -35,7 +38,8 @@ export const API_WRITE_LIMIT_PER_MINUTE = 10
 export const API_LOGIN_LIMIT_PER_MINUTE = 10
 export const API_FORGOT_PASSWORD_LIMIT_PER_HOUR = 3
 export const AKIS_LIMIT_PER_MINUTE = 60
-export const AKIS_MAX_PAGE = 20
+/** Derin sayfalama tavanı: 100 × 24 = 2400 ürün. Tavan aşımı rota tarafında boş liste sonu döner. */
+export const AKIS_MAX_PAGE = 100
 
 const MINUTE_MS = 60_000
 const HOUR_MS = 60 * MINUTE_MS
@@ -244,24 +248,8 @@ function decideGraphql(
   return { allowed: true }
 }
 
-function decideAkis(
-  input: ApiGuardInput,
-  params: URLSearchParams,
-  now: number,
-  store: RateStore,
-): ApiGuardDecision {
-  for (const raw of params.getAll('sayfa')) {
-    // Rota sayısal olmayan `sayfa` değerini 1 kabul eder; aynı davranış korunur.
-    const page = /^\d+$/.test(raw) ? Number(raw) : 1
-    if (page > AKIS_MAX_PAGE) {
-      return {
-        allowed: false,
-        status: 429,
-        message: `Liste akışı en fazla ${AKIS_MAX_PAGE} sayfa döndürür. Filtreleri daraltıp listenin başından devam edin.`,
-      }
-    }
-  }
-
+function decideAkis(input: ApiGuardInput, now: number, store: RateStore): ApiGuardDecision {
+  // Sayfa tavanı rotada uygulanır (200 + boş liste sonu); burada yalnız IP bütçesi var.
   const retry = consume(store, `akis:${input.ip}`, AKIS_LIMIT_PER_MINUTE, now)
   if (retry !== null) return tooMany(retry)
 
@@ -379,7 +367,7 @@ export function decideApiRequest(
   const now = input.now ?? Date.now()
   const params = new URLSearchParams(input.search)
 
-  if (isAkisPath(input.pathname)) return decideAkis(input, params, now, store)
+  if (isAkisPath(input.pathname)) return decideAkis(input, now, store)
   if (isGraphqlPath(input.pathname)) return decideGraphql(input, params, now, store)
   if (method === 'GET' || method === 'HEAD') {
     return decideRead(input, params, now, store)
