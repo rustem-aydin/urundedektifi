@@ -1,6 +1,7 @@
 import type { MCPPluginConfig } from '@payloadcms/plugin-mcp'
 import { z as zod3 } from 'zod3'
 
+import { hardenMcpApiKeysCollection } from './mcpApiKeys'
 import { getProductCase } from './productCase'
 
 type ZodRawShape = NonNullable<
@@ -11,6 +12,9 @@ type ZodRawShape = NonNullable<
 const z = zod3
 
 export const mcpProductsPluginOptions: MCPPluginConfig = {
+  // Eklenti anahtar koleksiyonunu erişim kuralları olmadan ekler; yönetici dışına
+  // kapatma ve anahtar sahipliğini zorlama burada yapılır (bkz. mcpApiKeys.ts).
+  overrideApiKeyCollection: hardenMcpApiKeysCollection,
   collections: {
     products: {
       enabled: true,
