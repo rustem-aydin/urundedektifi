@@ -85,7 +85,7 @@ export function ProductVerdictProvider({
 export function MatchedStamp() {
   const { data, loading, error } = useContext(VerdictContext)
   if (loading || error || !data || data.totalMatched === 0) return null
-  return <VerdictStamp variant="warn">{data.totalMatched} dayanak eşleşti</VerdictStamp>
+  return <VerdictStamp variant="warn">{data.totalMatched} kural eşleşti</VerdictStamp>
 }
 
 /** Dosya 01: hüküm listesi ya da "uzman takip edin" boş durumu. */

@@ -63,7 +63,7 @@ export const mcpProductsPluginOptions: MCPPluginConfig = {
     },
     'expert-rules': {
       enabled: true,
-      description: 'Uzman kuralları; ürün hükümlerini besleyen kural seti.',
+      description: 'Uzman kuralları; ürün görüşlerini besleyen kural seti.',
     },
     pages: {
       enabled: true,
@@ -78,7 +78,7 @@ export const mcpProductsPluginOptions: MCPPluginConfig = {
       {
         name: 'getProductCaseByBarcode',
         description:
-          'Barkoda ait tam Ürün Dosyasını (çözümlenmiş ürün + hükümler + galeri + fiyat özeti) tek çağrıda döndürür.',
+          'Barkoda ait tam Ürün Dosyasını (çözümlenmiş ürün + görüşler + galeri + fiyat özeti) tek çağrıda döndürür.',
         parameters: z
           .object({
             barcode: z.string().describe('GS1/EAN-13, UPC veya EAN-8 barkod'),

@@ -412,7 +412,7 @@ export interface Topic {
   createdAt: string;
 }
 /**
- * Ürün markaları. Marka hakkındaki hükümler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.
+ * Ürün markaları. Marka hakkındaki görüşler (boykot dahil) uzman kurallarından gelir; markada ayrı bir boykot bayrağı tutulmaz.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "brands".
@@ -1108,7 +1108,7 @@ export interface ExpertRule {
       }[]
     | null;
   /**
-   * Hükmün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.
+   * Görüşün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.
    */
   sources?:
     | {
@@ -1149,7 +1149,7 @@ export interface RatingScale {
    */
   order?: number | null;
   /**
-   * Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama kanıtlanmamış").
+   * Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama dayanağı gösterilmemiş").
    */
   description?: string | null;
   updatedAt: string;
@@ -1467,7 +1467,7 @@ export interface PayloadMcpApiKey {
   };
   'payload-mcp-tool'?: {
     /**
-     * Barkoda ait tam Ürün Dosyasını (çözümlenmiş ürün + hükümler + galeri + fiyat özeti) tek çağrıda döndürür.
+     * Barkoda ait tam Ürün Dosyasını (çözümlenmiş ürün + görüşler + galeri + fiyat özeti) tek çağrıda döndürür.
      */
     getProductCaseByBarcode?: boolean | null;
   };

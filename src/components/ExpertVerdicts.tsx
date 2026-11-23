@@ -67,7 +67,7 @@ export function ExpertVerdicts({
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate font-medium">{verdict.expert.name}</span>
                   <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                    {verdict.matchedRules.length} dayanak
+                    {verdict.matchedRules.length} kural
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">

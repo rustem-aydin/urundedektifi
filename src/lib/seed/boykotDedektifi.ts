@@ -82,7 +82,7 @@ const RATING_DEFS: Record<SiteStatus, { color: string; order: number; descriptio
     color: '#465468',
     order: 4,
     description:
-      'Araştırılıyor: marka hakkında ihbar/iddia bulunur, inceleme sürer. Henüz bir hüküm verilmemiştir.',
+      'Araştırılıyor: marka hakkında ihbar/iddia bulunur, inceleme sürer. Henüz bir görüş bildirilmemiştir.',
   },
   'Uygun': {
     color: '#267f78',

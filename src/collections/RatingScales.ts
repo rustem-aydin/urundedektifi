@@ -74,7 +74,7 @@ export const RatingScales: CollectionConfig = {
       label: 'Açıklama',
       admin: {
         description:
-          'Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama kanıtlanmamış").',
+          'Bu derecenin ne anlama geldiği (Örn: "Ürün doğrudan boykot listesinde", "Şüpheli bağlantılar mevcut ama dayanağı gösterilmemiş").',
       },
     },
   ],
