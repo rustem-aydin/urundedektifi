@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -20,6 +21,7 @@ import { Brands } from './collections/Brands'
 import { Products } from './collections/Products'
 import { ProductFeedback } from './collections/ProductFeedback'
 import { ProductContributions } from './collections/ProductContributions'
+import { Objections } from './collections/Objections'
 import { Pages } from './collections/Pages'
 import { Experts } from './collections/Experts'
 import { ExpertRules } from './collections/ExpertRules'
@@ -69,6 +71,7 @@ export default buildConfig({
     Products,
     ProductFeedback,
     ProductContributions,
+    Objections,
     Allergens,
     Pages,
     Experts,
@@ -80,6 +83,25 @@ export default buildConfig({
     Countries,
   ],
   editor: lexicalEditor(),
+  // E-posta yalnız SMTP tanımlıysa kurulur. Env yokken uygulama açılmaya devam
+  // eder; itiraz ucu kaydı yazar, `emailSent: false` döner (bkz. Objections ucu).
+  ...(process.env.SMTP_HOST
+    ? {
+        email: nodemailerAdapter({
+          defaultFromAddress:
+            process.env.SMTP_FROM || process.env.SMTP_USER || 'no-reply@localhost',
+          defaultFromName: 'Barkod Dedektifi',
+          transportOptions: {
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 587),
+            secure: Number(process.env.SMTP_PORT || 587) === 465,
+            auth: process.env.SMTP_USER
+              ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS || '' }
+              : undefined,
+          },
+        }),
+      }
+    : {}),
   globals: [AiSettings],
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

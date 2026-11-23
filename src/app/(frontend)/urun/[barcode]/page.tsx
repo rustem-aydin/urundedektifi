@@ -29,6 +29,7 @@ import { ProductAdminActions } from '@/components/ProductAdminActions'
 import { ProductViewCounter } from '@/components/ProductViewCounter'
 import { ContributorsStrip } from '@/components/ContributorsStrip'
 import { VerdictDisclaimer } from '@/components/VerdictDisclaimer'
+import { ObjectionDialog } from '@/components/ObjectionDialog'
 import { ContributionForm } from '@/components/ContributionForm'
 import { listContributors } from '@/lib/productContributions'
 import { CardContent } from '@/components/ui/card'
@@ -185,6 +186,11 @@ export default async function ProductDetailPage({
 
   // Uzman hükümleri satırının solu: uzman avatarı (hüküm nesnesi avatar taşımaz, experts'ten eşlenir).
   const expertSlugs = verdict.byExpert.map((entry) => entry.expert.slug).filter(Boolean)
+  // İtiraz formunun "İlgili görüş" seçenekleri: uzman + bu üründe eşleşen dayanak adları.
+  const objectionVerdicts = verdict.byExpert.map((entry) => ({
+    expert: entry.expert.name,
+    rules: [...new Set(entry.matchedRules.map((rule) => rule.name))],
+  }))
 
   /**
    * Dosya çözüldükten sonraki üç okuma birbirinden bağımsızdır (sayaç, katkıcılar,
@@ -296,6 +302,13 @@ export default async function ProductDetailPage({
         {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
         <VerdictSection avatars={expertAvatars} />
         <VerdictDisclaimer className="-mt-6" />
+        <div className="-mt-2 flex justify-end">
+          <ObjectionDialog
+            barcode={product.barcode ?? barcode}
+            productName={product.name}
+            verdicts={objectionVerdicts}
+          />
+        </div>
 
         {/* UYARILAR */}
         <CaseSection

@@ -36,6 +36,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@modelcontextprotocol/sdk": "1.26.0",
     "@payloadcms/db-postgres": "3.87.0",
+    "@payloadcms/email-nodemailer": "3.87.0",
     "@payloadcms/next": "3.87.0",
     "@payloadcms/plugin-mcp": "3.87.0",
     "@payloadcms/richtext-lexical": "3.87.0",

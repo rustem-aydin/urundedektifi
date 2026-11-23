@@ -15,6 +15,7 @@ import * as migration_20261101_140000_product_ai_analysis from './20261101_14000
 import * as migration_20261102_090000_products_view_sort_index from './20261102_090000_products_view_sort_index';
 import * as migration_20261120_120000_users_google_id from './20261120_120000_users_google_id';
 import * as migration_20261120_140000_products_sort_indexes from './20261120_140000_products_sort_indexes';
+import * as migration_20261123_193000_add_objections from './20261123_193000_add_objections';
 
 export const migrations = [
   {
@@ -50,7 +51,7 @@ export const migrations = [
   {
     up: migration_20261025_061858.up,
     down: migration_20261025_061858.down,
-    name: '20261025_061858'
+    name: '20261025_061858',
   },
   {
     up: migration_20261025_173424_add_goruntulenme.up,
@@ -101,5 +102,10 @@ export const migrations = [
     up: migration_20261120_140000_products_sort_indexes.up,
     down: migration_20261120_140000_products_sort_indexes.down,
     name: '20261120_140000_products_sort_indexes',
+  },
+  {
+    up: migration_20261123_193000_add_objections.up,
+    down: migration_20261123_193000_add_objections.down,
+    name: '20261123_193000_add_objections',
   },
 ];

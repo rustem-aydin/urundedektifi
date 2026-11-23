@@ -77,6 +77,7 @@ export interface Config {
     products: Product;
     'product-feedback': ProductFeedback;
     'product-contributions': ProductContribution;
+    objections: Objection;
     allergens: Allergen;
     pages: Page;
     experts: Expert;
@@ -107,6 +108,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     'product-feedback': ProductFeedbackSelect<false> | ProductFeedbackSelect<true>;
     'product-contributions': ProductContributionsSelect<false> | ProductContributionsSelect<true>;
+    objections: ObjectionsSelect<false> | ObjectionsSelect<true>;
     allergens: AllergensSelect<false> | AllergensSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     experts: ExpertsSelect<false> | ExpertsSelect<true>;
@@ -626,7 +628,7 @@ export interface Product {
   warnings?:
     | {
         /**
-         * Uyarının ciddiyet seviyesi. Sitede renkli olarak gösterilir.
+         * Uyarının ciddiyet seviyesi. "Yüksek" için uyarının dayanağı (etiket, üretici, resmî kurum) açıklama/uyarı metninde belirtilmelidir.
          */
         severity: 'low' | 'medium' | 'high';
         /**
@@ -838,7 +840,7 @@ export interface Additive {
       )
     | null;
   /**
-   * Sağlık açısından risk seviyesi. Bilimsel kanıtlara dayanır.
+   * Sağlık açısından risk seviyesi. "Yüksek" yalnız kaynağı (EFSA/WHO/JECFA vb.) `sources` alanında gösterilen kayıtlara verilir; kaynaksız risk iddiası yayınlanmaz.
    */
   riskLevel?: ('low' | 'medium' | 'high') | null;
   /**
@@ -916,6 +918,34 @@ export interface ProductContribution {
   product?: (number | null) | Product;
   user?: (number | null) | User;
   kind: 'create' | 'update' | 'verify';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Ürün dosyalarındaki uzman görüşlerine yapılan itirazlar. Kayıt yalnız ürün sayfasındaki formdan açılır; durum ve e-posta sonucu panelde izlenir.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "objections".
+ */
+export interface Objection {
+  id: number;
+  name: string;
+  email: string;
+  type: 'gorus_dayanak' | 'veri_hatasi' | 'diger';
+  productBarcode?: string | null;
+  productName?: string | null;
+  expertName?: string | null;
+  ruleName?: string | null;
+  pageUrl?: string | null;
+  message: string;
+  ip?: string | null;
+  userAgent?: string | null;
+  /**
+   * Yalnız yönetici değiştirebilir.
+   */
+  status: 'new' | 'in_review' | 'resolved' | 'rejected';
+  emailSent?: boolean | null;
+  emailError?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1077,6 +1107,9 @@ export interface ExpertRule {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Hükmün dayanağı: resmî kurum, mevzuat, üretici beyanı veya doğrulanabilir haber. Kaynaksız kural eklenebilir; ancak marka itirazında ilk istenen şey bu bağlantılardır, boş bırakılan kural savunmasızdır.
+   */
   sources?:
     | {
         title: string;
@@ -1506,6 +1539,10 @@ export interface PayloadLockedDocument {
         value: number | ProductContribution;
       } | null)
     | ({
+        relationTo: 'objections';
+        value: number | Objection;
+      } | null)
+    | ({
         relationTo: 'allergens';
         value: number | Allergen;
       } | null)
@@ -1804,6 +1841,28 @@ export interface ProductContributionsSelect<T extends boolean = true> {
   product?: T;
   user?: T;
   kind?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "objections_select".
+ */
+export interface ObjectionsSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  type?: T;
+  productBarcode?: T;
+  productName?: T;
+  expertName?: T;
+  ruleName?: T;
+  pageUrl?: T;
+  message?: T;
+  ip?: T;
+  userAgent?: T;
+  status?: T;
+  emailSent?: T;
+  emailError?: T;
   updatedAt?: T;
   createdAt?: T;
 }
