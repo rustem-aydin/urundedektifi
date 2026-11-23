@@ -1,12 +1,17 @@
-import { SignJWT, createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
+import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose'
+import { getFieldsToSign, jwtSign, type Payload, type PayloadRequest } from 'payload'
+import { addSessionToUser } from 'payload/shared'
+
+import type { User } from '@/payload-types'
 
 /**
  * Google ile giriş (web + mobil).
  *
  * İki istemci de Google'dan bir **ID token** (JWT) alır ve `/api/users/google` ucuna yollar.
  * Uç, jetonu Google'ın JWKS anahtarlarıyla doğrular; e-posta Google tarafından doğrulanmışsa
- * Payload kullanıcısını bulur/açar ve Payload'ın kendi imzaladığı oturum jetonunu döndürür.
- * Böylece istemci başına ayrı OAuth yönlendirme akışı ve istemci sırrı gerekmez.
+ * Payload kullanıcısını bulur/açar ve Payload'ın kendi `login` akışıyla aynı biçimde
+ * (oturum kaydı + `sid`) imzalanmış oturum jetonunu döndürür. Böylece istemci başına ayrı
+ * OAuth yönlendirme akışı ve istemci sırrı gerekmez.
  */
 
 export const GOOGLE_ISSUERS = ['https://accounts.google.com', 'accounts.google.com']
@@ -60,21 +65,41 @@ export async function verifyGoogleIdToken(
 }
 
 /**
- * Payload'ın kendi oturum jetonu (HS256). `JWTAuthentication` jetonu çözer, `id` ile kullanıcıyı
- * yeniden yükler; bu yüzden yük yalnız kimlik + koleksiyon + e-posta taşır.
+ * Payload'ın kendi `login` operasyonuyla aynı sırayı izleyen oturum jetonu üretimi.
+ *
+ * Jetonun `sid` taşıması zorunlu: Payload 3.87'de `auth.useSessions` varsayılanı `true` ve
+ * `JWTAuthentication` her istekte `sid`'i kullanıcının `sessions` dizisinde arar. Elle
+ * imzalanan (`sid`'siz) jeton doğrulanır ama `req.user` her zaman `null` kalır.
+ *
+ * Oturum dizisi yalnız DB'den gelen ham belgede tamdır; API katmanından geçen belgeyle
+ * yazmak eski oturumları silebilir. Bu yüzden tıpkı `login` gibi `db.findOne` kullanılır.
  */
-export async function issueUserToken(args: {
-  id: number | string
-  email: string
-  secret: string
-  tokenExpiration: number
+export async function issueSessionToken(args: {
+  payload: Payload
+  req: PayloadRequest
+  user: User
 }): Promise<{ token: string; exp: number }> {
-  const issuedAt = Math.floor(Date.now() / 1000)
-  const exp = issuedAt + args.tokenExpiration
-  const token = await new SignJWT({ id: args.id, collection: 'users', email: args.email })
-    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-    .setIssuedAt(issuedAt)
-    .setExpirationTime(exp)
-    .sign(new TextEncoder().encode(args.secret))
-  return { token, exp }
+  const { payload, req, user } = args
+  const collectionConfig = payload.collections.users.config
+
+  const stored = await payload.db.findOne<User>({
+    collection: 'users',
+    req,
+    where: { id: { equals: user.id } },
+  })
+  if (!stored) throw new Error('Oturum açılacak kullanıcı bulunamadı')
+
+  const { sid } = await addSessionToUser({ collectionConfig, payload, req, user: stored })
+  const fieldsToSign = getFieldsToSign({
+    collectionConfig,
+    email: String(stored.email),
+    sid,
+    user: stored,
+  })
+
+  return jwtSign({
+    fieldsToSign,
+    secret: payload.secret,
+    tokenExpiration: collectionConfig.auth.tokenExpiration,
+  })
 }

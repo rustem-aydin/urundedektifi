@@ -5,7 +5,7 @@ import type { User } from '@/payload-types'
 import { buildPublicProfile } from '@/lib/productContributions'
 import {
   allowedGoogleAudiences,
-  issueUserToken,
+  issueSessionToken,
   verifyGoogleIdToken,
   type GoogleProfile,
 } from '@/lib/googleAuth'
@@ -24,7 +24,10 @@ export const Users: CollectionConfig = {
   auth: {
     cookies: {
       sameSite: 'Lax',
-      secure: false,
+      // Prod'da her zaman Secure (TLS Cloudflare'de sonlansa da tarayıcı HTTPS bağlantısında
+      // Secure çerezi kabul eder; `x-forwarded-proto` güveni gerekmez). Dev'de http üzerinde
+      // giriş çalışmaya devam etsin diye yalnız prod'da açılır.
+      secure: process.env.NODE_ENV === 'production',
     },
     // Tüketici uygulaması oturumu: kısa süreli jeton sürekli yeniden giriş demek.
     tokenExpiration: 604800, // 7 gün
@@ -225,14 +228,17 @@ export const Users: CollectionConfig = {
           return Response.json({ error: 'Hesap açılamadı. Tekrar dene.' }, { status: 500 })
         }
 
-        const expiration = payload.collections.users.config.auth.tokenExpiration
-        const tokenExpiration = typeof expiration === 'number' ? expiration : 604800
-        const { token, exp } = await issueUserToken({
-          id: user.id,
-          email: String(user.email),
-          secret: payload.secret,
-          tokenExpiration,
-        })
+        let issued: { token: string; exp: number }
+        try {
+          issued = await issueSessionToken({ payload, req, user })
+        } catch (error) {
+          payload.logger.error({ err: error }, 'google oturumu açılamadı')
+          return Response.json(
+            { error: 'Giriş tamamlanamadı. Tekrar dene.' },
+            { status: 500 },
+          )
+        }
+        const { token, exp } = issued
         const sessionUser = await payload.findByID({
           collection: 'users',
           id: user.id,
