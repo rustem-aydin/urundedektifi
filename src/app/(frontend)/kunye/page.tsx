@@ -32,6 +32,9 @@ export default function KunyePage() {
       <h2 className="mt-10 font-display text-xl tracking-wide">Vergi durumu</h2>
       <p className="mt-3 text-sm text-muted-foreground">Vergi mükellefi değildir.</p>
 
+      <h2 className="mt-10 font-display text-xl tracking-wide">Yerleşim yeri</h2>
+      <p className="mt-3 text-sm text-muted-foreground">Ankara / Altındağ</p>
+
       <h2 className="mt-10 font-display text-xl tracking-wide">İletişim</h2>
       <p className="mt-3 text-sm text-muted-foreground">
         <a
