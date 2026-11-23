@@ -49,7 +49,14 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border pt-4">
+        <p className="mt-8 max-w-3xl border-t border-dashed border-border pt-6 text-xs leading-relaxed text-muted-foreground">
+          Barkod Dedektifi bağımsız bir bilgi platformudur. Ürün bilgileri ambalaj, üretici beyanı
+          ve kamuya açık kaynaklardan derlenir; uzman hükümleri her uzmanın kendi kurallarına
+          dayanan değerlendirmesidir. Doğruluk, güncellik ve eksiksizlik garanti edilmez, resmî
+          tespit sayılmaz. Satın alma öncesi ürün etiketini kontrol edin.
+        </p>
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-border pt-4">
           <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
             DOSYA NO: BD-2026
           </p>
