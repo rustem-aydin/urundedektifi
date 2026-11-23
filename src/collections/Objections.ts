@@ -125,10 +125,33 @@ export const Objections: CollectionConfig = {
           )
         }
 
-        const mail = buildObjectionEmail(data)
+        const recordEmailFailure = async (message: string) => {
+          try {
+            await req.payload.update({
+              collection: 'objections',
+              id: created.id,
+              overrideAccess: true,
+              data: { emailSent: false, emailError: message.slice(0, 500) },
+            })
+          } catch (updateError) {
+            req.payload.logger.error({
+              err: updateError,
+              msg: 'İtiraz e-posta hatası kayda yazılamadı',
+            })
+          }
+        }
+
+        // Adaptör yokken Payload `sendEmail` çağrısını sessizce konsola yazar ve
+        // başarı döner; "gönderildi" dememek için burada açıkça başarısız sayılır.
+        if (!process.env.SMTP_HOST) {
+          await recordEmailFailure('SMTP yapılandırılmadı (SMTP_HOST boş).')
+          return Response.json({ ok: true, emailSent: false })
+        }
+
         try {
+          const mail = buildObjectionEmail(data)
           await req.payload.sendEmail({
-            to: process.env.OBJECTION_EMAIL ?? 'rustemaydinnn@gmail.com',
+            to: process.env.OBJECTION_EMAIL?.trim() || 'rustemaydinnn@gmail.com',
             replyTo: data.email,
             subject: mail.subject,
             text: mail.text,
@@ -143,21 +166,9 @@ export const Objections: CollectionConfig = {
           return Response.json({ ok: true, emailSent: true })
         } catch (error) {
           // Kayıt kaybolmaz: panelde görünür, `emailError` üzerinden izlenir.
-          const message = errorMessage(error).slice(0, 500)
+          const message = errorMessage(error)
           req.payload.logger.error({ err: error, msg: 'İtiraz e-postası gönderilemedi' })
-          try {
-            await req.payload.update({
-              collection: 'objections',
-              id: created.id,
-              overrideAccess: true,
-              data: { emailSent: false, emailError: message },
-            })
-          } catch (updateError) {
-            req.payload.logger.error({
-              err: updateError,
-              msg: 'İtiraz e-posta hatası kayda yazılamadı',
-            })
-          }
+          await recordEmailFailure(message)
           return Response.json({ ok: true, emailSent: false })
         }
       },
