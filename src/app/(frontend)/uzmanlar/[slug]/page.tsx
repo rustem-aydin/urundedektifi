@@ -56,7 +56,7 @@ export async function generateMetadata({
     title: expert.name,
     description:
       expert.bio ??
-      `${expert.name}${expert.title ? ` — ${expert.title}` : ''}. Ürünlere yazdığı uzman kuralları ve hüküm verdiği dosyalar.`,
+      `${expert.name}${expert.title ? ` — ${expert.title}` : ''}. Ürünlere yazdığı uzman kuralları ve görüş verdiği dosyalar.`,
     path: `/uzmanlar/${expert.slug}`,
     images: image ? [{ url: image, alt: expert.name }] : [],
     type: 'profile',
@@ -423,7 +423,7 @@ export default async function ExpertDetailPage({
             ? [
                 {
                   value: 'urunler',
-                  label: 'Hüküm verdiği ürünler',
+                  label: 'Görüş verdiği ürünler',
                   meta: `${matchedShownTotal} dosya`,
                   content: (
                     <>
@@ -437,7 +437,7 @@ export default async function ExpertDetailPage({
                       />
                       {matchedProducts.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
-                          Bu derecede hüküm verdiği ürün yok.
+                          Bu derecede görüş verdiği ürün yok.
                         </p>
                       ) : (
                         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -488,7 +488,7 @@ export default async function ExpertDetailPage({
                         <CaseCard tape={i === 0} className="h-full gap-3">
                           <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
                             <EvidenceTag variant="evidence">
-                              DELİL{' '}
+                              DAYANAK{' '}
                               {String((rulePage - 1) * RULE_PAGE_SIZE + i + 1).padStart(2, '0')}
                             </EvidenceTag>
                             {r.rating && (

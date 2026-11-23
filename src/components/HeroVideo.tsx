@@ -41,7 +41,7 @@ const SOURCES = {
 
 const POSTER_SIZES = '(min-width: 1024px) 620px, 100vw'
 
-const LABEL = 'Barkod Dedektifi tanıtımı: barkodu göster, uzman kurallarının delillerini topla, hükmü gör.'
+const LABEL = 'Barkod Dedektifi tanıtımı: barkodu göster, uzman kurallarının dayanaklarını topla, görüşü gör.'
 
 type NetworkInformation = { saveData?: boolean; effectiveType?: string }
 

@@ -67,7 +67,7 @@ export function ExpertVerdicts({
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate font-medium">{verdict.expert.name}</span>
                   <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                    {verdict.matchedRules.length} delil
+                    {verdict.matchedRules.length} dayanak
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -107,7 +107,7 @@ export function ExpertVerdicts({
                 <ExpertAvatarImage avatar={avatars[open.expert.slug]} name={open.expert.name} large />
                 <div className="flex min-w-0 flex-col gap-1">
                   <span className="font-mono text-[0.65rem] tracking-[0.2em] text-stamp uppercase">
-                    Uzman hükmü
+                    Uzman görüşü
                   </span>
                   <DialogTitle className="font-display text-xl">{open.expert.name}</DialogTitle>
                 </div>
@@ -133,7 +133,7 @@ export function ExpertVerdicts({
 
               <div className="flex flex-col gap-2">
                 <p className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                  Deliller ({open.matchedRules.length})
+                  Dayanaklar ({open.matchedRules.length})
                 </p>
                 <ul className="flex flex-col gap-3">
                   {open.matchedRules.map((rule) => (

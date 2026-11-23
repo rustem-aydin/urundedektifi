@@ -13,8 +13,8 @@ export const CORRECTION_EMAIL = 'rustemaydinnn@gmail.com'
 
 export function VerdictDisclaimer({ className }: { className?: string }) {
   const mailto = `mailto:${CORRECTION_EMAIL}?subject=${encodeURIComponent(
-    'Hüküm düzeltme talebi',
-  )}&body=${encodeURIComponent('Marka/ürün:\nİtiraz edilen hüküm:\nDayanak:')}`
+    'Görüş düzeltme talebi',
+  )}&body=${encodeURIComponent('Marka/ürün:\nİtiraz edilen görüş:\nDayanak:')}`
 
   return (
     <aside
@@ -27,13 +27,13 @@ export function VerdictDisclaimer({ className }: { className?: string }) {
         Uzman görüşü
       </p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Hükümler, uzmanların kendi yazdığı kurallara ve o kuralların kaynaklarına dayanan{' '}
+        Görüşler, uzmanların kendi yazdığı kurallara ve o kuralların kaynaklarına dayanan{' '}
         <strong className="font-medium text-foreground">değerlendirmelerdir</strong>; resmî tespit,
-        bilirkişi raporu veya satın alma tavsiyesi değildir. Her kural kaynağını ve son güncelleme
-        tarihini gösterir; kaynak değişirse hüküm de güncellenir.
+        bilirkişi raporu, sertifikasyon kararı veya satın alma tavsiyesi değildir. Her görüş
+        dayanağını ve son güncelleme tarihini gösterir; kaynak değişirse görüş de güncellenir.
       </p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Hakkınızda verilen bir hükme itiraz etmek veya düzeltme talep etmek için{' '}
+        Hakkınızda verilen bir görüşe itiraz etmek veya düzeltme talep etmek için{' '}
         <a
           href={mailto}
           className="text-foreground underline underline-offset-4 hover:text-stamp"

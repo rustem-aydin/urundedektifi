@@ -11,10 +11,10 @@ import type { ProductCase } from './productCase'
  */
 
 export const SITE_NAME = 'Barkod Dedektifi'
-export const SITE_TAGLINE = 'Barkodu tara, kararı gör'
+export const SITE_TAGLINE = 'Barkodu tara, görüşü gör'
 export const SITE_TITLE = `${SITE_NAME} — ${SITE_TAGLINE}`
 export const SITE_DESCRIPTION =
-  'Barkodu tara; uzman kurallarına göre ürünün boykot, sağlık ve helal hükmünü anında gör.'
+  'Barkodu tara; uzman kurallarına göre ürünün boykot, sağlık ve helal görüşünü anında gör.'
 
 const FALLBACK_SITE_URL = 'https://barkoddedektifi.com'
 

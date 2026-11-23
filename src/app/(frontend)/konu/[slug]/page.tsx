@@ -230,7 +230,7 @@ export default async function TopicPage({
                 <CaseCard key={rule.id} tape>
                   <CardHeader>
                     <div className="flex items-start justify-between gap-3">
-                      <EvidenceTag variant="evidence">DELİL</EvidenceTag>
+                      <EvidenceTag variant="evidence">DAYANAK</EvidenceTag>
                       {rating && (
                         <span
                           className="inline-flex w-fit shrink-0 items-center rounded-[3px] border-2 border-current px-2 py-0.5 font-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] motion-safe:-rotate-2"

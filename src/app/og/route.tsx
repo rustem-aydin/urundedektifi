@@ -90,7 +90,7 @@ export function GET() {
             }}
           >
             Boykot, sağlık ve helal kuralları ürüne uygulanır; geriye tek bakışta okunacak net bir
-            hüküm kalır.
+            görüş kalır.
           </div>
         </div>
 

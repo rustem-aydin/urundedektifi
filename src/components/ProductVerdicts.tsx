@@ -67,7 +67,7 @@ export function ProductVerdictProvider({
           setState({
             data: null,
             loading: false,
-            error: `Hükümler yüklenemedi. ${userMessage(caught, 'Bağlantını kontrol edip tekrar dene.')}`,
+            error: `Görüşler yüklenemedi. ${userMessage(caught, 'Bağlantını kontrol edip tekrar dene.')}`,
           })
       })
     return () => {
@@ -85,7 +85,7 @@ export function ProductVerdictProvider({
 export function MatchedStamp() {
   const { data, loading, error } = useContext(VerdictContext)
   if (loading || error || !data || data.totalMatched === 0) return null
-  return <VerdictStamp variant="warn">{data.totalMatched} delil eşleşti</VerdictStamp>
+  return <VerdictStamp variant="warn">{data.totalMatched} dayanak eşleşti</VerdictStamp>
 }
 
 /** Dosya 01: hüküm listesi ya da "uzman takip edin" boş durumu. */
@@ -112,11 +112,11 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
 
   return (
     <CaseSection
-      id="hukumler"
+      id="gorusler"
       eyebrow="Dosya 01"
       title={
         <>
-          Uzman hükümleri{' '}
+          Uzman görüşleri{' '}
           {data ? <span className="font-mono text-base text-faded">({total})</span> : null}
         </>
       }
@@ -124,9 +124,9 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
       hasError={Boolean(error)}
       emptyMessage={
         loading
-          ? 'Hükümler yükleniyor…'
+          ? 'Görüşler yükleniyor…'
           : data?.hasOtherMatches
-            ? 'Bu ürünle eşleşen hükümler var, ama takip ettiğin uzmanlardan değil. İlgili uzmanları takip edince hükümler burada görünür.'
+            ? 'Bu ürünle eşleşen görüşler var, ama takip ettiğin uzmanlardan değil. İlgili uzmanları takip edince görüşler burada görünür.'
             : 'Bu ürünle eşleşen aktif kural yok. Uzmanlar kural ekledikçe bu bölüm güncellenir.'
       }
       emptyAction={
@@ -146,7 +146,7 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
         <>
           {lastUpdatedLabel ? (
             <p className="mt-3 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-              Delillerin son güncellemesi · {lastUpdatedLabel}
+              Dayanakların son güncellemesi · {lastUpdatedLabel}
             </p>
           ) : null}
           <ExpertVerdicts verdicts={verdicts} avatars={avatars} />

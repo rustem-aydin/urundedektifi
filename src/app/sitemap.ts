@@ -61,6 +61,8 @@ function baseEntries(): MetadataRoute.Sitemap {
     entry('/konular', { changeFrequency: 'weekly', priority: 0.7 }),
     entry('/uzmanlar', { changeFrequency: 'weekly', priority: 0.8 }),
     entry('/gizlilik', { changeFrequency: 'yearly', priority: 0.2 }),
+    entry('/kullanim-kosullari', { changeFrequency: 'yearly', priority: 0.2 }),
+    entry('/kunye', { changeFrequency: 'yearly', priority: 0.2 }),
   ]
 }
 

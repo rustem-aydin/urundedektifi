@@ -147,7 +147,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           eyebrow="Takip"
           title={`Takip ettikleri (${profile.following.length})`}
           hasData={profile.following.length > 0}
-          emptyMessage="Henüz uzman takip etmiyor. Uzmanları takip edince ürün dosyalarında onların hükümleri görünür."
+          emptyMessage="Henüz uzman takip etmiyor. Uzmanları takip edince ürün dosyalarında onların görüşleri görünür."
         >
           <ul className="mt-4 flex flex-wrap gap-2">
             {profile.following.map((expert) => (

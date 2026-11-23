@@ -31,7 +31,7 @@ import { cached } from '@/lib/serverCache'
 const STEPS = [
   { no: '01', title: 'Sorgula', desc: 'Barkod numarasını yaz; ürün dosyası anında açılır.' },
   { no: '02', title: 'Kurallar eşleşir', desc: 'Uzman kuralları ürünle otomatik karşılaştırılır.' },
-  { no: '03', title: 'Kararı gör', desc: 'Boykot, sağlık ve helal hükmü tek bakışta oku.' },
+  { no: '03', title: 'Görüşü gör', desc: 'Boykot, sağlık ve helal görüşünü tek bakışta oku.' },
 ]
 
 export const metadata: Metadata = pageMetadata({
@@ -106,7 +106,7 @@ export default async function HomePage() {
           </h1>
           <p className="max-w-md text-muted-foreground">
             Barkod Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
-            Geriye tek bakışta okunacak net bir hüküm kalır.
+            Geriye tek bakışta okunacak net bir görüş kalır.
           </p>
           <BarcodeLookupForm />
         </div>

@@ -9,6 +9,8 @@ const FOOTER_NAV = [
   { href: '/konular', label: 'Konular' },
   { href: '/uzmanlar', label: 'Uzmanlar' },
   { href: '/gizlilik', label: 'Gizlilik' },
+  { href: '/kullanim-kosullari', label: 'Kullanım Koşulları' },
+  { href: '/kunye', label: 'Künye' },
 ]
 
 export function SiteFooter() {
@@ -51,7 +53,7 @@ export function SiteFooter() {
 
         <p className="mt-8 max-w-3xl border-t border-dashed border-border pt-6 text-xs leading-relaxed text-muted-foreground">
           Barkod Dedektifi bağımsız bir bilgi platformudur. Ürün bilgileri ambalaj, üretici beyanı
-          ve kamuya açık kaynaklardan derlenir; uzman hükümleri her uzmanın kendi kurallarına
+          ve kamuya açık kaynaklardan derlenir; uzman görüşleri her uzmanın kendi kurallarına
           dayanan değerlendirmesidir. Doğruluk, güncellik ve eksiksizlik garanti edilmez, resmî
           tespit sayılmaz. Satın alma öncesi ürün etiketini kontrol edin.
         </p>

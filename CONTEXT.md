@@ -15,7 +15,7 @@ GS1/EAN-13 (veya UPC/EAN-8) ürün kimliği. Hem okutma hem sorgulama anahtarıd
 _Avoid_: ürün kodu, SKU (farklı şey)
 
 **Ürün Dosyası**:
-Bir barkoda ait derin, sunuma hazır paket: çözümlenmiş ürün + hükümler + galeri + fiyat özeti + etiket çevirileri. Web sayfası da mobil API de bu tek nesneyi tüketir.
+Bir barkoda ait derin, sunuma hazır paket: çözümlenmiş ürün + görüşler + galeri + fiyat özeti + etiket çevirileri. Web sayfası da mobil API de bu tek nesneyi tüketir.
 _Avoid_: ürün detayı, ürün sayfası, detail DTO
 
 **Ürün**:
@@ -38,12 +38,12 @@ _Avoid_: uzman kullanıcısı, expert hesabı
 Bir uzmana ve bir konuya ait tek eşleşme kuralı. 12 kural tipi (içindekiler/katkı/alerjen/ülke/marka/boykot/kategori/besin min-max/etiket) destekler.
 _Avoid_: politika, kontrol
 
-**Delil**:
-Bir ürünle **eşleşmiş** bir kuraldır (matched rules). Ürün sayfasında "delil" olarak sunulur; yakalanan `matchedValue` kullanıcıya eşleşme nedenini açıklar.
+**Dayanak**:
+Bir ürünle **eşleşmiş** bir kuraldır (matched rules). Ürün sayfasında "dayanak" olarak sunulur; yakalanan `matchedValue` kullanıcıya eşleşme nedenini açıklar. (2026-11-23'e kadar kullanıcıya "delil" olarak sunuluyordu; tarihsel ad.)
 _Avoid_: eşleşme (teknik), sonuç
 
-**Hüküm / Karar**:
-Uzmanın bir ürün hakkındaki nihai değerlendirmesi (yenilebilir / boykot / riskli vb.). Birden çok Delil'den ve her uzmanın Derecelendirmesinden türer.
+**Görüş**:
+Uzmanın bir ürün hakkındaki nihai değerlendirmesi (yenilebilir / boykot / riskli vb.). Birden çok Dayanak'tan ve her uzmanın Derecelendirmesinden türer. Kullanıcıya görünen ad **Görüş**'tür; kodda `verdict` olarak geçer. Eski adlar "Hüküm / Karar" tarihseldir (2026-11-23'e kadar kullanıldı).
 _Avoid_: skor, puan
 
 **Derecelendirme / Derece**:
@@ -86,12 +86,12 @@ uçta yazılır.
 _Avoid_: sosyal giriş, OAuth girişi (genel)
 
 **Takip**:
-Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Hükümleri görünür, ürün kartlarındaki "N kural eşleşti" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
+Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Görüşleri görünür, ürün kartlarındaki "N kural eşleşti" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
 _Avoid_: abonelik, favori
 
-**Kişisel Hüküm**:
-Oturum sahibinin takip listesine göre süzülmüş hüküm (`GET /api/products/verdict/:barcode`). Misafir ya da hiç takip etmeyen kullanıcı boş liste alır; `totalMatched` kalan uzmanların eşleşen kurallarından yeniden hesaplanır.
-_Avoid_: herkese açık hüküm, genel hüküm
+**Kişisel Görüş**:
+Oturum sahibinin takip listesine göre süzülmüş görüş (`GET /api/products/verdict/:barcode`). Misafir ya da hiç takip etmeyen kullanıcı boş liste alır; `totalMatched` kalan uzmanların eşleşen kurallarından yeniden hesaplanır.
+_Avoid_: herkese açık görüş, genel görüş
 
 **Takipçi**:
 Bir Uzmanı takip eden Tüketici Hesabı sayısı. Anonim istemci `users` okuyamadığı için `GET /api/experts/:id/stats` ucundan servis edilir.

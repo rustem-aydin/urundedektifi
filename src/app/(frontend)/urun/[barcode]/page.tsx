@@ -58,7 +58,7 @@ function verdictMetaDescription(product: ProductCase): string {
   const base = `${product.name}${product.brand?.name ? ` (${product.brand.name})` : ''}`
   return verdicts.length > 0
     ? `${base} — ${verdicts.join(', ')}. İçindekiler, besin değerleri ve uzman kuralları.`
-    : `${base} ürün dosyası: içindekiler, besin değerleri, alerjenler ve uzman hükümleri.`
+    : `${base} ürün dosyası: içindekiler, besin değerleri, alerjenler ve uzman görüşleri.`
 }
 
 export async function generateMetadata({
@@ -283,7 +283,7 @@ export default async function ProductDetailPage({
                   className="w-full max-w-[240px] text-foreground"
                 />
                 <p className="mt-2 font-mono text-[0.65rem] tracking-[0.2em] text-faded uppercase">
-                  KANIT NO: {product.barcode}
+                  BARKOD: {product.barcode}
                 </p>
               </div>
             )}
