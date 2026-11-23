@@ -1,14 +1,20 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-import { decideApiRead } from '@/lib/apiGuard'
+import { decideApiRequest } from '@/lib/apiGuard'
 
 /**
- * Genel API okuma kapısı (ADR: bot/scraper azaltma, 2026-11-11).
+ * Genel API kapısı (ADR: bot/scraper azaltma, 2026-11-11).
  *
- * Yalnız `/api/*` isteklerinde çalışır; HTML sayfaları, `/_next/image` ve
- * `urunler/akis` gibi uygulama rotaları bu kapıdan geçmez. Kurallar
+ * `/api/*` isteklerinin yanı sıra `/urunler/akis` sayfalama ucunu da denetler;
+ * HTML sayfaları ve `/_next/image` bu kapıdan geçmez. Kurallar
  * `src/lib/apiGuard.ts` içinde saf fonksiyon olarak durur.
+ *
+ * GraphQL ve şifre sıfırlama gövdesi yalnız bu iki uç için (klonlanarak) okunur:
+ * `limit` üst sınırı ve e-posta bazlı bütçe gövdeye bağlıdır. Diğer isteklerin
+ * gövdesine dokunulmaz, akış downstream'e olduğu gibi kalır.
  */
+const INSPECT_BODY_MAX_BYTES = 256 * 1024
+
 function clientIp(headers: Headers): string {
   const cf = headers.get('cf-connecting-ip')
   if (cf) return cf.trim()
@@ -22,12 +28,43 @@ function clientIp(headers: Headers): string {
   return headers.get('x-real-ip')?.trim() || 'unknown'
 }
 
-export default function proxy(request: NextRequest) {
-  const decision = decideApiRead({
-    method: request.method,
+function inspectableBody(pathname: string): boolean {
+  const path = pathname.replace(/\/+$/, '')
+  return path === '/api/graphql' || path === '/api/users/forgot-password'
+}
+
+function declaredBodyTooLarge(request: NextRequest): boolean {
+  const header = request.headers.get('content-length')
+  if (!header) return false
+  const length = Number(header)
+  return Number.isFinite(length) && length > INSPECT_BODY_MAX_BYTES
+}
+
+export default async function proxy(request: NextRequest) {
+  const method = request.method
+  let body: string | null = null
+  let bodyTooLarge = false
+
+  if (method !== 'GET' && method !== 'HEAD' && inspectableBody(request.nextUrl.pathname)) {
+    if (declaredBodyTooLarge(request)) {
+      bodyTooLarge = true
+    } else {
+      try {
+        body = await request.clone().text()
+      } catch {
+        // Gövde okunamazsa bütçe yine uygulanır; içerik denetimi atlanır.
+        body = null
+      }
+    }
+  }
+
+  const decision = decideApiRequest({
+    method,
     pathname: request.nextUrl.pathname,
     search: request.nextUrl.search,
     ip: clientIp(request.headers),
+    body,
+    bodyTooLarge,
   })
 
   if (decision.allowed) return NextResponse.next()
@@ -41,5 +78,5 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/:path*'],
+  matcher: ['/api/:path*', '/urunler/akis'],
 }
