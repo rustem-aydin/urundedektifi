@@ -133,7 +133,10 @@ export default buildConfig({
       : []),
     mcpPlugin(mcpProductsPluginOptions),
   ],
+  // GraphQL kapalı: `/api/graphql` tek istekte tüm kataloğu (Products(limit:0))
+  // döndürüyordu ve apiGuard bu yolu muaf tutuyor. Repo içinde tüketicisi yok
+  // (yalnız robots.txt engeli ve apiGuard muafiyeti); yönetim paneli REST kullanır.
   graphQL: {
-    disable: false,
+    disable: true,
   },
 })
