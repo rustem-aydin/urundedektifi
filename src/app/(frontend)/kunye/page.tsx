@@ -28,6 +28,9 @@ export default function KunyePage() {
       <p className="mt-3 text-sm text-muted-foreground">
         Rustem Aydın (gerçek kişi) — içerik sağlayıcı ve yer sağlayıcı.
       </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Bu platform kişisel bir projedir; herhangi bir kamu kurumunu temsil etmez.
+      </p>
 
       <h2 className="mt-10 font-display text-xl tracking-wide">Vergi durumu</h2>
       <p className="mt-3 text-sm text-muted-foreground">Vergi mükellefi değildir.</p>
