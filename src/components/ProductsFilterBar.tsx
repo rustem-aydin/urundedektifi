@@ -186,7 +186,7 @@ export function ProductsFilterBar({
     <div aria-busy={pending} className={cn('transition-opacity', pending && 'opacity-60')}>
       <form
         role="search"
-        aria-label="Ürünleri filtrele"
+        aria-label="Ürün, marka ya da barkod ara"
         className="flex items-stretch gap-2"
         onSubmit={(event) => {
           event.preventDefault()
@@ -195,11 +195,11 @@ export function ProductsFilterBar({
       >
         <div className="relative min-w-0 flex-1">
           <label htmlFor="urun-q" className="sr-only">
-            Ürün adı ara
+            Ürün adı, marka ya da barkod
           </label>
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             id="urun-q"
@@ -208,11 +208,11 @@ export function ProductsFilterBar({
             autoComplete="off"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            placeholder="Ürün adında ara…"
-            className="h-10 border-2 border-foreground bg-card pl-8 shadow-xs"
+            placeholder="Ürün, marka ya da barkod"
+            className="h-14 border-2 border-foreground bg-card pl-11 shadow-xs placeholder:text-muted-foreground md:text-base"
           />
         </div>
-        <Button type="submit" className="h-10 shrink-0 px-5">
+        <Button type="submit" className="h-14 shrink-0 px-6">
           <Search aria-hidden="true" />
           Ara
         </Button>

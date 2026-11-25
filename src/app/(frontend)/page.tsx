@@ -1,5 +1,6 @@
 import { getPayload } from 'payload'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { ArrowRight } from 'lucide-react'
 
@@ -15,15 +16,15 @@ import {
   pageMetadata,
   websiteNode,
 } from '@/lib/seo'
-import { BarcodeLookupForm } from '@/components/BarcodeLookupForm'
 import { HeroVideo } from '@/components/HeroVideo'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { CaseCard } from '@/components/CaseCard'
-import { ProductGrid } from '@/components/ProductGrid'
 import { StatsStrip } from '@/components/StatsStrip'
 import { StoryRail } from '@/components/StoryRail'
+import { ProductSlider, ProductSliderError, ProductSliderSkeleton } from '@/components/ProductSlider'
+import { UnifiedSearchForm } from '@/components/UnifiedSearchForm'
 import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PRODUCT_CARD_QUERY, productCardFromDoc } from '@/lib/productCardData'
+import { listSliderCards, type ProductSliderKind } from '@/lib/productCardData'
 import { totalProductScans } from '@/lib/productScans'
 import { ruleStats } from '@/lib/ruleStats'
 import { cached } from '@/lib/serverCache'
@@ -43,7 +44,7 @@ export const metadata: Metadata = pageMetadata({
 
 /**
  * Ana sayfanın verisi 5 dakika süreç içi önbellekte tutulur: bot trafiği ve
- * ziyaretçiler aynı 6 sorguyu tekrar tekrar çalıştırmaz. İçerik yazımında
+ * ziyaretçiler aynı sorguları tekrar tekrar çalıştırmaz. İçerik yazımında
  * `clearServerCache()` ile düşürülür (bkz. koleksiyon hook'ları).
  */
 const loadHomeData = () =>
@@ -51,8 +52,7 @@ const loadHomeData = () =>
     const payloadConfig = await config
     const payload = await getPayload({ config: payloadConfig })
 
-  const [topics, stats, latestProducts, publishedProducts, brandCount, totalScans] =
-    await Promise.all([
+    const [topics, stats, publishedProducts, brandCount, totalScans] = await Promise.all([
       // Ana sayfa konu şeridi yalnız bu alanları çizer; konu belgesinin tamamı gerekmiyor.
       payload.find({
         collection: 'topics',
@@ -63,13 +63,6 @@ const loadHomeData = () =>
       }),
       // Kural sayıları tek GROUP BY sorgusundan gelir; 3.900 kural satırı çekilmez.
       ruleStats(payload),
-      payload.find({
-        collection: 'products',
-        where: { status: { equals: 'published' } },
-        sort: '-createdAt',
-        limit: 6,
-        ...PRODUCT_CARD_QUERY,
-      }),
       // İstatistik şeridi yalnız sayı gösterir; belge çekilmez.
       payload.count({ collection: 'products', where: { status: { equals: 'published' } } }),
       payload.count({ collection: 'brands' }),
@@ -83,11 +76,48 @@ const loadHomeData = () =>
       { label: 'Marka', value: brandCount.totalDocs },
     ]
 
-    return { topics, stats, latestProducts, siteStats }
+    return { topics, stats, siteStats }
   })
 
+/**
+ * Slider verisi ayrı önbellek anahtarında tutulur: biri yavaşlar ya da hata verirse
+ * diğeri ve sayfanın kalanı etkilenmez (her bölüm kendi Suspense sınırında).
+ */
+const SLIDER_LIMIT = 8
+
+const loadSlider = (kind: ProductSliderKind) =>
+  cached(`home-slider-${kind}`, async () => {
+    const payloadConfig = await config
+    const payload = await getPayload({ config: payloadConfig })
+    return listSliderCards(payload, kind, SLIDER_LIMIT)
+  })
+
+const SLIDERS: Record<ProductSliderKind, { id: string; title: string; viewAllHref: string }> = {
+  // Görüntülenme varsayılan sıralamadır: "tümü" bağlantısı düz listeye gider.
+  views: { id: 'most-viewed-heading', title: 'En çok görüntülenen', viewAllHref: '/urunler' },
+  newest: {
+    id: 'newest-heading',
+    title: 'Yeni eklenen',
+    viewAllHref: '/urunler?sirala=newest',
+  },
+}
+
+/**
+ * Tek slider bölümü: veri sunucuda çekilir, hata boş sonuçtan ayrı bir kutuya düşer.
+ * Boş sonuçta `ProductSlider` hiçbir şey çizmez (bölüm gizlenir).
+ */
+async function ProductSliderSection({ kind }: { kind: ProductSliderKind }) {
+  const { id, title, viewAllHref } = SLIDERS[kind]
+  const products = await loadSlider(kind).catch((error: unknown) => {
+    console.error(`[anasayfa] "${title}" slider'ı yüklenemedi`, error)
+    return null
+  })
+  if (!products) return <ProductSliderError id={id} title={title} />
+  return <ProductSlider id={id} title={title} products={products} viewAllHref={viewAllHref} />
+}
+
 export default async function HomePage() {
-  const { topics, stats, latestProducts, siteStats } = await loadHomeData()
+  const { topics, stats, siteStats } = await loadHomeData()
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
@@ -108,7 +138,7 @@ export default async function HomePage() {
             Barkod Dedektifi, uzmanların yazdığı boykot, sağlık ve helal kurallarını ürüne uygular.
             Geriye tek bakışta okunacak net bir görüş kalır.
           </p>
-          <BarcodeLookupForm />
+          <UnifiedSearchForm />
         </div>
 
         {/* Tanıtım videosu: mobilde formun altında tam genişlik, masaüstünde hero'nun geniş kolonu. */}
@@ -119,6 +149,18 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Ürün keşfi: iki slider kendi Suspense sınırında; yükleme iskeleti ve hata
+          kutusu ayrı, boş sonuçta bölüm hiç çizilmez (ayırıcı çizgi bölümün kendi
+          alt kenarında; boş sonuçta geriye boş bir şerit kalmaz). */}
+      <div>
+        <Suspense fallback={<ProductSliderSkeleton id="most-viewed-heading" title="En çok görüntülenen" />}>
+          <ProductSliderSection kind="views" />
+        </Suspense>
+        <Suspense fallback={<ProductSliderSkeleton id="newest-heading" title="Yeni eklenen" />}>
+          <ProductSliderSection kind="newest" />
+        </Suspense>
+      </div>
 
       <StatsStrip stats={siteStats} />
 
@@ -141,29 +183,6 @@ export default async function HomePage() {
           ))}
         </ol>
       </section>
-
-      {latestProducts.docs.length > 0 && (
-        <section aria-labelledby="products-heading" className="pb-12">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 id="products-heading" className="font-display text-xl sm:text-2xl">
-              Son dosyalar
-            </h2>
-            <Link
-              href="/urunler"
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-            >
-              Tüm ürünler
-              <ArrowRight className="size-3.5" aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="mt-6">
-            <ProductGrid
-              className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4"
-              products={latestProducts.docs.map(productCardFromDoc)}
-            />
-          </div>
-        </section>
-      )}
 
       <section aria-labelledby="topics-heading" className="py-12">
         <div className="flex items-baseline justify-between gap-4">
