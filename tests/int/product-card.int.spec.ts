@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { productCardFromDoc } from '@/lib/productCardData'
+import { priceTextFor, productCardFromDoc } from '@/lib/productCardData'
 import { productSortCaption, productSortFromParam, productSortOrder } from '@/lib/productSort'
 
 const media = (url: string, alt?: string) => ({ id: 1, url, alt: alt ?? null })
@@ -48,6 +48,22 @@ describe('productCardFromDoc kapak seçimi', () => {
   it('yalnız ilişki kimliği (depth 0) gelse de görsel sayılmaz', () => {
     const card = productCardFromDoc({ id: 5, name: 'Çay', frontImage: 42 })
     expect(card.imageUrl).toBeNull()
+  })
+})
+
+describe('slider kartı fiyat metni', () => {
+  it('tek fiyat kaydı tek tutar olarak yazılır', () => {
+    expect(priceTextFor([{ amount: 12.5 }])).toBe('12,50 ₺')
+  })
+
+  it('birden fazla kayıt en düşük - en yüksek aralığına döner', () => {
+    expect(priceTextFor([{ amount: 12.5 }, { amount: 15 }])).toBe('12,50 - 15,00 ₺')
+  })
+
+  it('fiyat yoksa ya da hepsi geçersizse boş döner (kart "Fiyat yok" der)', () => {
+    expect(priceTextFor([])).toBeNull()
+    expect(priceTextFor(null)).toBeNull()
+    expect(priceTextFor([{ amount: 0 }])).toBeNull()
   })
 })
 

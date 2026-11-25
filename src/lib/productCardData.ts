@@ -1,6 +1,7 @@
 import type { Payload, Where } from 'payload'
 import { LRUCache } from 'lru-cache'
 
+import { summarizePrices, type PriceRecord } from './priceSummary'
 import { PRODUCT_SORT_DEFAULT, productSortOrder, type ProductSort } from './productSort'
 
 /** Ürün listelerinde (ızgara) karta taşınan alanlar; tam Dosya istemciye gönderilmez. */
@@ -14,6 +15,8 @@ export type ProductCardData = {
   imageUrl?: string | null
   imageAlt?: string | null
   viewCount?: number
+  /** Yalnız slider kartları doldurur: "12,50 ₺" ya da "12,50 - 15,00 ₺". */
+  priceText?: string | null
 }
 
 /** Liste süzgeci: ad, kategori (tek veya alt kategorilerle), marka, etiketler ve sıralama. */
@@ -81,6 +84,23 @@ export const PRODUCT_CARD_QUERY = {
   select: PRODUCT_CARD_SELECT,
   populate: PRODUCT_CARD_POPULATE,
 } as const
+
+/**
+ * Ana sayfa slider kartı fiyat da ister. `prices` (ürün başına en fazla 10 satır)
+ * 24'lük liste sorgusuna eklenmez; yalnız slider kendi select'ini kullanır.
+ */
+export const SLIDER_CARD_SELECT = {
+  ...PRODUCT_CARD_SELECT,
+  prices: true,
+} as const
+
+/** Ana sayfa slider türleri: en çok görüntülenen ve en yeni eklenen. */
+export type ProductSliderKind = 'views' | 'newest'
+
+const SLIDER_SORT: Record<ProductSliderKind, ProductSort> = {
+  views: 'views',
+  newest: 'newest',
+}
 
 /** Payload medya ilişkisinden yalnız karta gereken iki alanı çıkarır. */
 function mediaOf(value: unknown): { url: string; alt: string | null } | null {
@@ -152,6 +172,17 @@ export function productCardFromDoc(product: {
 }
 
 /**
+ * Slider kartının fiyat metni. Tek kayıt ortalama (aynı sayı) ile, birden fazla kayıt
+ * "en düşük - en yüksek ₺" aralığıyla gösterilir; fiyat yoksa `null` döner ve kart
+ * "Fiyat yok" der. Biçimlendirme `summarizePrices` üzerinden tek yerde kalır.
+ */
+export function priceTextFor(prices: PriceRecord[] | null | undefined): string | null {
+  const summary = summarizePrices(prices)
+  if (!summary) return null
+  return summary.count > 1 ? summary.rangeText : summary.averageText
+}
+
+/**
  * Liste sonuçları süreç içi LRU'da tutulur.
  *
  * `/urunler` ile sonsuz kaydırma ucu aynı sorguları tekrar tekrar çalıştırıyordu;
@@ -182,6 +213,22 @@ export function invalidateProductCardCache() {
   listCache.clear()
 }
 
+/**
+ * Arama tek kutudan gelir: aynı `q` ürün adında, barkodda ve marka adında aranır.
+ * Marka ilişkisi alt alan sorgusu yerine önce eşleşen marka kimlikleri çekilir; iki
+ * küçük sorgu, ilişki JOIN'ine bağlı adaptör davranışından daha taşınabilir.
+ */
+async function brandIdsMatching(payload: Payload, q: string): Promise<(number | string)[]> {
+  const brands = await payload.find({
+    collection: 'brands',
+    where: { name: { contains: q } },
+    limit: 50,
+    depth: 0,
+    select: { name: true },
+  })
+  return brands.docs.map((brand) => brand.id)
+}
+
 export async function listProductCards(
   payload: Payload,
   filter: ProductCardFilter = {},
@@ -191,7 +238,15 @@ export async function listProductCards(
   if (cached) return cached
 
   const and: Where[] = [{ status: { equals: 'published' } }]
-  if (filter.q) and.push({ name: { contains: filter.q } })
+  if (filter.q) {
+    const brandIds = await brandIdsMatching(payload, filter.q)
+    const matches: Where[] = [
+      { name: { contains: filter.q } },
+      { barcode: { contains: filter.q } },
+    ]
+    if (brandIds.length > 0) matches.push({ brand: { in: brandIds } })
+    and.push({ or: matches })
+  }
   if (filter.categories && filter.categories.length > 0) {
     and.push({ category: { in: filter.categories } })
   } else if (filter.category) {
@@ -217,4 +272,30 @@ export async function listProductCards(
   const cards = { docs: result.docs.map(productCardFromDoc), totalDocs: result.totalDocs }
   listCache.set(key, cards)
   return cards
+}
+
+/**
+ * Ana sayfa slider'ı: yayındaki ürünlerden `kind` sırasına göre ilk `limit` kart.
+ * Liste LRU'suna yazılmaz (fiyat alanı ve sıra sözleşmesi farklı); ana sayfa bu
+ * sorguyu `cached()` ile 5 dakika tutar. Boş veri boş dizi döner — bölümü sayfa gizler.
+ */
+export async function listSliderCards(
+  payload: Payload,
+  kind: ProductSliderKind,
+  limit = 8,
+): Promise<ProductCardData[]> {
+  const result = await payload.find({
+    collection: 'products',
+    where: { status: { equals: 'published' } },
+    sort: productSortOrder(SLIDER_SORT[kind]),
+    limit,
+    depth: 1,
+    select: SLIDER_CARD_SELECT,
+    populate: PRODUCT_CARD_POPULATE,
+  })
+
+  return result.docs.map((product) => ({
+    ...productCardFromDoc(product),
+    priceText: priceTextFor(product.prices),
+  }))
 }
