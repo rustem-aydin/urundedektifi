@@ -237,18 +237,21 @@ export default async function ProductDetailPage({
         <ProductGallery images={product.gallery} />
 
         <CaseCard className="flex flex-col gap-4 p-5 sm:p-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <EvidenceTag variant="evidence">ÜRÜN DOSYASI</EvidenceTag>
-            <MatchedStamp />
-          </div>
+          <EvidenceTag variant="evidence">ÜRÜN DOSYASI</EvidenceTag>
 
+          {/* Rozet marka satırının sağında: solda marka tek satır kırpılır, sağda rozet sabit. */}
           <div>
             <h1 className="font-display text-2xl leading-tight text-balance sm:text-3xl">
               {product.name}
             </h1>
-            {product.brand?.name && (
-              <p className="mt-1 text-muted-foreground">{product.brand.name}</p>
-            )}
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              {product.brand?.name ? (
+                <p className="min-w-0 flex-1 truncate text-muted-foreground">{product.brand.name}</p>
+              ) : (
+                <span className="min-w-0 flex-1" />
+              )}
+              <MatchedStamp />
+            </div>
           </div>
 
           <ProductAdminActions id={String(product.id)} name={product.name} />

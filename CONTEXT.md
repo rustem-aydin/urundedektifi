@@ -47,7 +47,7 @@ Uzmanın bir ürün hakkındaki nihai değerlendirmesi (yenilebilir / boykot / r
 _Avoid_: skor, puan
 
 **Arayüz dili notu**:
-Sayaçlar **"N kural eşleşti"** der (eşleşen kural sayısı). Kod, tip, koleksiyon ve API adları (`VerdictStamp`, `ExpertVerdicts`, `verdict`, `matchedRules`) değişmez; "hüküm" ve "delil" yalnız tarihsel/kod içi adlardır.
+Sayaçlar **"N görüş"** der (eşleşen görüş sayısı; damgada "N GÖRÜŞ"). Kod, tip, koleksiyon ve API adları (`VerdictStamp`, `ExpertVerdicts`, `verdict`, `matchedRules`) değişmez; "hüküm" ve "delil" yalnız tarihsel/kod içi adlardır.
 
 **Derecelendirme / Derece**:
 Bir uzmanın kendi ölçeğindeki tek bir seviye (örn: "Helal", "Riskli", "Boykot"). Renk + sıra (`rating-scales`) ile CMS'ten gelir.
@@ -89,7 +89,7 @@ uçta yazılır.
 _Avoid_: sosyal giriş, OAuth girişi (genel)
 
 **Takip**:
-Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Görüşleri görünür, ürün kartlarındaki "N kural eşleşti" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
+Bir Tüketici Hesabının bir Uzmanı izlemesi: `users.following` (hasMany → `experts`). Takip bir **kapıdır**: Ürün Dosyasında yalnız takip edilen uzmanların Görüşleri görünür, ürün kartlarındaki "N görüş" rozeti de yalnız takip edilen uzmanların eşleşen kurallarını sayar.
 _Avoid_: abonelik, favori
 
 **Kişisel Görüş**:

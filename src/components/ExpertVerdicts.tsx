@@ -33,7 +33,7 @@ function formatRuleDate(value: string): string {
  *
  * Her satır bir uzmanı temsil eder: solda uzman (avatar + ad), sağda o uzmanın bu
  * ürün için verdiği hüküm (derecelendirme damgaları). Satıra tıklamak hükmün
- * ayrıntısını (derece açıklaması + eşleşen deliller) bulanık arka planlı diyalogda açar.
+ * ayrıntısını (derece açıklaması + eşleşen dayanaklar) bulanık arka planlı diyalogda açar.
  * Mobilde aynı içerik alt çekmecede (bottom drawer) açılır.
  */
 export function ExpertVerdicts({
@@ -67,7 +67,7 @@ export function ExpertVerdicts({
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate font-medium">{verdict.expert.name}</span>
                   <span className="font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
-                    {verdict.matchedRules.length} kural
+                    {verdict.matchedRules.length} dayanak
                   </span>
                 </span>
                 <span className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -113,7 +113,7 @@ export function ExpertVerdicts({
                 </div>
               </div>
               <DialogDescription>
-                {open.expert.name} bu ürün için {open.matchedRules.length} kuralla eşleşti.
+                {open.expert.name} bu ürünle {open.matchedRules.length} dayanakta eşleşti.
               </DialogDescription>
             </DialogHeader>
 

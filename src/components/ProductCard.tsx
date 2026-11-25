@@ -65,27 +65,29 @@ export function ProductCard({
               Görsel yok
             </span>
           )}
-          {hasVerdicts && (
-            <div className="absolute right-1 bottom-1 left-1 z-10 hidden justify-start sm:flex">
-              <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
-            </div>
-          )}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:gap-0">
           <CardHeader className="gap-1 px-0 sm:px-(--card-spacing)">
             <CardTitle className="line-clamp-2 text-sm sm:text-base">{name}</CardTitle>
-            {brandName && (
-              <p className="line-clamp-2 text-xs break-words text-muted-foreground sm:text-sm">
-                {brandName}
-              </p>
+            {(brandName || hasVerdicts) && (
+              // Marka tek satırda kırpılır; rozet satırın sağında sabit kalır (marka adı uzasa da taşmaz).
+              <div className="flex min-w-0 items-center gap-2">
+                {brandName ? (
+                  <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground sm:text-sm">
+                    {brandName}
+                  </p>
+                ) : (
+                  <span className="min-w-0 flex-1" />
+                )}
+                {hasVerdicts && (
+                  <VerdictStamp variant="warn" className="shrink-0">
+                    {verdictCount} görüş
+                  </VerdictStamp>
+                )}
+              </div>
             )}
           </CardHeader>
-          {hasVerdicts && (
-            <div className="sm:hidden">
-              <VerdictStamp variant="warn">{verdictCount} kural eşleşti</VerdictStamp>
-            </div>
-          )}
           <CardContent className="mt-auto flex flex-col gap-1.5 px-0 pt-1.5 sm:gap-2 sm:px-(--card-spacing)">
             {typeof viewCount === 'number' && (
               <p className="flex items-center gap-1 font-mono text-[0.65rem] tracking-[0.18em] text-faded uppercase">
