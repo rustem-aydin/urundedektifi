@@ -81,11 +81,11 @@ export function ProductVerdictProvider({
   return <VerdictContext.Provider value={{ ...state, retry }}>{children}</VerdictContext.Provider>
 }
 
-/** Üst bilgi rozeti: takip edilen uzmanların eşleşen kural sayısı. Hata/boşta rozet yok. */
+/** Üst bilgi rozeti: takip edilen uzmanların eşleşen görüş sayısı. Hata/boşta rozet yok. */
 export function MatchedStamp() {
   const { data, loading, error } = useContext(VerdictContext)
   if (loading || error || !data || data.totalMatched === 0) return null
-  return <VerdictStamp variant="warn">{data.totalMatched} kural eşleşti</VerdictStamp>
+  return <VerdictStamp variant="warn">{data.totalMatched} görüş</VerdictStamp>
 }
 
 /** Dosya 01: hüküm listesi ya da "uzman takip edin" boş durumu. */
@@ -95,7 +95,7 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
   const total = data?.totalMatched ?? 0
 
   // Hüküm listesinin üstünde "ne zaman güncellendi" görünmeli: marka itirazında
-  // ilk sorulan şey hükmün yaşı. Tarih, eşleşen delillerin en yeni güncellemesidir.
+  // ilk sorulan şey görüşün yaşı. Tarih, eşleşen dayanakların en yeni güncellemesidir.
   const lastUpdated = verdicts
     .flatMap((entry) => entry.matchedRules)
     .map((rule) => rule.updatedAt)
@@ -127,7 +127,7 @@ export function VerdictSection({ avatars }: { avatars: Record<string, ExpertAvat
           ? 'Görüşler yükleniyor…'
           : data?.hasOtherMatches
             ? 'Bu ürünle eşleşen görüşler var, ama takip ettiğin uzmanlardan değil. İlgili uzmanları takip edince görüşler burada görünür.'
-            : 'Bu ürünle eşleşen aktif kural yok. Uzmanlar kural ekledikçe bu bölüm güncellenir.'
+            : 'Bu ürünle eşleşen aktif görüş yok. Uzmanlar yeni dayanak ekledikçe bu bölüm güncellenir.'
       }
       emptyAction={
         loading ? null : (

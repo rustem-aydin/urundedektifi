@@ -10,7 +10,7 @@ import type { ProductCardData } from '@/lib/productCardData'
 /**
  * Ürün kartı ızgarası.
  *
- * Kart rozeti ("N kural eşleşti") takibe bağlıdır: sayı, oturum sahibinin takip ettiği
+ * Kart rozeti ("N görüş") takibe bağlıdır: sayı, oturum sahibinin takip ettiği
  * uzmanların bu üründeki eşleşen kurallarıdır (`/api/products/match-counts`). Misafir ya
  * da hiç takip etmeyen kullanıcıda rozet görünmez.
  */
