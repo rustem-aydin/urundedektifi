@@ -51,7 +51,13 @@ describe('Google oturum jetonu (sid)', () => {
       headers: new Headers({ authorization: `JWT ${token}` }),
     })
 
-    expect(authed?.id).toBe(user.id)
-    expect(authed?.email).toBe(email)
+    // `TypedUser` iki kimlik doğrulamalı koleksiyonun birleşimi (`users` + MCP API anahtarı);
+    // jeton `users` koleksiyonuna çözülmeli.
+    if (!authed || !('email' in authed)) {
+      throw new Error('Google jetonu users koleksiyonundaki kullanıcıya çözülmedi')
+    }
+
+    expect(authed.id).toBe(user.id)
+    expect(authed.email).toBe(email)
   })
 })
