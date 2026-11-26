@@ -150,6 +150,10 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Site istatistikleri hero'nun hemen altında: ilk ekranda sayılar görünür,
+          slider'ların altına düşmez. Şerit kendi üst/alt çizgisini çizer. */}
+      <StatsStrip stats={siteStats} />
+
       {/* Ürün keşfi: iki slider kendi Suspense sınırında; yükleme iskeleti ve hata
           kutusu ayrı, boş sonuçta bölüm hiç çizilmez (ayırıcı çizgi bölümün kendi
           alt kenarında; boş sonuçta geriye boş bir şerit kalmaz). */}
@@ -161,8 +165,6 @@ export default async function HomePage() {
           <ProductSliderSection kind="newest" />
         </Suspense>
       </div>
-
-      <StatsStrip stats={siteStats} />
 
       {/* Takip edilen uzmanların yazıları: oturum + takip yoksa kendini gizler. */}
       <StoryRail />
