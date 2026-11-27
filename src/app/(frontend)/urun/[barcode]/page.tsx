@@ -16,7 +16,8 @@ import {
 import { Barcode } from '@/components/Barcode'
 import { EvidenceTag } from '@/components/EvidenceTag'
 import { type ExpertAvatar } from '@/components/ExpertVerdicts'
-import { MatchedStamp, ProductVerdictProvider, VerdictSection } from '@/components/ProductVerdicts'
+import { ExpertVerdictsSection, SessionVerdictProvider } from '@/components/ExpertVerdictsGate'
+import { MatchedStamp } from '@/components/ProductVerdicts'
 import {
   FeedbackAside,
   FeedbackCommentsSection,
@@ -205,7 +206,7 @@ export default async function ProductDetailPage({
   const { total: contributorTotal, contributors } = contributorList
 
   return (
-    <ProductVerdictProvider barcode={String(product.barcode ?? barcode)}>
+    <SessionVerdictProvider barcode={String(product.barcode ?? barcode)}>
       <JsonLd
         data={jsonLdGraph([
           productNode(
@@ -302,8 +303,8 @@ export default async function ProductDetailPage({
       </header>
 
       <div className="mt-10 flex flex-col gap-10">
-        {/* HÜKÜMLER — yalnız takip edilen uzmanlar (istemcide JWT ile süzülür) */}
-        <VerdictSection avatars={expertAvatars} />
+        {/* HÜKÜMLER — oturuma bağlı: misafir giriş çağrısı görür (istemcide süzülür) */}
+        <ExpertVerdictsSection avatars={expertAvatars} />
         <VerdictDisclaimer className="-mt-6" />
         <div className="-mt-2 flex justify-end">
           <ObjectionDialog
@@ -581,6 +582,6 @@ export default async function ProductDetailPage({
       </div>
       </div>
       </ProductFeedbackProvider>
-    </ProductVerdictProvider>
+    </SessionVerdictProvider>
   )
 }
