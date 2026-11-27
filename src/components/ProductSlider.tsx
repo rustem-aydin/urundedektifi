@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { AlertTriangle, ArrowRight } from 'lucide-react'
 
 import { CaseCard } from '@/components/CaseCard'
+import { SliderVerdictBadge, SliderVerdictCounts } from '@/components/SliderVerdictCounts'
 import type { ProductCardData } from '@/lib/productCardData'
 
 type SliderChrome = {
@@ -19,8 +20,8 @@ type ProductSliderProps = SliderChrome & {
 
 function SliderCard({ product }: { product: ProductCardData }) {
   const card = (
-    <CaseCard className="h-full overflow-hidden py-0 transition-shadow group-hover:shadow-md">
-      <div className="relative aspect-[4/3] w-full border-b border-border bg-muted/50">
+    <CaseCard className="flex h-full flex-col overflow-hidden py-0 transition-shadow group-hover:shadow-md">
+      <div className="relative aspect-[4/3] w-full shrink-0 border-b border-border bg-muted/50">
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
@@ -36,14 +37,16 @@ function SliderCard({ product }: { product: ProductCardData }) {
           </span>
         )}
       </div>
-      <div className="flex min-h-[7.5rem] flex-col gap-1 p-3">
+      <div className="flex min-h-[7.5rem] flex-1 flex-col gap-1 p-3">
         <p className="line-clamp-2 text-sm leading-snug font-medium">{product.name}</p>
         <p className="line-clamp-1 text-xs text-muted-foreground">
           {product.brandName || 'Marka belirtilmemiş'}
         </p>
-        <p className="mt-auto font-mono text-sm">
+        {/* Fiyat bloğu: rozet varsa fiyatın hemen üstünde durur; fiyat her kartta tabana hizalı kalır. */}
+        <p className="mt-auto flex flex-col items-start gap-1 font-mono text-sm">
+          <SliderVerdictBadge barcode={product.barcode} />
           {product.priceText ? (
-            product.priceText
+            <span>{product.priceText}</span>
           ) : (
             <span className="text-faded">Fiyat yok</span>
           )}
@@ -103,6 +106,10 @@ export function ProductSlider({
 }: ProductSliderProps) {
   if (products.length === 0) return null
 
+  const barcodes = products
+    .map((product) => product.barcode)
+    .filter((barcode): barcode is string => Boolean(barcode))
+
   return (
     <section aria-labelledby={id} className="border-b border-border py-8">
       <SliderHeader id={id} title={title} viewAllHref={viewAllHref} />
@@ -112,13 +119,15 @@ export function ProductSlider({
         tabIndex={0}
         className="-mx-4 mt-5 overflow-x-auto px-4 pb-2 outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
       >
-        <ul className="flex snap-x snap-mandatory gap-3 sm:gap-4">
-          {products.map((product) => (
-            <li key={product.id} className="w-40 shrink-0 snap-start sm:w-48">
-              <SliderCard product={product} />
-            </li>
-          ))}
-        </ul>
+        <SliderVerdictCounts barcodes={barcodes}>
+          <ul className="flex snap-x snap-mandatory gap-3 sm:gap-4">
+            {products.map((product) => (
+              <li key={product.id} className="w-40 shrink-0 snap-start sm:w-48">
+                <SliderCard product={product} />
+              </li>
+            ))}
+          </ul>
+        </SliderVerdictCounts>
       </div>
     </section>
   )
