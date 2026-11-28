@@ -27,13 +27,75 @@ function navItemsFor(isPanel: boolean) {
   return isPanel ? [...items, { href: '/inceleme', label: 'İnceleme' }] : items
 }
 
+/**
+ * Oturum köşesi: girişlide profil ikonu (değişmedi), girişsizde "Giriş yap" butonu.
+ *
+ * `restoring` sırasında yalnızca ikonun yerini tutan görünmez bir kutu çizilir; böylece
+ * girişli kullanıcı ilk boyamada butonu görüp kaybetmez ve yerleşim oynamaz. Oturum bilgisi
+ * `session-provider`dan okunur; burada ek istek atılmaz.
+ */
+function AccountSlot({ variant }: { variant: 'desktop' | 'mobile' }) {
+  const { user, restoring } = useSession()
+
+  if (restoring) {
+    return (
+      <span
+        aria-hidden="true"
+        className={cn('shrink-0', variant === 'desktop' ? 'ml-1 size-8' : 'size-11')}
+      />
+    )
+  }
+
+  if (!user) {
+    return (
+      <Link
+        href="/giris"
+        title="Giriş yap"
+        className={cn(
+          'inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
+          variant === 'desktop' ? 'ml-1 h-11 px-3' : 'h-11 px-2',
+        )}
+      >
+        {/*
+          Dar ekranlarda etiket "Giriş"e kısalır: "Giriş yap" (85 px) 390–1023 px arasında
+          marka adını iki satıra itiyordu. lg ve üstünde tam etiket kalır.
+        */}
+        <span className="lg:hidden">Giriş</span>
+        <span className="hidden lg:inline">Giriş yap</span>
+      </Link>
+    )
+  }
+
+  if (variant === 'desktop') {
+    return (
+      <Link
+        href={`/profil/${user.id}`}
+        aria-label="Profilim"
+        title="Profilim"
+        className="ml-1 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+      >
+        <UserRound className="size-4" aria-hidden="true" />
+      </Link>
+    )
+  }
+
+  return (
+    <Link
+      href={`/profil/${user.id}`}
+      aria-label="Profilim"
+      title="Profilim"
+      className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+    >
+      <UserRound className="size-5" aria-hidden="true" />
+    </Link>
+  )
+}
+
 export function SiteHeader() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(0)
-  const { user, token, isPanel } = useSession()
-  const profileHref = user ? `/profil/${user.id}` : '/giris'
-  const accountLabel = user ? 'Profilim' : 'Giriş'
+  const { token, isPanel } = useSession()
   const navItems = navItemsFor(isPanel)
 
   /** Menü etiketi: inceleme girdisinde bekleyen taslak sayısı rozet olarak eklenir. */
@@ -96,27 +158,13 @@ export function SiteHeader() {
               </Link>
             )
           })}
-          <Link
-            href={profileHref}
-            aria-label={accountLabel}
-            title={accountLabel}
-            className="ml-1 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <UserRound className="size-4" aria-hidden="true" />
-          </Link>
+          <AccountSlot variant="desktop" />
           <ThemeToggle />
         </nav>
 
         <div className="flex items-center gap-1 md:hidden">
           <ThemeToggle />
-          <Link
-            href={profileHref}
-            aria-label={accountLabel}
-            title={accountLabel}
-            className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            <UserRound className="size-5" aria-hidden="true" />
-          </Link>
+          <AccountSlot variant="mobile" />
           <button
             type="button"
             aria-expanded={open}
