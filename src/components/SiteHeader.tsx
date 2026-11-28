@@ -27,67 +27,62 @@ function navItemsFor(isPanel: boolean) {
   return isPanel ? [...items, { href: '/inceleme', label: 'İnceleme' }] : items
 }
 
+const ACCOUNT_BUTTON =
+  'inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2'
+
 /**
  * Oturum köşesi: girişlide profil ikonu (değişmedi), girişsizde "Giriş yap" butonu.
  *
  * `restoring` sırasında yalnızca ikonun yerini tutan görünmez bir kutu çizilir; böylece
  * girişli kullanıcı ilk boyamada butonu görüp kaybetmez ve yerleşim oynamaz. Oturum bilgisi
- * `session-provider`dan okunur; burada ek istek atılmaz.
+ * `session-provider`dan okunur (jeton `localStorage`da); burada ek istek atılmaz.
+ *
+ * `<noscript>` bloğu: JavaScript kapalıyken oturum okunamaz, o yüzden girişe giden bağlantı
+ * sunucudan gelir — istemci tarafı buton yalnızca hidrasyondan sonra çizilir.
  */
 function AccountSlot({ variant }: { variant: 'desktop' | 'mobile' }) {
   const { user, restoring } = useSession()
-
-  if (restoring) {
-    return (
-      <span
-        aria-hidden="true"
-        className={cn('shrink-0', variant === 'desktop' ? 'ml-1 size-8' : 'size-11')}
-      />
-    )
-  }
-
-  if (!user) {
-    return (
-      <Link
-        href="/giris"
-        title="Giriş yap"
-        className={cn(
-          'inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2',
-          variant === 'desktop' ? 'ml-1 h-11 px-3' : 'h-11 px-2',
-        )}
-      >
-        {/*
-          Dar ekranlarda etiket "Giriş"e kısalır: "Giriş yap" (85 px) 390–1023 px arasında
-          marka adını iki satıra itiyordu. lg ve üstünde tam etiket kalır.
-        */}
-        <span className="lg:hidden">Giriş</span>
-        <span className="hidden lg:inline">Giriş yap</span>
-      </Link>
-    )
-  }
-
-  if (variant === 'desktop') {
-    return (
-      <Link
-        href={`/profil/${user.id}`}
-        aria-label="Profilim"
-        title="Profilim"
-        className="ml-1 flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-      >
-        <UserRound className="size-4" aria-hidden="true" />
-      </Link>
-    )
-  }
+  const size = variant === 'desktop' ? 'ml-1 h-11 px-3' : 'h-11 px-2'
 
   return (
-    <Link
-      href={`/profil/${user.id}`}
-      aria-label="Profilim"
-      title="Profilim"
-      className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-    >
-      <UserRound className="size-5" aria-hidden="true" />
-    </Link>
+    <>
+      <noscript>
+        <a href="/giris" className={cn(ACCOUNT_BUTTON, size)}>
+          <span className="lg:hidden">Giriş</span>
+          <span className="hidden lg:inline">Giriş yap</span>
+        </a>
+      </noscript>
+      {restoring ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            'shrink-0 [@media(scripting:none)]:hidden',
+            variant === 'desktop' ? 'ml-1 size-8' : 'size-11',
+          )}
+        />
+      ) : user ? (
+        <Link
+          href={`/profil/${user.id}`}
+          aria-label="Profilim"
+          title="Profilim"
+          className={cn(
+            'flex items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
+            variant === 'desktop' ? 'ml-1 size-8 border border-border' : 'size-11',
+          )}
+        >
+          <UserRound className={variant === 'desktop' ? 'size-4' : 'size-5'} aria-hidden="true" />
+        </Link>
+      ) : (
+        <Link href="/giris" title="Giriş yap" className={cn(ACCOUNT_BUTTON, size)}>
+          {/*
+            Dar ekranlarda etiket "Giriş"e kısalır: "Giriş yap" (85 px) 390–1023 px arasında
+            marka adını iki satıra itiyordu. lg ve üstünde tam etiket kalır.
+          */}
+          <span className="lg:hidden">Giriş</span>
+          <span className="hidden lg:inline">Giriş yap</span>
+        </Link>
+      )}
+    </>
   )
 }
 
